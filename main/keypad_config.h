@@ -12,8 +12,8 @@ const char keys[ROWS][COLS] = {
   { '*', '0', '#', 'D' }
 };
 
-const byte colPins[COLS] = { 44, 46, 48, 50 };
-const byte rowPins[ROWS] = { 45, 47, 49, 51 };
+const byte colPins[COLS] = { 31, 33, 35, 37 };
+const byte rowPins[ROWS] = { 30, 32, 34, 36 };
 
 extern Keypad keypad;
 
