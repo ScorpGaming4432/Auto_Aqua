@@ -10,7 +10,7 @@ const Language LANGUAGES[LANG_COUNT] = {
   { "Italiano ", "Num=Lingua ", "Vol. serbatoio" },
   { "Portugu\352s", "Num=Idioma ", "Vol. do tanque" },
   { "T\374rk\347e   ", "Num=Dil    ", "Hacim         " },
-  { "\000e\001tina  ", "Num=Jazyk  ", "Objem n\341dr\003e  " }
+  { "\000e\001tina  ", "Num=Jazyk  ", "Objem n\341dr\002e  " }
 };
 
 // function to fetch these
