@@ -25,6 +25,7 @@
 #include "chars.h"
 #include "display.h"
 #include "language.h"
+#include "water.h"
 #include <Arduino.h>
 #include <Keypad.h>
 
@@ -41,7 +42,7 @@
  * @param dest Destination RAM buffer
  * @param len Number of bytes to copy
  */
- void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
+void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
@@ -53,7 +54,7 @@
  * @param idx Language index (0-9)
  * @return Language structure for the selected language
  */
- Language readLanguage(uint8_t idx) {
+Language readLanguage(uint8_t idx) {
   Language result;
   memcpy_P(&result, &LANGUAGES[idx % LANG_COUNT], sizeof(Language));
   return result;
@@ -76,7 +77,7 @@ bool editFlag = false;
  * Display animated splash screen
  * Shows "AUTO AQUA" with animated water drop effect
  */
- void splashScreen() {
+void splashScreen() {
   // Initialize LCD display and turn on backlight
   lcd.init();
   lcd.backlight();
@@ -121,25 +122,25 @@ bool editFlag = false;
  * @param editMode If true, allows editing (required for initial setup)
  * @return Selected language index
  */
- uint8_t langConfigScreen(uint8_t idx, bool editMode) {
+uint8_t langConfigScreen(uint8_t idx, bool editMode) {
   lcd.clear();
   // Load custom glyphs for the selected language
   loadGlyphSet(idx);
-  
+
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
   readLanguageField(idx, offsetof(Language, langName), langName,
-                    LANG_NAME_VISIBLE);
+                    LANG_NAME_LEN);
   readLanguageField(idx, offsetof(Language, langPrompt), langPrompt,
-                    LANG_PROMPT_VISIBLE);
-  
+                    LANG_PROMPT_LEN);
+
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
-  lcdPrintWithGlyphs(langName, LANG_NAME_VISIBLE);
+  lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
   lcd.setCursor(0, 1);
   lcd.print("Num=");
-  lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_VISIBLE);
+  lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
   lcd.print("  #->");
 
   uint8_t newlang = idx;
@@ -150,19 +151,19 @@ bool editFlag = false;
       // Numeric key: select language directly
       if (key >= '0' && key <= '9') {
         newlang = key - '0';
-      } 
+      }
       // Key A: next language
       else if (key == 'A') {
         newlang = (newlang + 1) % LANG_COUNT;
-      } 
+      }
       // Key B: previous language
       else if (key == 'B') {
         newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
-      } 
+      }
       // Key #: confirm selection
       else if (key == '#') {
         return newlang;
-      } 
+      }
       // Key *: cancel
       else if (key == '*') {
         return idx;
@@ -173,13 +174,13 @@ bool editFlag = false;
         idx = newlang;
         loadGlyphSet(idx);
         readLanguageField(idx, offsetof(Language, langName), langName,
-                          LANG_NAME_VISIBLE);
+                          LANG_NAME_LEN);
         readLanguageField(idx, offsetof(Language, langPrompt), langPrompt,
-                          LANG_PROMPT_VISIBLE);
+                          LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);
-        lcdPrintWithGlyphs(langName, LANG_NAME_VISIBLE);
+        lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
         lcd.setCursor(4, 1);
-        lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_VISIBLE);
+        lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
       }
     }
 
@@ -188,8 +189,7 @@ bool editFlag = false;
 }
 
 // Formatki LCD do PROGMEM
-const char LCD_TANK_FORMAT[] PROGMEM = "<-* _______l #->";
-const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
+
 
 // ============================================================================
 // Numeric input screen - shared by tank volume, pump amount, and duration
@@ -214,7 +214,7 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
  * @param unit Optional unit label (e.g., \"ml\", \"l\") displayed after digits
  * @return Entered value, or -1 if cancelled
  */
- int32_t editNumberScreen(const char *label, const char *format,
+int32_t editNumberScreen(const char *label, const char *format,
                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
                          bool editMode, const char *unit = nullptr) {
   lcd.clear();
@@ -222,10 +222,10 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
   lcd.print(label);
   lcd.setCursor(0, 1);
   // Copy format string from PROGMEM to RAM buffer
-  char fmtBuf[20];
-  strncpy_P(fmtBuf, format, sizeof(fmtBuf) - 1);
-  fmtBuf[sizeof(fmtBuf) - 1] = '\0';
-  lcd.print(fmtBuf);
+  // char fmtBuf[20];
+  // strncpy_P(fmtBuf, format, sizeof(fmtBuf) - 1);
+  // fmtBuf[sizeof(fmtBuf) - 1] = '\0';
+  lcd.print(format);
 
   // Animation timing for cursor blink (500ms period)
   unsigned long lastBlink = millis();
@@ -243,12 +243,12 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
    * Lambda function to redraw the numeric input field
    * Updates display with current value, handling alignment and formatting
    */
-     auto redrawNumber = [&](uint32_t val) {
+  auto redrawNumber = [&](uint32_t val) {
     // Clear digit field with underscores
     lcd.setCursor(entryCol, 1);
     for (uint8_t i = 0; i < maxDigits; i++)
       lcd.print('_');
-    
+
     // If no digits entered, reset tracking variables
     if (!digitsEntered) {
       curLen = 0;
@@ -256,12 +256,12 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
       lastDigitChar = ' ';
       return;
     }
-    
+
     // Convert number to string for display
     char tmp[8];  // max 7 digits + null terminator
     uint8_t idx = 0;
     unsigned long v = (unsigned long)val;
-    
+
     // Handle zero special case
     if (v == 0) {
       tmp[idx++] = '0';
@@ -278,7 +278,7 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
         tmp[idx++] = rev[i];
     }
     tmp[idx] = '\0';
-    
+
     // If number exceeds max digits, display rightmost digits
     if (idx > maxDigits) {
       const char *p = tmp + (idx - maxDigits);
@@ -302,8 +302,8 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
         lastDigitChar = tmp[curLen - 1];
       }
     }
-    
-    // Display unit label if provided
+
+    //Display unit label if provided
     if (unit) {
       lcd.setCursor(entryCol + maxDigits, 1);
       lcd.print(unit);
@@ -318,7 +318,7 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
   // Main input loop
   while (true) {
     char key = keypad.getKey();
-    
+
     // Handle cursor blink animation (500ms period)
     if (localEdit && millis() - lastBlink >= 500) {
       lastBlink = millis();
@@ -334,7 +334,7 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
       delay(10);
       continue;
     }
-    
+
     // In view mode: # enters edit mode, * cancels
     if (!localEdit) {
       if (key == '#') {
@@ -353,7 +353,7 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
       }
       continue;
     }
-    
+
     // In edit mode
     if (key == '*') {
       // Backspace: clear number if empty, or reset to 0
@@ -364,14 +364,14 @@ const char LCD_AM_FORMAT[] PROGMEM = "<-* ______ml #->";
       redrawNumber(number);
       continue;
     }
-    
+
     if (key == '#') {
       // Confirm: must have entered digits
       if (!digitsEntered || number == 0)
         return -1;
       return (int32_t)number;
     }
-    
+
     // Digit entry: 0-9
     if (key >= '0' && key <= '9') {
       // Check if we have room for more digits
@@ -401,8 +401,8 @@ int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode,
     tankVolume = 0;
     editMode = true;
   }
-  return editNumberScreen(tankVolumeBuf, LCD_TANK_FORMAT, 4, 7, tankVolume,
-                          editMode);
+  return editNumberScreen(tankVolumeBuf, "<-* _______l #->", 4, 7, tankVolume,
+                          editMode, "l");
 }
 
 int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
@@ -413,7 +413,8 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
   Serial.print(amount);
   Serial.print(" index=");
   Serial.println(pumpIndex);
-  char _amBuf[LANG_AMOUNTTITLE_LEN];
+  // Make buffer large enough to include terminating NUL and copy full string (so '#' isn't lost)
+  char _amBuf[LANG_AMOUNTTITLE_LEN + 1];
   strncpy(_amBuf, amountBuf, sizeof(_amBuf) - 1);
   _amBuf[sizeof(_amBuf) - 1] = '\0';
   for (int i = 0; _amBuf[i] != '\0'; i++) {
@@ -427,7 +428,7 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
     amount = 0;
     editMode = true;
   }
-  return editNumberScreen(_amBuf, LCD_AM_FORMAT, 4, 4, amount, editMode);
+  return editNumberScreen(_amBuf, "<-* ______ml #->", 6, 6, amount, editMode);
 }
 
 uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
@@ -439,7 +440,8 @@ uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool edi
   Serial.println((unsigned long)duration);
 
   // Prepare the buffer for the title, replacing '#' with the pump index
-  char _durationBuf[LANG_AMOUNTTITLE_LEN];
+  // Use duration title length and ensure NUL is available
+  char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
   strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
   _durationBuf[sizeof(_durationBuf) - 1] = '\0';
   for (int i = 0; _durationBuf[i] != '\0'; i++) {
@@ -604,4 +606,109 @@ void showTime(uint64_t currentTime) {
   if (ss < 10)
     lcd.print('0');
   lcd.print(ss);
+}
+
+int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
+                            int16_t lowThreshold, int16_t highThreshold) {
+  Serial.print("[THRESH] entry: editMode=");
+  Serial.print(editMode);
+  Serial.print(" low=");
+  Serial.print(lowThreshold);
+  Serial.print(" high=");
+  Serial.println(highThreshold);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(thresholdBuf);
+
+  uint16_t low = lowThreshold;
+  uint16_t high = highThreshold;
+  uint8_t editing = 0;  // 0=low, 1=high
+  char key = 0;
+  bool modified = false;
+
+  while (true) {
+    lcd.setCursor(0, 1);
+    if (editing == 0) {
+      lcd.print("L:");
+      if (low < 100) lcd.print('0');
+      if (low < 10) lcd.print('0');
+      lcd.print(low);
+      lcd.print(" H:");
+      if (high < 100) lcd.print('0');
+      if (high < 10) lcd.print('0');
+      lcd.print(high);
+    } else {
+      lcd.print("L:");
+      if (low < 100) lcd.print('0');
+      if (low < 10) lcd.print('0');
+      lcd.print(low);
+      lcd.print(" H:");
+      if (high < 100) lcd.print('0');
+      if (high < 10) lcd.print('0');
+      lcd.print(high);
+    }
+
+    if (editMode) {
+      // Blink cursor on current value
+      if (millis() % 1000 < 500) {
+        lcd.setCursor(editing == 0 ? 2 : 7, 1);
+        lcd.print("   ");
+      }
+    }
+
+    key = keypad.getKey();
+    if (!key) {
+      delay(10);
+      continue;
+    }
+
+    Serial.print("[THRESH] key: ");
+    Serial.println(key);
+
+    if (key >= '0' && key <= '9') {
+      if (editMode) {
+        uint8_t digit = key - '0';
+        if (editing == 0) {
+          low = (low * 10 + digit) % 1000;
+        } else {
+          high = (high * 10 + digit) % 1000;
+        }
+        modified = true;
+      }
+    } else if (key == '#') {
+      if (editMode) {
+        editing = 1 - editing;  // Toggle between low and high
+      }
+    } else if (key == '*') {
+      Serial.println("[THRESH] cancelled");
+      return -1;
+    } else if (key == 'D') {
+      if (editMode) {
+        if (editing == 0 && low > 0) low /= 10;
+        else if (editing == 1 && high > 0) high /= 10;
+        modified = true;
+      }
+    } else if (key == 'A') {
+      if (modified) {
+        // Validate thresholds
+        if (low < high) {
+          setWaterThresholds(low, high);
+          Serial.print("[THRESH] saved - Low: ");
+          Serial.print(low);
+          Serial.print(", High: ");
+          Serial.println(high);
+          return 1;
+        } else {
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Error: Low >= High");
+          delay(2000);
+        }
+      }
+      break;
+    }
+  }
+
+  return modified ? 1 : 0;
 }

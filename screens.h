@@ -141,4 +141,15 @@ inline uint64_t seconds() {
   return totalMillis / 1000;
 }
 
+/**
+ * Display water threshold configuration screen
+ * @param thresholdBuf Localized label for threshold
+ * @param editMode Whether to allow editing
+ * @param lowThreshold Current low threshold value
+ * @param highThreshold Current high threshold value
+ * @return 1 if modified, 0 if not modified, -1 if cancelled
+ */
+int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
+                             int16_t lowThreshold, int16_t highThreshold);
+
 #endif
