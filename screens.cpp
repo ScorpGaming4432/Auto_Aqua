@@ -42,7 +42,7 @@
  * @param dest Destination RAM buffer
  * @param len Number of bytes to copy
  */
-void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
+ void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
@@ -54,7 +54,7 @@ void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
  * @param idx Language index (0-9)
  * @return Language structure for the selected language
  */
-Language readLanguage(uint8_t idx) {
+ Language readLanguage(uint8_t idx) {
   Language result;
   memcpy_P(&result, &LANGUAGES[idx % LANG_COUNT], sizeof(Language));
   return result;
@@ -77,7 +77,7 @@ bool editFlag = false;
  * Display animated splash screen
  * Shows "AUTO AQUA" with animated water drop effect
  */
-void splashScreen() {
+ void splashScreen() {
   // Initialize LCD display and turn on backlight
   lcd.init();
   lcd.backlight();
@@ -122,11 +122,11 @@ void splashScreen() {
  * @param editMode If true, allows editing (required for initial setup)
  * @return Selected language index
  */
-uint8_t langConfigScreen(uint8_t idx, bool editMode) {
+ uint8_t langConfigScreen(uint8_t idx, bool editMode) {
   lcd.clear();
   // Load custom glyphs for the selected language
   loadGlyphSet(idx);
-
+  
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
@@ -134,7 +134,7 @@ uint8_t langConfigScreen(uint8_t idx, bool editMode) {
                     LANG_NAME_LEN);
   readLanguageField(idx, offsetof(Language, langPrompt), langPrompt,
                     LANG_PROMPT_LEN);
-
+  
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
   lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
@@ -151,19 +151,19 @@ uint8_t langConfigScreen(uint8_t idx, bool editMode) {
       // Numeric key: select language directly
       if (key >= '0' && key <= '9') {
         newlang = key - '0';
-      }
+      } 
       // Key A: next language
       else if (key == 'A') {
         newlang = (newlang + 1) % LANG_COUNT;
-      }
+      } 
       // Key B: previous language
       else if (key == 'B') {
         newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
-      }
+      } 
       // Key #: confirm selection
       else if (key == '#') {
         return newlang;
-      }
+      } 
       // Key *: cancel
       else if (key == '*') {
         return idx;
@@ -214,24 +214,35 @@ uint8_t langConfigScreen(uint8_t idx, bool editMode) {
  * @param unit Optional unit label (e.g., \"ml\", \"l\") displayed after digits
  * @return Entered value, or -1 if cancelled
  */
-int32_t editNumberScreen(const char *label, const char *format,
+ int32_t editNumberScreen(const char *label, const char *format,
                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
                          bool editMode, const char *unit = nullptr) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(label);
   lcd.setCursor(0, 1);
-  // Copy format string from PROGMEM to RAM buffer
-  // char fmtBuf[20];
-  // strncpy_P(fmtBuf, format, sizeof(fmtBuf) - 1);
-  // fmtBuf[sizeof(fmtBuf) - 1] = '\0';
-  lcd.print(format);
+
+  // Copy format into a local RAM buffer so we can inspect characters
+  char fmtBuf[17];
+  strncpy(fmtBuf, format, sizeof(fmtBuf) - 1);
+  fmtBuf[sizeof(fmtBuf) - 1] = '\0';
+  lcd.print(fmtBuf);
+
+  // Determine whether the format already contains a unit character right
+  // after the digit field so we don't print the unit twice.
+  bool formatHasUnit = false;
+  uint8_t unitPos = entryCol + maxDigits;
+  if (unit && unitPos < sizeof(fmtBuf) - 1 && fmtBuf[unitPos] != '\0' &&
+      fmtBuf[unitPos] != ' ' && fmtBuf[unitPos] != '_') {
+    formatHasUnit = true;
+  }
 
   // Animation timing for cursor blink (500ms period)
   unsigned long lastBlink = millis();
   bool showCursor = false;
-  // Flag to track if user has entered any digits
-  bool digitsEntered = (value != 0);
+  // Treat sentinel (0xFFFFFFFF) as "no value"; otherwise consider existing
+  // value present (including zero).
+  bool digitsEntered = (value != (uint32_t)-1);
   // Position of the last digit entered (for cursor placement)
   uint8_t lastDigitPos = entryCol + maxDigits - 1;
   // Character at last digit position (for cursor restoration)
@@ -244,7 +255,7 @@ int32_t editNumberScreen(const char *label, const char *format,
    * Updates display with current value, handling alignment and formatting
    */
   auto redrawNumber = [&](uint32_t val) {
-    // Clear digit field with underscores
+    // Draw/clear only the digit region (so the rest of the format stays visible)
     lcd.setCursor(entryCol, 1);
     for (uint8_t i = 0; i < maxDigits; i++)
       lcd.print('_');
@@ -254,6 +265,11 @@ int32_t editNumberScreen(const char *label, const char *format,
       curLen = 0;
       lastDigitPos = entryCol + maxDigits - 1;
       lastDigitChar = ' ';
+      // Ensure unit is shown if format doesn't include it
+      if (unit && !formatHasUnit) {
+        lcd.setCursor(unitPos, 1);
+        lcd.print(unit);
+      }
       return;
     }
 
@@ -303,9 +319,9 @@ int32_t editNumberScreen(const char *label, const char *format,
       }
     }
 
-    //Display unit label if provided
-    if (unit) {
-      lcd.setCursor(entryCol + maxDigits, 1);
+    // Display unit label if provided and format doesn't already include it
+    if (unit && !formatHasUnit) {
+      lcd.setCursor(unitPos, 1);
       lcd.print(unit);
     }
   };
@@ -340,8 +356,8 @@ int32_t editNumberScreen(const char *label, const char *format,
       if (key == '#') {
         // Enter edit mode
         localEdit = true;
-        // Mark digits as entered if value is non-zero
-        if (number > 0 && number != (uint32_t)-1)
+        // Consider any non-sentinel value (including 0) as entered
+        if (number != (uint32_t)-1)
           digitsEntered = true;
         else {
           digitsEntered = false;
@@ -356,8 +372,8 @@ int32_t editNumberScreen(const char *label, const char *format,
 
     // In edit mode
     if (key == '*') {
-      // Backspace: clear number if empty, or reset to 0
-      if (!digitsEntered || number == 0)
+      // Backspace: cancel if nothing entered, otherwise clear to zero
+      if (!digitsEntered)
         return -1;
       number = 0;
       digitsEntered = false;
@@ -366,14 +382,16 @@ int32_t editNumberScreen(const char *label, const char *format,
     }
 
     if (key == '#') {
-      // Confirm: must have entered digits
-      if (!digitsEntered || number == 0)
+      // Confirm: must have entered digits (zero is valid)
+      if (!digitsEntered)
         return -1;
       return (int32_t)number;
     }
 
     // Digit entry: 0-9
     if (key >= '0' && key <= '9') {
+      // Start from zero if we had sentinel
+      if (number == (uint32_t)-1) number = 0;
       // Check if we have room for more digits
       if (curLen < maxDigits) {
         digitsEntered = true;
@@ -417,18 +435,18 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
   char _amBuf[LANG_AMOUNTTITLE_LEN + 1];
   strncpy(_amBuf, amountBuf, sizeof(_amBuf) - 1);
   _amBuf[sizeof(_amBuf) - 1] = '\0';
-  for (int i = 0; _amBuf[i] != '\0'; i++) {
-    if (_amBuf[i] == '#') {
-      _amBuf[i] = '1' + pumpIndex;
-      break;
-    }
-  }
-  if (amount == (uint32_t)-1ULL) {
-    Serial.println("[AM] sentinel passed -> start edit mode at 0");
-    amount = 0;
-    editMode = true;
-  }
-  return editNumberScreen(_amBuf, "<-* ______ml #->", 6, 6, amount, editMode);
+   for (int i = 0; _amBuf[i] != '\0'; i++) {
+     if (_amBuf[i] == '#') {
+       _amBuf[i] = '1' + pumpIndex;
+       break;
+     }
+   }
+   if (amount == (uint32_t)-1ULL) {
+     Serial.println("[AM] sentinel passed -> start edit mode at 0");
+     amount = 0;
+     editMode = true;
+   }
+   return editNumberScreen(_amBuf, "<-* ________ #->", 6, 6, amount, editMode, "ml");
 }
 
 uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
@@ -444,12 +462,12 @@ uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool edi
   char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
   strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
   _durationBuf[sizeof(_durationBuf) - 1] = '\0';
-  for (int i = 0; _durationBuf[i] != '\0'; i++) {
-    if (_durationBuf[i] == '#') {
-      _durationBuf[i] = '1' + pumpIndex;
-      break;
-    }
-  }
+   for (int i = 0; _durationBuf[i] != '\0'; i++) {
+     if (_durationBuf[i] == '#') {
+       _durationBuf[i] = '1' + pumpIndex;
+       break;
+     }
+   }
 
   // Handle sentinel value for duration
   if (duration == (uint64_t)-1ULL) {
@@ -609,24 +627,24 @@ void showTime(uint64_t currentTime) {
 }
 
 int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                            int16_t lowThreshold, int16_t highThreshold) {
+                             int16_t lowThreshold, int16_t highThreshold) {
   Serial.print("[THRESH] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" low=");
   Serial.print(lowThreshold);
   Serial.print(" high=");
   Serial.println(highThreshold);
-
+  
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(thresholdBuf);
-
+  
   uint16_t low = lowThreshold;
   uint16_t high = highThreshold;
-  uint8_t editing = 0;  // 0=low, 1=high
+  uint8_t editing = 0; // 0=low, 1=high
   char key = 0;
   bool modified = false;
-
+  
   while (true) {
     lcd.setCursor(0, 1);
     if (editing == 0) {
@@ -648,7 +666,7 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       if (high < 10) lcd.print('0');
       lcd.print(high);
     }
-
+    
     if (editMode) {
       // Blink cursor on current value
       if (millis() % 1000 < 500) {
@@ -656,16 +674,16 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
         lcd.print("   ");
       }
     }
-
+    
     key = keypad.getKey();
     if (!key) {
       delay(10);
       continue;
     }
-
+    
     Serial.print("[THRESH] key: ");
     Serial.println(key);
-
+    
     if (key >= '0' && key <= '9') {
       if (editMode) {
         uint8_t digit = key - '0';
@@ -678,7 +696,7 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       }
     } else if (key == '#') {
       if (editMode) {
-        editing = 1 - editing;  // Toggle between low and high
+        editing = 1 - editing; // Toggle between low and high
       }
     } else if (key == '*') {
       Serial.println("[THRESH] cancelled");
@@ -709,6 +727,6 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       break;
     }
   }
-
+  
   return modified ? 1 : 0;
 }
