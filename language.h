@@ -2,10 +2,10 @@
  * ============================================================================
  * LANGUAGE.H - Multi-Language Support
  * ============================================================================
- * 
+ *
  * Provides support for 10 different languages in the aquarium system interface.
  * All strings are stored in PROGMEM to minimize RAM usage.
- * 
+ *
  * Supported Languages (0-9):
  *   0: Polski (Polish)
  *   1: English
@@ -23,29 +23,22 @@
 #define LANGUAGES_H
 #include <stdint.h>
 #include <string.h>
+#include <avr/pgmspace.h>
 
 // Number of supported languages
 constexpr uint8_t LANG_COUNT = 10;
 
-// Buffer sizes for language strings (in bytes)
-constexpr uint8_t LANG_NAME_LEN = 16;              ///< Language name
-constexpr uint8_t LANG_PROMPT_LEN = 12;            ///< Input prompt
-constexpr uint8_t LANG_TANKTITLE_LEN = 16;         ///< Tank volume title
-constexpr uint8_t LANG_AMOUNTTITLE_LEN = 16;       ///< Pump amount title
+// Max characters per string (visible characters). All strings must fit in
+// MAX_LANG_CHARS characters; buffers allocate one extra byte for the null.
+constexpr uint8_t MAX_LANG_CHARS = 16; // MAX 16 characters per field
+constexpr uint8_t LANG_NAME_LEN = 9;              ///< Language name
+constexpr uint8_t LANG_PROMPT_LEN = 7;            ///< Input prompt
+constexpr uint8_t LANG_TANKTITLE_LEN = 14;         ///< Tank volume title
+constexpr uint8_t LANG_AMOUNTTITLE_LEN = 15;       ///< Pump amount title
 constexpr uint8_t LANG_DURATIONTITLE_LEN = 16;     ///< Pump duration title
-constexpr uint8_t LANG_MAINSCREEN_LEN = 16;        ///< Main screen label
-constexpr uint8_t LANG_NOTASK_LEN = 16;            ///< No task message
-constexpr uint8_t LANG_PUMPWORKING_LEN = 16;       ///< Pump active message
-
-// Number of characters to display on 16-character LCD screen
-constexpr uint8_t LANG_NAME_VISIBLE = 8;
-constexpr uint8_t LANG_PROMPT_VISIBLE = 7;
-constexpr uint8_t LANG_TANKTITLE_VISIBLE = 16;
-constexpr uint8_t LANG_AMOUNTTITLE_VISIBLE = 16;
-constexpr uint8_t LANG_DURATIONTITLE_VISIBLE = 16;
-constexpr uint8_t LANG_PUMPWORKING_VISIBLE = 16;
-constexpr uint8_t LANG_MAINSCREEN_VISIBLE = 16;
-constexpr uint8_t LANG_NOTASK_VISIBLE = 16;
+constexpr uint8_t LANG_MAINSCREEN_LEN = 15;        ///< Main screen label
+constexpr uint8_t LANG_NOTASK_LEN = 15;            ///< No task message
+constexpr uint8_t LANG_PUMPWORKING_LEN = 15;       ///< Pump active message
 
 // Number of pumps in the system
 constexpr uint8_t PUMP_COUNT = 5;
@@ -66,16 +59,17 @@ struct Language {
 
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
-  { "Polski   ", "J\000zyk  ", "Poj. zbiornika  ", "Ilosc płynu w #", "Czas pracy pompy #", "Ekran g\001\002wny    ", "Brak zadania    " },
-  { "English  ", "Lang   ", "Tank volume     ", "Liquid in #    ", "Pump duration #", "Main screen     ", "No task         " },
-  { "Pycckий  ", "Языk   ", "O6ъём бака      ", "Жидкость в #   ", "Время работы помпы #", "Главный экран   ", "Нет задачи      " },
-  { "Deutsch  ", "Sprache", "Tankvolumen     ", "Flüssigk. in # ", "Pumpendauer #", "Hauptbildschirm ", "Keine Aufgabe   " },
-  { "Français ", "Langue ", "Vol. réservoir  ", "Liquide dans # ", "Durée pompe #", "Écran principal ", "Aucune tâche    " },
-  { "Español  ", "Idioma ", "Vol. tanque     ", "Líquido en #   ", "Duración bomba #", "Pantalla princ. ", "Sin tarea       " },
-  { "Italiano ", "Lingua ", "Vol. serbatoio  ", "Liquido in #   ", "Schermo prin.   ", "Nessun compito  " },
-  { "Português", "Idioma ", "Vol. do tanque  ", "Líquido em #   ", "Duração bomba #", "Tela principal  ", "Sem tarefa      " },
-  { "Türkçe   ", "Dil    ", "Hacim           ", "Sıvı içinde #  ", "Pompa süresi #", "Ana ekran       ", "Görev yok       " },
-  { "Čeština  ", "Jazyk  ", "Objem nádrže    ", "Kapalina v #   ", "Délka činnosti #", "Hlavní obrazovka", "Žádný úkol      " }
+  // langName,    prompt,    tank title,       amount title,      duration title,     main screen,       no task,          pump working
+  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Czas pompy #    ", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   " },
+  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Pump duration # ", "Main screen    ", "No task       ", "Pump running   " },
+  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Vremya pompy #  ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet " },
+  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Pumpenzeit #    ", "Hauptbildschirm", "Keine Aufgabe ", "Pumpe laeuft   " },
+  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Duree pompa #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche" },
+  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Duracion bomba #", "Pantalla princ ", "Sin tarea     ", "Bomba activa   " },
+  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Durata pompa #  ", "Schermo princ  ", "Nessun compito", "Pompa attiva   " },
+  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Duracao bomba # ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    " },
+  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Pompa suresi #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor" },
+  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Delka pumpy #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     " }
 };
 
 /**

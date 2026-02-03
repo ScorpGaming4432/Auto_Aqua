@@ -10,6 +10,7 @@
  */
 
 #include "storage.h"
+#include "language.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <stdint.h>
@@ -161,16 +162,22 @@ void factoryReset() {
   writeEEPROM64(EEPROM_ADDR_TIME_OFFSET, 0xFFFFFFFFFFFFFFFFULL);
   
   // Reset all pump amounts to 0xFFFF
-  for (uint8_t i = 0; i < 5; ++i) {  // Support up to 5 pumps
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
     uint16_t address = EEPROM_ADDR_PUMP_AMOUNTS + (i * 2);
     EEPROM.write(address, 0xFF);
     EEPROM.write(address + 1, 0xFF);
+    Serial.print("[STORAGE] Reset pump[");
+    Serial.print(i);
+    Serial.println("] amount to 0xFFFF");
   }
   
   // Reset all pump durations to 0xFFFFFFFFFFFFFFFF
-  for (uint8_t i = 0; i < 5; ++i) {  // Support up to 5 pumps
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
     uint16_t address = EEPROM_ADDR_PUMP_DURATIONS + (i * 8);
     writeEEPROM64(address, 0xFFFFFFFFFFFFFFFFULL);
+    Serial.print("[STORAGE] Reset pump[");
+    Serial.print(i);
+    Serial.println("] duration to 0xFFFFFFFFFFFFFFFF");
   }
   
   Serial.println("[STORAGE] Factory reset completed - all values set to unset state");
