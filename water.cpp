@@ -1,261 +1,273 @@
 /**
  * ============================================================================
- * WATER.CPP - Water System Management
+ * WATER.CPP - Water Management Implementation
  * ============================================================================
  * 
- * Implements water pump control and water level sensing operations.
- * Provides functions to activate pumps and read sensor data via I2C.
-*/
+ * Implements water level monitoring and automatic pump control for the
+ * aquarium system. Reads water level sensors and manages inlet/outlet pumps
+ * based on configurable thresholds.
+ */
 
-#include "pumps.h"
-#include "sensor.h"
-#include <Wire.h>
+#include "water.h"
+#include "waterlevelsensor.h"
 #include <Arduino.h>
+#include <Wire.h>
+#include <EEPROM.h>
+#include <string.h>
 
-// Water management state
-namespace WaterManager {
-  // Water level thresholds (can be configured)
-  int16_t lowThreshold = 100;   // Below this, inlet pump activates
-  int16_t highThreshold = 900;  // Above this, outlet pump activates
-  
-  // Pump modes (true = auto, false = manual)
-  bool inletAutoMode = true;
-  bool outletAutoMode = true;
-  
-  // Manual override states
-  bool inletManualState = false;
-  bool outletManualState = false;
-  
-  // Last water level reading
-  uint16_t lastWaterLevel = 0;
-  unsigned long lastCheckTime = 0;
-  const unsigned long CHECK_INTERVAL = 5000; // Check every 5 seconds
-  
-  // Pump pin assignments (water pumps)
-  const uint8_t INLET_PUMP_PIN = 6;  // Example pin for inlet pump
-  const uint8_t OUTLET_PUMP_PIN = 7; // Example pin for outlet pump
+// ============================================================================
+// Configuration Constants
+// ============================================================================
+
+// Pump pin assignments (adjust for your hardware)
+#define INLET_PUMP_PIN 38
+#define OUTLET_PUMP_PIN 39
+
+// EEPROM storage addresses for water settings
+#define EEPROM_ADDR_INLET_MODE 50
+#define EEPROM_ADDR_OUTLET_MODE 51
+#define EEPROM_ADDR_LOW_THRESHOLD 52
+#define EEPROM_ADDR_HIGH_THRESHOLD 54
+
+// I2C sensor addresses (from waterlevelsensor.cpp)
+#define ATTINY1_HIGH_ADDR 0x78
+#define ATTINY2_LOW_ADDR 0x77
+
+// ============================================================================
+// Global State Variables
+// ============================================================================
+
+// Pump mode: AUTO (1) or MANUAL (0)
+static bool inletPumpAuto = true;
+static bool outletPumpAuto = true;
+
+// Water level thresholds (percentage, 0-100)
+static int16_t lowThreshold = 30;
+static int16_t highThreshold = 70;
+
+// Raw sensor data buffers (persist for getCurrentWaterLevel)
+static uint8_t g_high_data[12] = {0};
+static uint8_t g_low_data[8] = {0};
+
+// Last water check time (for periodic checks)
+static unsigned long lastWaterCheck = 0;
+static const unsigned long WATER_CHECK_INTERVAL = 5000;  // 5 seconds
+
+// ============================================================================
+// Internal Helper Functions
+// ============================================================================
+
+/**
+ * Read raw touch sensor data from both I2C sensors
+ * Stores data in global buffers
+ */
+static void readSensorData() {
+  memset(g_low_data, 0, sizeof(g_low_data));
+  Wire.requestFrom(ATTINY2_LOW_ADDR, 8);
+  while (8 != Wire.available());
+  for (int i = 0; i < 8; i++) {
+    g_low_data[i] = Wire.read();
+  }
+
+  memset(g_high_data, 0, sizeof(g_high_data));
+  Wire.requestFrom(ATTINY1_HIGH_ADDR, 12);
+  while (12 != Wire.available());
+  for (int i = 0; i < 12; i++) {
+    g_high_data[i] = Wire.read();
+  }
+  delay(10);
 }
 
 /**
- * Initialize water management system
- * Sets up pump pins and initial state
+ * Calculate current water level percentage from sensor data
+ * @return Water level as percentage (0-100)
  */
-void initWaterManagement() {
-  pinMode(WaterManager::INLET_PUMP_PIN, OUTPUT);
-  pinMode(WaterManager::OUTLET_PUMP_PIN, OUTPUT);
+static uint8_t calculateWaterLevel() {
+  readSensorData();
   
-  // Ensure pumps start in OFF state
-  digitalWrite(WaterManager::INLET_PUMP_PIN, LOW);
-  digitalWrite(WaterManager::OUTLET_PUMP_PIN, LOW);
+  uint32_t touch_val = 0;
+  uint8_t trig_section = 0;
+  const int THRESHOLD = 100;
+  
+  // Combine sensor readings into single value
+  for (int i = 0; i < 8; i++) {
+    if (g_low_data[i] > THRESHOLD) {
+      touch_val |= 1 << i;
+    }
+  }
+  
+  for (int i = 0; i < 12; i++) {
+    if (g_high_data[i] > THRESHOLD) {
+      touch_val |= (uint32_t)1 << (8 + i);
+    }
+  }
+  
+  // Count leading zeros to get section count
+  while (touch_val & 0x01) {
+    trig_section++;
+    touch_val >>= 1;
+  }
+  
+  // Each section represents approximately 5%
+  return (trig_section * 5);
+}
+
+// ============================================================================
+// Public Water Management Functions
+// ============================================================================
+
+void initWaterManagement() {
+  // Configure pump pins as outputs
+  pinMode(INLET_PUMP_PIN, OUTPUT);
+  pinMode(OUTLET_PUMP_PIN, OUTPUT);
+  digitalWrite(INLET_PUMP_PIN, LOW);
+  digitalWrite(OUTLET_PUMP_PIN, LOW);
+  
+  // Load settings from EEPROM
+  inletPumpAuto = EEPROM.read(EEPROM_ADDR_INLET_MODE) ? true : false;
+  outletPumpAuto = EEPROM.read(EEPROM_ADDR_OUTLET_MODE) ? true : false;
+  
+  // Load thresholds (default to 30% and 70% if not set)
+  uint16_t lowStored = (EEPROM.read(EEPROM_ADDR_LOW_THRESHOLD) << 8) | 
+                       EEPROM.read(EEPROM_ADDR_LOW_THRESHOLD + 1);
+  uint16_t highStored = (EEPROM.read(EEPROM_ADDR_HIGH_THRESHOLD) << 8) | 
+                        EEPROM.read(EEPROM_ADDR_HIGH_THRESHOLD + 1);
+  
+  if (lowStored != 0xFFFF) lowThreshold = lowStored;
+  if (highStored != 0xFFFF) highThreshold = highStored;
   
   Serial.println("[WATER] Water management initialized");
-  Serial.print("[WATER] Low threshold: ");
-  Serial.println(WaterManager::lowThreshold);
-  Serial.print("[WATER] High threshold: ");
-  Serial.println(WaterManager::highThreshold);
+  Serial.print("[WATER] Inlet: ");
+  Serial.println(inletPumpAuto ? "AUTO" : "MANUAL");
+  Serial.print("[WATER] Outlet: ");
+  Serial.println(outletPumpAuto ? "AUTO" : "MANUAL");
+  Serial.print("[WATER] Thresholds: ");
+  Serial.print(lowThreshold);
+  Serial.print("% - ");
+  Serial.print(highThreshold);
+  Serial.println("%");
 }
 
-/**
- * Check water level and control pumps automatically
- * Should be called periodically from main loop
- */
 void checkWaterLevel() {
-  unsigned long currentTime = millis();
+  unsigned long now = millis();
   
-  // Only check at specified intervals
-  if (currentTime - WaterManager::lastCheckTime < WaterManager::CHECK_INTERVAL) {
+  // Throttle checks to avoid excessive I2C traffic
+  if (now - lastWaterCheck < WATER_CHECK_INTERVAL) {
     return;
   }
+  lastWaterCheck = now;
   
-  WaterManager::lastCheckTime = currentTime;
-  WaterManager::lastWaterLevel = read_water_sensor();
-  
+  uint8_t currentLevel = calculateWaterLevel();
   Serial.print("[WATER] Level: ");
-  Serial.print(WaterManager::lastWaterLevel);
-  Serial.print(" (Low: ");
-  Serial.print(WaterManager::lowThreshold);
-  Serial.print(", High: ");
-  Serial.print(WaterManager::highThreshold);
-  Serial.println(")");
+  Serial.print(currentLevel);
+  Serial.println("%");
   
-  // Check inlet pump (add water when level is low)
-  if (WaterManager::inletAutoMode && !WaterManager::inletManualState) {
-    if (WaterManager::lastWaterLevel < WaterManager::lowThreshold) {
-      digitalWrite(WaterManager::INLET_PUMP_PIN, HIGH);
-      Serial.println("[WATER] Inlet pump ON (low level)");
-    } else {
-      digitalWrite(WaterManager::INLET_PUMP_PIN, LOW);
-      Serial.println("[WATER] Inlet pump OFF (level OK)");
+  // Inlet pump control: activates when level drops below low threshold
+  if (inletPumpAuto) {
+    if (currentLevel < lowThreshold) {
+      Serial.println("[WATER] Inlet pump ON (level too low)");
+      digitalWrite(INLET_PUMP_PIN, HIGH);
+      delay(1000);  // Run for 1 second
+      digitalWrite(INLET_PUMP_PIN, LOW);
     }
   }
   
-  // Check outlet pump (remove water when level is high)
-  if (WaterManager::outletAutoMode && !WaterManager::outletManualState) {
-    if (WaterManager::lastWaterLevel > WaterManager::highThreshold) {
-      digitalWrite(WaterManager::OUTLET_PUMP_PIN, HIGH);
-      Serial.println("[WATER] Outlet pump ON (high level)");
-    } else {
-      digitalWrite(WaterManager::OUTLET_PUMP_PIN, LOW);
-      Serial.println("[WATER] Outlet pump OFF (level OK)");
+  // Outlet pump control: activates when level rises above high threshold
+  if (outletPumpAuto) {
+    if (currentLevel > highThreshold) {
+      Serial.println("[WATER] Outlet pump ON (level too high)");
+      digitalWrite(OUTLET_PUMP_PIN, HIGH);
+      delay(1000);  // Run for 1 second
+      digitalWrite(OUTLET_PUMP_PIN, LOW);
     }
   }
 }
 
-/**
- * Toggle inlet pump mode between auto and manual
- */
 void toggleInletPumpMode() {
-  WaterManager::inletAutoMode = !WaterManager::inletAutoMode;
-  WaterManager::inletManualState = false; // Reset manual state when switching modes
-  
+  inletPumpAuto = !inletPumpAuto;
+  EEPROM.write(EEPROM_ADDR_INLET_MODE, inletPumpAuto ? 1 : 0);
   Serial.print("[WATER] Inlet pump mode: ");
-  Serial.println(WaterManager::inletAutoMode ? "AUTO" : "MANUAL");
-  
-  // Turn off pump if switching to manual mode
-  if (!WaterManager::inletAutoMode) {
-    digitalWrite(WaterManager::INLET_PUMP_PIN, LOW);
-  }
+  Serial.println(inletPumpAuto ? "AUTO" : "MANUAL");
 }
 
-/**
- * Toggle outlet pump mode between auto and manual
- */
 void toggleOutletPumpMode() {
-  WaterManager::outletAutoMode = !WaterManager::outletAutoMode;
-  WaterManager::outletManualState = false; // Reset manual state when switching modes
-  
+  outletPumpAuto = !outletPumpAuto;
+  EEPROM.write(EEPROM_ADDR_OUTLET_MODE, outletPumpAuto ? 1 : 0);
   Serial.print("[WATER] Outlet pump mode: ");
-  Serial.println(WaterManager::outletAutoMode ? "AUTO" : "MANUAL");
-  
-  // Turn off pump if switching to manual mode
-  if (!WaterManager::outletAutoMode) {
-    digitalWrite(WaterManager::OUTLET_PUMP_PIN, LOW);
-  }
+  Serial.println(outletPumpAuto ? "AUTO" : "MANUAL");
 }
 
-/**
- * Manual control of inlet pump
- * @param turnOn true to turn on, false to turn off
- */
-void setInletPumpManual(bool turnOn) {
-  if (!WaterManager::inletAutoMode) {
-    WaterManager::inletManualState = turnOn;
-    digitalWrite(WaterManager::INLET_PUMP_PIN, turnOn ? HIGH : LOW);
-    Serial.print("[WATER] Inlet pump manual: ");
-    Serial.println(turnOn ? "ON" : "OFF");
-  }
-}
-
-/**
- * Manual control of outlet pump
- * @param turnOn true to turn on, false to turn off
- */
-void setOutletPumpManual(bool turnOn) {
-  if (!WaterManager::outletAutoMode) {
-    WaterManager::outletManualState = turnOn;
-    digitalWrite(WaterManager::OUTLET_PUMP_PIN, turnOn ? HIGH : LOW);
-    Serial.print("[WATER] Outlet pump manual: ");
-    Serial.println(turnOn ? "ON" : "OFF");
-  }
-}
-
-/**
- * Get current water level
- * @return Last water level reading
- */
-uint16_t getCurrentWaterLevel() {
-  return WaterManager::lastWaterLevel;
-}
-
-/**
- * Get inlet pump mode
- * @return true if auto mode, false if manual mode
- */
 bool getInletPumpMode() {
-  return WaterManager::inletAutoMode;
+  return inletPumpAuto;
 }
 
-/**
- * Get outlet pump mode
- * @return true if auto mode, false if manual mode
- */
 bool getOutletPumpMode() {
-  return WaterManager::outletAutoMode;
-}
-
-/**
- * Set water level thresholds
- * @param low Low threshold for inlet pump activation
- * @param high High threshold for outlet pump activation
- */
-void setWaterThresholds(int16_t low, int16_t high) {
-  WaterManager::lowThreshold = low;
-  WaterManager::highThreshold = high;
-  Serial.print("[WATER] Thresholds set - Low: ");
-  Serial.print(low);
-  Serial.print(", High: ");
-  Serial.println(high);
+  return outletPumpAuto;
 }
 
 int16_t getLowThreshold() {
-  return WaterManager::lowThreshold;
+  return lowThreshold;
 }
 
 int16_t getHighThreshold() {
-  return WaterManager::highThreshold;
+  return highThreshold;
 }
 
-/**
- * Activate a pump for a specified duration
- * Controls pump relay via digital pin to dispense precise amounts of liquid.
- * @param pump_pin Digital pin connected to pump relay (HIGH=on, LOW=off)
- * @param duration_ms Duration to keep pump running in milliseconds
- */
- void pump_work(uint8_t pump_pin, uint16_t duration_ms) {
-  // Activate pump by setting pin HIGH
-  digitalWrite(pump_pin, HIGH);
-  // Wait for specified duration
-  delay(duration_ms);
-  // Deactivate pump by setting pin LOW
-  digitalWrite(pump_pin, LOW);
-}
-
-/**
- * Read data from I2C water sensor device
- * Communicates with sensor at specified address and reads requested bytes.
- * @param addr I2C device address
- * @param length Number of bytes to read from device
- * @return Sum of all bytes read from the sensor
- */
- int readI2CData(byte addr, int length) {
-  // Request specified number of bytes from I2C device
-  Wire.requestFrom(addr, length);
-  int sum = 0;
-  // Sum all received bytes
-  while (Wire.available()) {
-    sum += Wire.read();
+void setLowThreshold(int16_t threshold) {
+  if (threshold >= 0 && threshold < highThreshold) {
+    lowThreshold = threshold;
+    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD, (threshold >> 8) & 0xFF);
+    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD + 1, threshold & 0xFF);
+    Serial.print("[WATER] Low threshold set to: ");
+    Serial.print(threshold);
+    Serial.println("%");
   }
-  return sum;
 }
 
-/**
- * Read water level from dual-level sensors
- * Compares high and low level sensors to determine water level.
- * Outputs debugging information to serial console.
- * @return Difference between high and low sensor readings
- */
- uint16_t read_water_sensor() {
-  // Read from upper sensor (high level detection)
-  int highVal = readI2CData(ADDR_HIGH, 12);  // 12 bytes from upper section
-  // Read from lower sensor (low level detection)
-  int lowVal = readI2CData(ADDR_LOW, 8);     // 8 bytes from lower section
+void setHighThreshold(int16_t threshold) {
+  if (threshold > lowThreshold && threshold <= 100) {
+    highThreshold = threshold;
+    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD, (threshold >> 8) & 0xFF);
+    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD + 1, threshold & 0xFF);
+    Serial.print("[WATER] High threshold set to: ");
+    Serial.print(threshold);
+    Serial.println("%");
+  }
+}
 
-  // Debug output
-  Serial.print("HighLevel: ");
-  Serial.println(highVal);
-  Serial.print("LowLevel : ");
-  Serial.println(lowVal);
+void getCurrentWaterLevel(uint8_t *highBuf, uint8_t *lowBuf) {
+  readSensorData();
+  
+  if (highBuf != NULL) {
+    memcpy(highBuf, g_high_data, 12);
+  }
+  if (lowBuf != NULL) {
+    memcpy(lowBuf, g_low_data, 8);
+  }
+  
+  // Print sensor data to serial for debugging
+  Serial.print("[WATER] High sensor: ");
+  for (int i = 0; i < 12; i++) {
+    Serial.print(g_high_data[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
+  
+  Serial.print("[WATER] Low sensor: ");
+  for (int i = 0; i < 8; i++) {
+    Serial.print(g_low_data[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
+}
 
-  // Return the difference as the water level indicator
-  return (highVal - lowVal);
+void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf) {
+  readSensorData();
+  
+  if (highBuf != NULL) {
+    memcpy(highBuf, g_high_data, 12);
+  }
+  if (lowBuf != NULL) {
+    memcpy(lowBuf, g_low_data, 8);
+  }
 }

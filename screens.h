@@ -152,4 +152,21 @@ inline uint64_t seconds() {
 int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
                              int16_t lowThreshold, int16_t highThreshold);
 
+/**
+ * Handle editing pump amount (view + optional edit on followup key)
+ * @param idx Pump index (0-4)
+ */
+void handleEditAmount(uint8_t idx);
+
+/**
+ * Handle editing tank volume (view + optional edit on followup key)
+ */
+void handleEditTankVolume();
+
+/**
+ * Handle editing pump duration
+ * @param idx Pump index (0-4)
+ */
+void handleEditPumpDuration(uint8_t idx);
+
 #endif

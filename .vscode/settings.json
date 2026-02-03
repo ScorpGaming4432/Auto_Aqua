@@ -1,5 +1,14 @@
 {
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format"
-  }
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".github/*.*": true
+  },
+  "explorerExclude.backup": {}
 }

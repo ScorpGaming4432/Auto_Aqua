@@ -52,3 +52,4 @@ wokwi.toml
 
 # gitignore
 .gitignore
+.github/

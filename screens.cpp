@@ -25,7 +25,10 @@
 #include "chars.h"
 #include "display.h"
 #include "language.h"
-#include "water.h"
+#include "appstate.h"
+#include "storage.h"
+#include "pumps.h"
+
 #include <Arduino.h>
 #include <Keypad.h>
 
@@ -130,10 +133,8 @@ bool editFlag = false;
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
-  readLanguageField(idx, offsetof(Language, langName), langName,
-                    LANG_NAME_LEN);
-  readLanguageField(idx, offsetof(Language, langPrompt), langPrompt,
-                    LANG_PROMPT_LEN);
+  readLanguageField(idx, offsetof(Language, langName), langName, LANG_NAME_LEN);
+  readLanguageField(idx, offsetof(Language, langPrompt), langPrompt, LANG_PROMPT_LEN);
   
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
@@ -729,4 +730,113 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
   }
   
   return modified ? 1 : 0;
+}
+// ============================================================================
+// Input Handlers - Process user interactions for editing
+// ============================================================================
+
+void handleEditAmount(uint8_t idx) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  Serial.print("[AM] enter handleEditAmount idx=");
+  Serial.println(idx);
+  char amountTitle[LANG_AMOUNTTITLE_LEN + 1];
+  readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_LEN);
+  int32_t v = AppState::pumps[idx].viewEdit(idx, amountTitle);
+  Serial.print("[AM] current (view) idx=");
+  Serial.print(idx);
+  Serial.print(" -> ");
+  Serial.println(v);
+  if (v >= 0) {
+    AppState::pumps[idx].setAmount((uint16_t)v);
+    savePumpAmount(idx, (uint16_t)v);
+  }
+
+  unsigned long start = millis();
+  char follow = 0;
+  while (millis() - start < 2000) {
+    follow = keypad.getKey();
+    if (follow) break;
+    delay(10);
+  }
+  Serial.print("[AM] followup key for idx=");
+  Serial.print(idx);
+  Serial.print(" -> ");
+  Serial.println(follow);
+  if (follow == '#') {
+    Serial.print("[AM] entering edit mode idx=");
+    Serial.println(idx);
+    int32_t nv = AppState::pumps[idx].edit(idx, amountTitle);
+    Serial.print("[AM] edited idx=");
+    Serial.print(idx);
+    Serial.print(" -> ");
+    Serial.println(nv);
+    if (nv >= 0) {
+      AppState::pumps[idx].setAmount((uint16_t)nv);
+      savePumpAmount(idx, (uint16_t)nv);
+    }
+  }
+  lcd.clear();
+}
+
+void handleEditTankVolume() {
+  lcd.clear();
+
+  lcd.setCursor(0, 0);
+  Serial.println("[TANK] enter handleEditTankVolume");
+  char tankTitle[LANG_TANKTITLE_LEN + 1];
+  readLanguageField(AppState::languageIndex, offsetof(Language, tankVolumeTitle), tankTitle, LANG_TANKTITLE_LEN);
+  int32_t tv = tankVolumeScreen(tankTitle, false, AppState::tankVolume);
+  Serial.print("[TANK] current (view) -> ");
+  Serial.println(tv);
+  if (tv > 0) {
+    AppState::tankVolume = (uint32_t)tv;
+    saveTankVolume(AppState::tankVolume);
+  }
+
+  unsigned long start = millis();
+  char follow = 0;
+  while ((millis() - start) < 2000) {
+    follow = keypad.getKey();
+    if (follow) break;
+    delay(10);
+  }
+  Serial.print("[TANK] followup key -> ");
+  Serial.println(follow);
+  if (follow == '#') {
+    Serial.println("[TANK] entering edit mode");
+    int32_t ntv = tankVolumeScreen(tankTitle, true, AppState::tankVolume);
+    Serial.print("[TANK] edited -> ");
+    Serial.println(ntv);
+    if (ntv > 0) {
+      AppState::tankVolume = (uint32_t)ntv;
+      saveTankVolume(AppState::tankVolume);
+    }
+  }
+  lcd.clear();
+}
+
+void handleEditPumpDuration(uint8_t idx) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  Serial.print("[DUR] enter handleEditPumpDuration idx=");
+  Serial.println(idx);
+
+  char durationTitle[LANG_DURATIONTITLE_LEN + 1];
+  readLanguageField(AppState::languageIndex, offsetof(Language, durationTitle), durationTitle, LANG_DURATIONTITLE_LEN);
+
+  uint64_t duration = AppState::pumps[idx].getDuration();
+  uint64_t newDuration = pumpDurationScreen(durationTitle, idx, true, duration);
+
+  Serial.print("[DUR] edited idx=");
+  Serial.print(idx);
+  Serial.print(" -> ");
+  Serial.println((unsigned long)newDuration);
+
+  if (newDuration != (uint64_t)-1) {
+    AppState::pumps[idx].setDuration(newDuration);
+    savePumpDuration(idx, newDuration);
+  }
+
+  lcd.clear();
 }

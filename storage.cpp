@@ -154,12 +154,13 @@ void factoryReset() {
   
   // Reset language index to 0xFF
   EEPROM.write(EEPROM_ADDR_LANGUAGE_INDEX, 0xFF);
+  Serial.println("[STORAGE] Reset LanguageIndex to 0xFF");
   
   // Reset tank volume to 0xFFFFFFFF
   writeEEPROM32(EEPROM_ADDR_TANK_VOLUME, 0xFFFFFFFF);
   
   // Reset time offset to 0xFFFFFFFFFFFFFFFF
-  writeEEPROM64(EEPROM_ADDR_TIME_OFFSET, 0xFFFFFFFFFFFFFFFFULL);
+  writeEEPROM64(EEPROM_ADDR_TIME_OFFSET, 0xFFFFFFFFFFFFFFFF);
   
   // Reset all pump amounts to 0xFFFF
   for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
@@ -174,7 +175,7 @@ void factoryReset() {
   // Reset all pump durations to 0xFFFFFFFFFFFFFFFF
   for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
     uint16_t address = EEPROM_ADDR_PUMP_DURATIONS + (i * 8);
-    writeEEPROM64(address, 0xFFFFFFFFFFFFFFFFULL);
+    writeEEPROM64(address, 0xFFFFFFFFFFFFFFFF);
     Serial.print("[STORAGE] Reset pump[");
     Serial.print(i);
     Serial.println("] duration to 0xFFFFFFFFFFFFFFFF");

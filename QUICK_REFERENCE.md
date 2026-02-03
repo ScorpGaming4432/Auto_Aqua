@@ -15,7 +15,7 @@
 | `chars.h` | Custom LCD characters and glyphs |
 | `sensor.h` | Water level sensor interface |
 | `pumps.h` / `water.cpp` | Pump control and I2C communication |
-| `storage.h/.cpp` | Data persistence (stub) |
+| `storage.h/.cpp` | Data persistence |
 
 ## Hardware Pins
 
