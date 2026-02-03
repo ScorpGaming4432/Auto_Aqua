@@ -69,11 +69,6 @@ void setup() {
     tv = tankVolumeScreen(tankTitle, true, savedTankVolume);
   } else {
     tv = savedTankVolume;
-  if (savedTankVolume == (uint32_t)-1) {
-    // Pobierz tylko potrzebne pole tankVolumeTitle
-    char tankTitle[LANG_TANKTITLE_LEN + 1];
-    readLanguageField(AppState::languageIndex, offsetof(Language, tankVolumeTitle), tankTitle, LANG_TANKTITLE_VISIBLE);
-    int32_t tv = tankVolumeScreen(tankTitle, true, savedTankVolume);
   }
   Serial.print("[SETUP] tankVolume = ");
   Serial.println(tv);
@@ -96,16 +91,6 @@ void setup() {
     }
     int32_t v = AppState::pumps[i].edit(i, amountTitle);
     Serial.print("[SETUP] dosing pump[");
-  readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_VISIBLE);
-
-  Serial.println("[SETUP] reading amounts");
-  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
-    // Try to load previously saved pump amount
-    uint16_t savedAmount = loadPumpAmount(i);
-    // Check if not set (0xFFFF)
-    uint16_t initialAmount = (savedAmount == 0xFFFF) ? 0 : savedAmount;
-    int32_t v = AppState::pumps[i].edit(i, amountTitle);
-    Serial.print("[SETUP] pump[");
     Serial.print(i);
     Serial.print("] = ");
     Serial.println(v);
@@ -141,31 +126,6 @@ void setup() {
 
   // Initialize water management system
   initWaterManagement();
-  }
-
-  // Pobierz tylko potrzebne pole durationTitle
-  char durationTitle[LANG_DURATIONTITLE_LEN + 1];
-  readLanguageField(AppState::languageIndex, offsetof(Language, durationTitle), durationTitle, LANG_DURATIONTITLE_VISIBLE);
-
-  Serial.println("[SETUP] reading pump durations");
-  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
-    // Try to load previously saved pump duration
-    uint64_t savedDuration = loadPumpDuration(i);
-    // Check if not set (0xFFFFFFFFFFFFFFFF)
-    uint64_t initialDuration = (savedDuration == 0xFFFFFFFFFFFFFFFFULL) ? 0 : savedDuration;
-    uint64_t duration = pumpDurationScreen(durationTitle, i, true, initialDuration);
-    Serial.print("[SETUP] pump[");
-    Serial.print(i);
-    Serial.print("] duration = ");
-    Serial.println((unsigned long)duration);
-    if (duration != (uint64_t)-1) {
-      AppState::pumps[i].setDuration(duration);
-      savePumpDuration(i, duration);
-    }
-  }
-
-  AppState::timeOffset = timeSetupScreen();
-  saveTimeOffset(AppState::timeOffset);
 
   lcd.clear();
 }
@@ -178,7 +138,6 @@ void handleEditAmount(uint8_t idx) {
   Serial.println(idx);
   char amountTitle[LANG_AMOUNTTITLE_LEN + 1];
   readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_LEN);
-  readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_VISIBLE);
   int32_t v = AppState::pumps[idx].viewEdit(idx, amountTitle);
   Serial.print("[AM] current (view) idx=");
   Serial.print(idx);
@@ -443,19 +402,6 @@ void loop() {
       }
       delay(10);
     }
-  } else if (k == 'C') {  // New keybinding for water level measurement
-    Serial.println("[LOOP] Measuring water level");
-    long waterLevel = read_water_sensor();
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Water Level:");
-    lcd.setCursor(0, 1);
-    lcd.print(waterLevel);
-    delay(2000);                                  // Display the water level for 2 seconds
-  } else if (k >= 'A' && k < 'A' + PUMP_COUNT) {  // A-E for pump duration (depending on PUMP_COUNT)
-    Serial.println("[LOOP] Editing pump duration");
-    uint8_t pumpIndex = k - 'A';
-    Screen::handleEditPumpDuration(pumpIndex);
   }
 
   // Check water level periodically for automatic pump control
