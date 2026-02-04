@@ -94,4 +94,11 @@ void getCurrentWaterLevel(uint8_t *highBuf, uint8_t *lowBuf);
  */
 void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf);
 
+/**
+ * Set both low and high water thresholds together
+ * @param low Low threshold (0-100)
+ * @param high High threshold (0-100)
+ */
+void setWaterThresholds(int16_t low, int16_t high);
+
 #endif

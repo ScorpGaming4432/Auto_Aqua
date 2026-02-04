@@ -235,6 +235,24 @@ void setHighThreshold(int16_t threshold) {
   }
 }
 
+void setWaterThresholds(int16_t low, int16_t high) {
+  if (low >= 0 && high <= 100 && low < high) {
+    lowThreshold = low;
+    highThreshold = high;
+    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD, (low >> 8) & 0xFF);
+    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD + 1, low & 0xFF);
+    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD, (high >> 8) & 0xFF);
+    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD + 1, high & 0xFF);
+    Serial.print("[WATER] Thresholds set - Low: ");
+    Serial.print(low);
+    Serial.print("% High: ");
+    Serial.print(high);
+    Serial.println("%");
+  } else {
+    Serial.println("[WATER] Invalid thresholds - not saved");
+  }
+}
+
 void getCurrentWaterLevel(uint8_t *highBuf, uint8_t *lowBuf) {
   readSensorData();
   

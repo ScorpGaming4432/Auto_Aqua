@@ -28,6 +28,7 @@
 #include "appstate.h"
 #include "storage.h"
 #include "pumps.h"
+#include "water.h"
 
 #include <Arduino.h>
 #include <Keypad.h>
