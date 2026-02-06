@@ -40,9 +40,6 @@ constexpr uint8_t LANG_MAINSCREEN_LEN = 15;        ///< Main screen label
 constexpr uint8_t LANG_NOTASK_LEN = 15;            ///< No task message
 constexpr uint8_t LANG_PUMPWORKING_LEN = 15;       ///< Pump active message
 
-// Number of pumps in the system
-constexpr uint8_t PUMP_COUNT = 5;
-
 /**
  * Language structure storing all UI strings for a language
  */

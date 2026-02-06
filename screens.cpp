@@ -46,7 +46,7 @@
  * @param dest Destination RAM buffer
  * @param len Number of bytes to copy
  */
- void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
+void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
@@ -58,9 +58,9 @@
  * @param idx Language index (0-9)
  * @return Language structure for the selected language
  */
- Language readLanguage(uint8_t idx) {
+Language readLanguage(uint8_t languageIndex) {
   Language result;
-  memcpy_P(&result, &LANGUAGES[idx % LANG_COUNT], sizeof(Language));
+  memcpy_P(&result, &LANGUAGES[languageIndex % LANG_COUNT], sizeof(Language));
   return result;
 }
 
@@ -81,7 +81,7 @@ bool editFlag = false;
  * Display animated splash screen
  * Shows "AUTO AQUA" with animated water drop effect
  */
- void splashScreen() {
+void splashScreen() {
   // Initialize LCD display and turn on backlight
   lcd.init();
   lcd.backlight();
@@ -122,21 +122,21 @@ bool editFlag = false;
  * Display language selection screen
  * Allows user to cycle through 10 languages and select one
  * Keys: A/B to navigate, # to confirm, * to cancel, 0-9 for direct selection
- * @param idx Current language index
+ * @param languageIndex Current language index
  * @param editMode If true, allows editing (required for initial setup)
  * @return Selected language index
  */
- uint8_t langConfigScreen(uint8_t idx, bool editMode) {
+uint8_t langConfigScreen(uint8_t languageIndex, bool editMode) {
   lcd.clear();
   // Load custom glyphs for the selected language
-  loadGlyphSet(idx);
-  
+  loadGlyphSet(languageIndex);
+
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
-  readLanguageField(idx, offsetof(Language, langName), langName, LANG_NAME_LEN);
-  readLanguageField(idx, offsetof(Language, langPrompt), langPrompt, LANG_PROMPT_LEN);
-  
+  readLanguageField(languageIndex, offsetof(Language, langName), langName, LANG_NAME_LEN);
+  readLanguageField(languageIndex, offsetof(Language, langPrompt), langPrompt, LANG_PROMPT_LEN);
+
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
   lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
@@ -145,7 +145,7 @@ bool editFlag = false;
   lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
   lcd.print("  #->");
 
-  uint8_t newlang = idx;
+  uint8_t newlang = languageIndex;
   while (true) {
     char key = keypad.getKey();
 
@@ -153,31 +153,31 @@ bool editFlag = false;
       // Numeric key: select language directly
       if (key >= '0' && key <= '9') {
         newlang = key - '0';
-      } 
+      }
       // Key A: next language
       else if (key == 'A') {
         newlang = (newlang + 1) % LANG_COUNT;
-      } 
+      }
       // Key B: previous language
       else if (key == 'B') {
         newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
-      } 
+      }
       // Key #: confirm selection
       else if (key == '#') {
         return newlang;
-      } 
+      }
       // Key *: cancel
       else if (key == '*') {
-        return idx;
+        return languageIndex;
       }
 
       // Update display if language changed
-      if (newlang != idx) {
-        idx = newlang;
-        loadGlyphSet(idx);
-        readLanguageField(idx, offsetof(Language, langName), langName,
+      if (newlang != languageIndex) {
+        languageIndex = newlang;
+        loadGlyphSet(languageIndex);
+        readLanguageField(languageIndex, offsetof(Language, langName), langName,
                           LANG_NAME_LEN);
-        readLanguageField(idx, offsetof(Language, langPrompt), langPrompt,
+        readLanguageField(languageIndex, offsetof(Language, langPrompt), langPrompt,
                           LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);
         lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
@@ -216,7 +216,7 @@ bool editFlag = false;
  * @param unit Optional unit label (e.g., \"ml\", \"l\") displayed after digits
  * @return Entered value, or -1 if cancelled
  */
- int32_t editNumberScreen(const char *label, const char *format,
+int32_t editNumberScreen(const char *label, const char *format,
                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
                          bool editMode, const char *unit = nullptr) {
   lcd.clear();
@@ -234,8 +234,7 @@ bool editFlag = false;
   // after the digit field so we don't print the unit twice.
   bool formatHasUnit = false;
   uint8_t unitPos = entryCol + maxDigits;
-  if (unit && unitPos < sizeof(fmtBuf) - 1 && fmtBuf[unitPos] != '\0' &&
-      fmtBuf[unitPos] != ' ' && fmtBuf[unitPos] != '_') {
+  if (unit && unitPos < sizeof(fmtBuf) - 1 && fmtBuf[unitPos] != '\0' && fmtBuf[unitPos] != ' ' && fmtBuf[unitPos] != '_') {
     formatHasUnit = true;
   }
 
@@ -410,8 +409,7 @@ bool editFlag = false;
   }
 }
 
-int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode,
-                         uint32_t tankVolume) {
+int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume) {
   Serial.print("[TANK] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" tankVolume=");
@@ -437,18 +435,18 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
   char _amBuf[LANG_AMOUNTTITLE_LEN + 1];
   strncpy(_amBuf, amountBuf, sizeof(_amBuf) - 1);
   _amBuf[sizeof(_amBuf) - 1] = '\0';
-   for (int i = 0; _amBuf[i] != '\0'; i++) {
-     if (_amBuf[i] == '#') {
-       _amBuf[i] = '1' + pumpIndex;
-       break;
-     }
-   }
-   if (amount == (uint32_t)-1ULL) {
-     Serial.println("[AM] sentinel passed -> start edit mode at 0");
-     amount = 0;
-     editMode = true;
-   }
-   return editNumberScreen(_amBuf, "<-* ________ #->", 6, 6, amount, editMode, "ml");
+  for (int i = 0; _amBuf[i] != '\0'; i++) {
+    if (_amBuf[i] == '#') {
+      _amBuf[i] = '1' + pumpIndex;
+      break;
+    }
+  }
+  if (amount == (uint32_t)-1ULL) {
+    Serial.println("[AM] sentinel passed -> start edit mode at 0");
+    amount = 0;
+    editMode = true;
+  }
+  return editNumberScreen(_amBuf, "<-* ________ #->", 6, 6, amount, editMode, "ml");
 }
 
 uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
@@ -464,12 +462,12 @@ uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool edi
   char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
   strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
   _durationBuf[sizeof(_durationBuf) - 1] = '\0';
-   for (int i = 0; _durationBuf[i] != '\0'; i++) {
-     if (_durationBuf[i] == '#') {
-       _durationBuf[i] = '1' + pumpIndex;
-       break;
-     }
-   }
+  for (int i = 0; _durationBuf[i] != '\0'; i++) {
+    if (_durationBuf[i] == '#') {
+      _durationBuf[i] = '1' + pumpIndex;
+      break;
+    }
+  }
 
   // Handle sentinel value for duration
   if (duration == (uint64_t)-1ULL) {
@@ -629,24 +627,24 @@ void showTime(uint64_t currentTime) {
 }
 
 int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                             int16_t lowThreshold, int16_t highThreshold) {
+                            int16_t lowThreshold, int16_t highThreshold) {
   Serial.print("[THRESH] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" low=");
   Serial.print(lowThreshold);
   Serial.print(" high=");
   Serial.println(highThreshold);
-  
+
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(thresholdBuf);
-  
+
   uint16_t low = lowThreshold;
   uint16_t high = highThreshold;
-  uint8_t editing = 0; // 0=low, 1=high
+  uint8_t editing = 0;  // 0=low, 1=high
   char key = 0;
   bool modified = false;
-  
+
   while (true) {
     lcd.setCursor(0, 1);
     if (editing == 0) {
@@ -668,7 +666,7 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       if (high < 10) lcd.print('0');
       lcd.print(high);
     }
-    
+
     if (editMode) {
       // Blink cursor on current value
       if (millis() % 1000 < 500) {
@@ -676,16 +674,16 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
         lcd.print("   ");
       }
     }
-    
+
     key = keypad.getKey();
     if (!key) {
       delay(10);
       continue;
     }
-    
+
     Serial.print("[THRESH] key: ");
     Serial.println(key);
-    
+
     if (key >= '0' && key <= '9') {
       if (editMode) {
         uint8_t digit = key - '0';
@@ -698,7 +696,7 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       }
     } else if (key == '#') {
       if (editMode) {
-        editing = 1 - editing; // Toggle between low and high
+        editing = 1 - editing;  // Toggle between low and high
       }
     } else if (key == '*') {
       Serial.println("[THRESH] cancelled");
@@ -729,7 +727,7 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
       break;
     }
   }
-  
+
   return modified ? 1 : 0;
 }
 // ============================================================================
@@ -780,13 +778,11 @@ void handleEditAmount(uint8_t idx) {
   lcd.clear();
 }
 
-void handleEditTankVolume() {
+void handleEditTankVolume(char* tankTitle[LANG_TANKTITLE_LEN + 1]) {
   lcd.clear();
 
   lcd.setCursor(0, 0);
   Serial.println("[TANK] enter handleEditTankVolume");
-  char tankTitle[LANG_TANKTITLE_LEN + 1];
-  readLanguageField(AppState::languageIndex, offsetof(Language, tankVolumeTitle), tankTitle, LANG_TANKTITLE_LEN);
   int32_t tv = tankVolumeScreen(tankTitle, false, AppState::tankVolume);
   Serial.print("[TANK] current (view) -> ");
   Serial.println(tv);

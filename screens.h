@@ -69,8 +69,7 @@ uint8_t langConfigScreen(uint8_t idx, bool editMode);
  * @param tankVolume Current tank volume value
  * @return Entered tank volume, or -1 if cancelled
  */
-int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode,
-                         uint32_t tankVolume);
+int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume);
 
 /**
  * Display pump amount input screen
@@ -150,7 +149,7 @@ inline uint64_t seconds() {
  * @return 1 if modified, 0 if not modified, -1 if cancelled
  */
 int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                             int16_t lowThreshold, int16_t highThreshold);
+                            int16_t lowThreshold, int16_t highThreshold);
 
 /**
  * Handle editing pump amount (view + optional edit on followup key)

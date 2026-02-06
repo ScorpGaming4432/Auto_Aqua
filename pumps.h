@@ -11,36 +11,26 @@
 #define PUMPS_H
 
 #include <stdint.h>
-#include "screens.h"
 
 // Pump flow rate constant: 2000 ml/ms (adjust based on actual pump specifications)
 #define PRZEPLYW 2000
 
-struct Pump {
-  uint16_t amount = 0;
-  uint64_t duration = 0;  // Added duration field
+class Pump {
+public:
+  Pump();
 
-  int32_t edit(uint8_t pumpIndex, const char* amountTitle) {
-    return pumpAmountScreen(amountTitle, pumpIndex, true, amount);
-  }
+  int32_t edit(uint8_t pumpIndex, const char* amountTitle);
+  int32_t viewEdit(uint8_t pumpIndex, const char* amountTitle);
 
-  int32_t viewEdit(uint8_t pumpIndex, const char* amountTitle) {
-    return pumpAmountScreen(amountTitle, pumpIndex, false, amount);
-  }
+  void setAmount(uint16_t v);
+  uint16_t getAmount() const;
 
-  void setAmount(uint16_t v) {
-    amount = v;
-  }
-  uint16_t getAmount() const {
-    return amount;
-  }
+  void setDuration(uint64_t d);
+  uint64_t getDuration() const;
 
-  void setDuration(uint64_t d) {
-    duration = d;
-  }
-  uint64_t getDuration() const {
-    return duration;
-  }
+private:
+  uint16_t amount;
+  uint64_t duration;  // Added duration field
 };
 
 

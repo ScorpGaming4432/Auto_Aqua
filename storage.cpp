@@ -2,11 +2,12 @@
  * ============================================================================
  * STORAGE.CPP - Data Storage Implementation
  * ============================================================================
- * 
+ *
  * Implements persistent storage of configuration data using Arduino EEPROM.
  * Handles reading/writing settings like tank volume, pump amounts, etc.
- * 
- * Returns maximum values (0xFF repeated) if data not set, allowing 0 to be a valid user value.
+ *
+ * Returns maximum values (0xFF repeated) if data not set, allowing 0 to be a
+ * valid user value.
  */
 
 #include "storage.h"
@@ -14,6 +15,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <stdint.h>
+
 // Helper function to write 32-bit value to EEPROM
 static void writeEEPROM32(uint16_t address, uint32_t value) {
   EEPROM.write(address, (uint8_t)(value & 0xFF));
@@ -83,7 +85,7 @@ uint32_t loadTankVolume() {
   uint32_t value = readEEPROM32(EEPROM_ADDR_TANK_VOLUME);
   Serial.print("[STORAGE] Loaded tank volume: ");
   Serial.println(value);
-  return value;  // 0xFFFFFFFF means not set, but 0 is valid
+  return value; // 0xFFFFFFFF means not set, but 0 is valid
 }
 
 void saveTimeOffset(int64_t timeOffset) {
@@ -93,10 +95,10 @@ void saveTimeOffset(int64_t timeOffset) {
 }
 
 int64_t loadTimeOffset() {
-  uint64_t value = readEEPROM64(EEPROM_ADDR_TIME_OFFSET);
+  int64_t value = readEEPROM64(EEPROM_ADDR_TIME_OFFSET);
   Serial.print("[STORAGE] Loaded time offset: ");
-  Serial.println((long)value);
-  return (int64_t)value;
+  Serial.println(value);
+  return value;
 }
 
 void savePumpAmount(uint8_t pumpIndex, uint16_t amount) {
@@ -117,7 +119,7 @@ uint16_t loadPumpAmount(uint8_t pumpIndex) {
   Serial.print(pumpIndex);
   Serial.print("] amount: ");
   Serial.println(value);
-  return value;  // 0xFFFF means not set, 0 means pump not used
+  return value; // 0xFFFF means not set, 0 means pump not used
 }
 
 void savePumpDuration(uint8_t pumpIndex, uint64_t duration) {
@@ -136,34 +138,68 @@ uint64_t loadPumpDuration(uint8_t pumpIndex) {
   Serial.print(pumpIndex);
   Serial.print("] duration: ");
   Serial.println((unsigned long)value);
-  return value;  // 0xFFFFFFFFFFFFFFFF means not set, 0 means pump not used
+  return value; // 0xFFFFFFFFFFFFFFFF means not set, 0 means pump not used
 }
 
-void loadAllConfiguration() {
+StorageState checkAllConfiguration() {
   Serial.println("[STORAGE] Loading all configuration from EEPROM");
-  // This will be called from main sketch after AppState is available
+  bool _temp[PUMP_COUNT] = {false};
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
+    _temp[i] = false;
+  }
+  StorageState output = {
+      false,
+      false,
+      false,
+      _temp,
+      _temp
+    }; // Bitmask to indicate unset values
+
+  output.languageIndexSet = (loadLanguageIndex() == 0xFF ? 1 : 0)
+                            << 0; // Bit 0: Language index loaded
+  output.tankVolumeSet = (loadTankVolume() == 0xFFFFFFFF ? 1 : 0)
+                         << 1; // Bit 1: Tank volume loaded
+  output.timeOffsetSet = (loadTimeOffset() == 0xFFFFFFFFFFFFFFFF ? 1 : 0)
+                         << 2; // Bit 2: Time offset loaded
+
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
+    // Each two neighboring bits represent pump amount and duration loaded state
+    // for pump[i]
+    output.pumpAmountSet[i] = (loadPumpAmount(i) == 0xFFFF ? 1 : 0) << (3 + i);
+    output.pumpDurationSet[i] =
+        (loadPumpDuration(i) == 0xFFFFFFFFFFFFFFFF ? 1 : 0) << (4 + i);
+  }
+
+  return output;
 }
 
-void saveAllConfiguration() {
+void saveAllConfiguration(AppState &state) {
   Serial.println("[STORAGE] Saving all configuration to EEPROM");
-  // This will be called from main sketch when values change
+
+  saveLanguageIndex(state.languageIndex);
+  saveTankVolume(state.tankVolume);
+  saveTimeOffset(state.timeOffset);
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
+    savePumpAmount(i, state.pumps[i].amount);
+    savePumpDuration(i, state.pumps[i].duration);
+  }
 }
 
 void factoryReset() {
   Serial.println("[STORAGE] ==== FACTORY RESET =====");
-  
+
   // Reset language index to 0xFF
   EEPROM.write(EEPROM_ADDR_LANGUAGE_INDEX, 0xFF);
   Serial.println("[STORAGE] Reset LanguageIndex to 0xFF");
-  
+
   // Reset tank volume to 0xFFFFFFFF
   writeEEPROM32(EEPROM_ADDR_TANK_VOLUME, 0xFFFFFFFF);
-  
+
   // Reset time offset to 0xFFFFFFFFFFFFFFFF
   writeEEPROM64(EEPROM_ADDR_TIME_OFFSET, 0xFFFFFFFFFFFFFFFF);
-  
+
   // Reset all pump amounts to 0xFFFF
-  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
     uint16_t address = EEPROM_ADDR_PUMP_AMOUNTS + (i * 2);
     EEPROM.write(address, 0xFF);
     EEPROM.write(address + 1, 0xFF);
@@ -171,16 +207,17 @@ void factoryReset() {
     Serial.print(i);
     Serial.println("] amount to 0xFFFF");
   }
-  
+
   // Reset all pump durations to 0xFFFFFFFFFFFFFFFF
-  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {  // Use PUMP_COUNT instead of hardcoded 5
+  for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
     uint16_t address = EEPROM_ADDR_PUMP_DURATIONS + (i * 8);
     writeEEPROM64(address, 0xFFFFFFFFFFFFFFFF);
     Serial.print("[STORAGE] Reset pump[");
     Serial.print(i);
     Serial.println("] duration to 0xFFFFFFFFFFFFFFFF");
   }
-  
-  Serial.println("[STORAGE] Factory reset completed - all values set to unset state");
+
+  Serial.println(
+      "[STORAGE] Factory reset completed - all values set to unset state");
   Serial.println("[STORAGE] ====================================");
 }

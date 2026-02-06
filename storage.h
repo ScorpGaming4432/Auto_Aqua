@@ -11,6 +11,7 @@
 #define STORAGE_H
 
 #include <stdint.h>
+#include "water.h"
 
 // EEPROM addresses for different data
 #define EEPROM_ADDR_LANGUAGE_INDEX 0
@@ -18,6 +19,23 @@
 #define EEPROM_ADDR_TIME_OFFSET 5
 #define EEPROM_ADDR_PUMP_AMOUNTS 13
 #define EEPROM_ADDR_PUMP_DURATIONS 23
+
+// Struct definitions for better organization
+struct StorageAddresses {
+  uint8_t languageIndexAddress;
+  uint8_t tankVolumeAddress;
+  uint8_t timeOffsetAddress;
+  uint8_t pumpAmountsAddress[PUMP_COUNT];  // Assuming PUMP_COUNT = 5
+  uint8_t pumpDurationsAddress[PUMP_COUNT];
+};
+
+struct StorageState {
+  bool languageIndexSet;
+  bool tankVolumeSet;
+  bool timeOffsetSet;
+  bool pumpAmountSet[PUMP_COUNT];
+  bool pumpDurationSet[PUMP_COUNT];
+};
 
 /**
  * Save language index to EEPROM
@@ -86,8 +104,9 @@ uint64_t loadPumpDuration(uint8_t pumpIndex);
 /**
  * Load all configuration from EEPROM
  * Used during setup to restore previous settings
+ * @return Bitmask indicating which values were not set (1 = not set, 0 = set)
  */
-void loadAllConfiguration();
+StorageState checkAllConfiguration();
 
 /**
  * Save all configuration to EEPROM

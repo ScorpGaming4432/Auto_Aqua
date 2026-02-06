@@ -13,10 +13,46 @@
 
 #include <stdint.h>
 
+#define PUMP_COUNT 5
+
 // Water level threshold modes
 enum WaterMode {
   WATER_MODE_MANUAL = 0,
   WATER_MODE_AUTO = 1
+};
+
+// Error codes for water management
+enum WaterError {
+  WATER_ERROR_NONE = 0,
+  WATER_ERROR_SENSOR_TIMEOUT = 1,
+  WATER_ERROR_SENSOR_COMMUNICATION = 2,
+  WATER_ERROR_SENSOR_INVALID_DATA = 3,
+  WATER_ERROR_PUMP_TIMEOUT = 4
+};
+
+// Safety limits
+#define MAX_PUMP_RUN_TIME_MS 30000  // 30 seconds maximum pump runtime
+#define SENSOR_READ_TIMEOUT_MS 1000  // 1 second timeout for sensor reads
+
+// Encapsulates low/high touch sensor data and reading logic
+class WaterSensor {
+public:
+  WaterSensor();
+  WaterError readSensorData();
+  uint8_t getTouchedSections();
+  uint8_t calculateWaterLevel();
+  uint32_t readWaterLevelRaw();
+  void getCurrentWaterLevel(uint8_t *highBuf, uint8_t *lowBuf);
+  WaterError getLastError() const;
+  bool calibrateSensor(uint8_t sensorType, uint8_t *referenceData);
+  bool isSensorConnected() const;
+
+private:
+  uint8_t high_data[12];
+  uint8_t low_data[8];
+  WaterError lastError : 3;  // Use bitfield to save memory
+  unsigned long lastSuccessfulRead;
+  bool sensorConnected : 1;  // Use bitfield to save memory
 };
 
 /**
@@ -32,27 +68,7 @@ void initWaterManagement();
  */
 void checkWaterLevel();
 
-/**
- * Toggle inlet pump between AUTO and MANUAL mode
- */
-void toggleInletPumpMode();
-
-/**
- * Toggle outlet pump between AUTO and MANUAL mode
- */
-void toggleOutletPumpMode();
-
-/**
- * Get current inlet pump mode
- * @return true if AUTO, false if MANUAL
- */
-bool getInletPumpMode();
-
-/**
- * Get current outlet pump mode
- * @return true if AUTO, false if MANUAL
- */
-bool getOutletPumpMode();
+// Pump mode controls moved to pumps module
 
 /**
  * Get current low threshold value
@@ -100,5 +116,40 @@ void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf);
  * @param high High threshold (0-100)
  */
 void setWaterThresholds(int16_t low, int16_t high);
+
+/**
+ * Get the last error code from water management system
+ * @return WaterError code indicating the last error
+ */
+WaterError getWaterError();
+
+/**
+ * Clear water management error state
+ */
+void clearWaterError();
+
+/**
+ * Check if water sensors are responding properly
+ * @return true if sensors are connected and responding
+ */
+bool checkSensorHealth();
+
+/**
+ * Emergency stop for all pumps
+ * Immediately stops all pump activity
+ */
+void emergencyStopPumps();
+
+/**
+ * Get pump runtime statistics
+ * @param inletRuntime Returns total inlet pump runtime in ms
+ * @param outletRuntime Returns total outlet pump runtime in ms
+ */
+void getPumpStatistics(uint32_t *inletRuntime, uint32_t *outletRuntime);
+
+/**
+ * Reset pump runtime statistics
+ */
+void resetPumpStatistics();
 
 #endif
