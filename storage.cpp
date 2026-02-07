@@ -9,7 +9,7 @@
  * Returns maximum values (0xFF repeated) if data not set, allowing 0 to be a
  * valid user value.
  */
-
+#include "appstate.h"
 #include "storage.h"
 #include "language.h"
 #include <Arduino.h>
@@ -85,7 +85,7 @@ uint32_t loadTankVolume() {
   uint32_t value = readEEPROM32(EEPROM_ADDR_TANK_VOLUME);
   Serial.print("[STORAGE] Loaded tank volume: ");
   Serial.println(value);
-  return value; // 0xFFFFFFFF means not set, but 0 is valid
+  return value;  // 0xFFFFFFFF means not set, but 0 is valid
 }
 
 void saveTimeOffset(int64_t timeOffset) {
@@ -97,7 +97,7 @@ void saveTimeOffset(int64_t timeOffset) {
 int64_t loadTimeOffset() {
   int64_t value = readEEPROM64(EEPROM_ADDR_TIME_OFFSET);
   Serial.print("[STORAGE] Loaded time offset: ");
-  Serial.println(value);
+  Serial.println(*(double *)&value, 16);
   return value;
 }
 
@@ -119,7 +119,7 @@ uint16_t loadPumpAmount(uint8_t pumpIndex) {
   Serial.print(pumpIndex);
   Serial.print("] amount: ");
   Serial.println(value);
-  return value; // 0xFFFF means not set, 0 means pump not used
+  return value;  // 0xFFFF means not set, 0 means pump not used
 }
 
 void savePumpDuration(uint8_t pumpIndex, uint64_t duration) {
@@ -138,50 +138,41 @@ uint64_t loadPumpDuration(uint8_t pumpIndex) {
   Serial.print(pumpIndex);
   Serial.print("] duration: ");
   Serial.println((unsigned long)value);
-  return value; // 0xFFFFFFFFFFFFFFFF means not set, 0 means pump not used
+  return value;  // 0xFFFFFFFFFFFFFFFF means not set, 0 means pump not used
 }
 
 StorageState checkAllConfiguration() {
   Serial.println("[STORAGE] Loading all configuration from EEPROM");
-  bool _temp[PUMP_COUNT] = {false};
+  StorageState output;
+  
+  // Initialize arrays
   for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
-    _temp[i] = false;
+    output.pumpAmountSet[i] = false;
+    output.pumpDurationSet[i] = false;
   }
-  StorageState output = {
-      false,
-      false,
-      false,
-      _temp,
-      _temp
-    }; // Bitmask to indicate unset values
 
-  output.languageIndexSet = (loadLanguageIndex() == 0xFF ? 1 : 0)
-                            << 0; // Bit 0: Language index loaded
-  output.tankVolumeSet = (loadTankVolume() == 0xFFFFFFFF ? 1 : 0)
-                         << 1; // Bit 1: Tank volume loaded
-  output.timeOffsetSet = (loadTimeOffset() == 0xFFFFFFFFFFFFFFFF ? 1 : 0)
-                         << 2; // Bit 2: Time offset loaded
+  // Check each configuration value
+  output.languageIndexSet = (loadLanguageIndex() != 0xFF);
+  output.tankVolumeSet = (loadTankVolume() != 0xFFFFFFFF);
+  output.timeOffsetSet = (loadTimeOffset() != 0xFFFFFFFFFFFFFFFF);
 
   for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
-    // Each two neighboring bits represent pump amount and duration loaded state
-    // for pump[i]
-    output.pumpAmountSet[i] = (loadPumpAmount(i) == 0xFFFF ? 1 : 0) << (3 + i);
-    output.pumpDurationSet[i] =
-        (loadPumpDuration(i) == 0xFFFFFFFFFFFFFFFF ? 1 : 0) << (4 + i);
+    output.pumpAmountSet[i] = (loadPumpAmount(i) != 0xFFFF);
+    output.pumpDurationSet[i] = (loadPumpDuration(i) != 0xFFFFFFFFFFFFFFFF);
   }
 
   return output;
 }
 
-void saveAllConfiguration(AppState &state) {
+void saveAllConfiguration() {
   Serial.println("[STORAGE] Saving all configuration to EEPROM");
 
-  saveLanguageIndex(state.languageIndex);
-  saveTankVolume(state.tankVolume);
-  saveTimeOffset(state.timeOffset);
+  saveLanguageIndex(AppState::languageIndex);
+  saveTankVolume(AppState::tankVolume);
+  saveTimeOffset(AppState::timeOffset);
   for (uint8_t i = 0; i < PUMP_COUNT; ++i) {
-    savePumpAmount(i, state.pumps[i].amount);
-    savePumpDuration(i, state.pumps[i].duration);
+    savePumpAmount(i, AppState::pumps[i].getAmount());
+    savePumpDuration(i, AppState::pumps[i].getDuration());
   }
 }
 
@@ -218,6 +209,6 @@ void factoryReset() {
   }
 
   Serial.println(
-      "[STORAGE] Factory reset completed - all values set to unset state");
+    "[STORAGE] Factory reset completed - all values set to unset state");
   Serial.println("[STORAGE] ====================================");
 }

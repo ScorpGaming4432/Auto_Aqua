@@ -160,7 +160,7 @@ void handleEditAmount(uint8_t idx);
 /**
  * Handle editing tank volume (view + optional edit on followup key)
  */
-void handleEditTankVolume();
+void handleEditTankVolume(const char* tankTitle);
 
 /**
  * Handle editing pump duration

@@ -53,3 +53,4 @@ wokwi.toml
 # gitignore
 .gitignore
 .github/
+.vscode/

@@ -24,8 +24,6 @@
 #define OUTLET_PUMP_PIN 39
 
 // EEPROM storage addresses for water settings
-#define EEPROM_ADDR_INLET_MODE 50
-#define EEPROM_ADDR_OUTLET_MODE 51
 #define EEPROM_ADDR_LOW_THRESHOLD 52
 #define EEPROM_ADDR_HIGH_THRESHOLD 54
 
@@ -45,8 +43,8 @@
 // ============================================================================
 
 // Water level thresholds (percentage, 0-100)
-static int16_t lowThreshold = 30;
-static int16_t highThreshold = 70;
+static int16_t lowThreshold = 40;
+static int16_t highThreshold = 80;
 
 // Last water check time (for periodic checks)
 static unsigned long lastWaterCheck = 0;
@@ -170,6 +168,10 @@ uint8_t WaterSensor::getTouchedSections() {
   return trig_section;
 }
 
+/**
+ * Calculate water level based on touched sections
+ * @return uint8_t Returns percentage (0-100)
+ */
 uint8_t WaterSensor::calculateWaterLevel() {
   uint8_t sections = getTouchedSections();
   return (sections * 5);
@@ -256,7 +258,7 @@ void initWaterManagement() {
   digitalWrite(INLET_PUMP_PIN, LOW);
   digitalWrite(OUTLET_PUMP_PIN, LOW);
   
-  // Initialize pump mode settings
+  // Initialize pump configurations
   initPumpModes();
 
   // Load water level thresholds from EEPROM
@@ -286,10 +288,8 @@ void initWaterManagement() {
   outletPumpWasActive = false;
   
   Serial.println("[WATER] Water management initialized");
-  Serial.print("[WATER] Inlet pump: ");
-  Serial.println(getInletPumpMode() ? "AUTO" : "MANUAL");
-  Serial.print("[WATER] Outlet pump: ");
-  Serial.println(getOutletPumpMode() ? "AUTO" : "MANUAL");
+  Serial.println("[WATER] Inlet pump: AUTO");
+  Serial.println("[WATER] Outlet pump: AUTO");
   Serial.print("[WATER] Thresholds: ");
   Serial.print(lowThreshold);
   Serial.print("% - ");
@@ -311,7 +311,7 @@ void checkWaterLevel() {
   
   // Check sensor health first
   if (!checkSensorHealth()) {
-    emergencyStopPumps();
+    emergencyStopLetPumps();
     return;
   }
   
@@ -320,30 +320,26 @@ void checkWaterLevel() {
   Serial.print(currentLevel);
   Serial.println("%");
   
-  // Inlet pump control with hysteresis
-  if (getInletPumpMode()) {
-    if (currentLevel < lowThreshold - HYSTERESIS_MARGIN) {
-      if (!inletPumpWasActive) {
-        Serial.println("[WATER] Inlet pump ON (level too low)");
-        runPumpSafely(INLET_PUMP_PIN, calculatePumpDuration(currentLevel, lowThreshold));
-        inletPumpWasActive = true;
-      }
-    } else if (currentLevel > lowThreshold + HYSTERESIS_MARGIN) {
-      inletPumpWasActive = false;
+  // Inlet pump control with hysteresis (always automatic)
+  if (currentLevel < lowThreshold - HYSTERESIS_MARGIN) {
+    if (!inletPumpWasActive) {
+      Serial.println("[WATER] Inlet pump ON (level too low)");
+      runPumpSafely(INLET_PUMP_PIN, calculatePumpDuration(currentLevel, lowThreshold));
+      inletPumpWasActive = true;
     }
+  } else if (currentLevel > lowThreshold + HYSTERESIS_MARGIN) {
+    inletPumpWasActive = false;
   }
   
-  // Outlet pump control with hysteresis
-  if (getOutletPumpMode()) {
-    if (currentLevel > highThreshold + HYSTERESIS_MARGIN) {
-      if (!outletPumpWasActive) {
-        Serial.println("[WATER] Outlet pump ON (level too high)");
-        runPumpSafely(OUTLET_PUMP_PIN, calculatePumpDuration(currentLevel, highThreshold));
-        outletPumpWasActive = true;
-      }
-    } else if (currentLevel < highThreshold - HYSTERESIS_MARGIN) {
-      outletPumpWasActive = false;
+  // Outlet pump control with hysteresis (always automatic)
+  if (currentLevel > highThreshold + HYSTERESIS_MARGIN) {
+    if (!outletPumpWasActive) {
+      Serial.println("[WATER] Outlet pump ON (level too high)");
+      runPumpSafely(OUTLET_PUMP_PIN, calculatePumpDuration(currentLevel, highThreshold));
+      outletPumpWasActive = true;
     }
+  } else if (currentLevel < highThreshold - HYSTERESIS_MARGIN) {
+    outletPumpWasActive = false;
   }
 }
 
@@ -388,11 +384,30 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
   pumpActive = false;
 }
 
-// Calculate pump duration based on deviation from threshold
-uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t threshold) {
-  uint8_t deviation = abs(currentLevel - threshold);
-  // Scale duration based on deviation (100ms per percentage point)
-  return min(deviation * 100, MAX_PUMP_RUN_TIME_MS);
+/**
+ * Calculate pump duration based on water level deviation from target
+ * @param currentLevel Current water level percentage (0-100)
+ * @param target Target percentage (low or high)
+ * @return Duration in milliseconds to run the pump
+ */
+uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t target) {
+  // Calculate deviation from target
+  uint8_t deviation = abs(currentLevel - target);
+  
+  // Base duration + proportional adjustment based on deviation
+  // Minimum 1000ms, maximum 10000ms (10 seconds)
+  uint16_t duration = 1000 + (deviation * 100);
+  
+  // Cap at maximum runtime
+  if (duration > MAX_PUMP_RUN_TIME_MS) {
+    duration = MAX_PUMP_RUN_TIME_MS;
+  }
+  
+  Serial.print("[WATER] Pump duration calculated: ");
+  Serial.print(duration);
+  Serial.println("ms");
+  
+  return duration;
 }
 
 int16_t getLowThreshold() {
@@ -497,7 +512,7 @@ bool checkSensorHealth() {
   return waterSensor.isSensorConnected();
 }
 
-void emergencyStopPumps() {
+void emergencyStopLetPumps() {
   digitalWrite(INLET_PUMP_PIN, LOW);
   digitalWrite(OUTLET_PUMP_PIN, LOW);
   pumpActive = false;
@@ -514,3 +529,5 @@ void resetPumpStatistics() {
   outletPumpTotalRuntime = 0;
   Serial.println("[WATER] Pump statistics reset");
 }
+
+// (Duplicate calculatePumpDuration removed — single implementation retained earlier)

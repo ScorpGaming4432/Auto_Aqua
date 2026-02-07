@@ -15,12 +15,6 @@
 
 #define PUMP_COUNT 5
 
-// Water level threshold modes
-enum WaterMode {
-  WATER_MODE_MANUAL = 0,
-  WATER_MODE_AUTO = 1
-};
-
 // Error codes for water management
 enum WaterError {
   WATER_ERROR_NONE = 0,
@@ -135,10 +129,18 @@ void clearWaterError();
 bool checkSensorHealth();
 
 /**
- * Emergency stop for all pumps
- * Immediately stops all pump activity
+ * Emergency stop for let pumps
+ * Immediately stops outlet and inlet pump activity
  */
-void emergencyStopPumps();
+void emergencyStopLetPumps();
+
+/**
+ * Calculate pump duration based on water level deviation from threshold
+ * @param currentLevel Current water level percentage (0-100)
+ * @param threshold Target threshold percentage (low or high)
+ * @return Duration in milliseconds to run the pump
+ */
+uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t threshold);
 
 /**
  * Get pump runtime statistics
@@ -151,5 +153,6 @@ void getPumpStatistics(uint32_t *inletRuntime, uint32_t *outletRuntime);
  * Reset pump runtime statistics
  */
 void resetPumpStatistics();
+
 
 #endif

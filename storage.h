@@ -10,6 +10,8 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
+
+#include "appstate.h"
 #include <stdint.h>
 #include "water.h"
 

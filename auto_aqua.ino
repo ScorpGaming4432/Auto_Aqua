@@ -54,7 +54,7 @@ void setup() {
   SerialPrint("[SETUP] showing splash screen");
   splashScreen();
   StorageState configStatus = checkAllConfiguration();
-  
+
   if (!configStatus.languageIndexSet) {
     SerialPrint("[SETUP] Language index not set - entering language configuration");
     AppState::languageIndex = langConfigScreen(0, false);
@@ -77,31 +77,31 @@ void setup() {
 
 
 
-  for(uint8_t i = 0; i < PUMP_COUNT; ++i) {
+  for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {
     if (!configStatus.pumpDurationSet[i] || !configStatus.pumpAmountSet[i]) {
       SerialPrint("[SETUP] Pump", i, " not set correctly - entering pump configuration");
       SerialPrint("[SETUP] set pump ", i, " duration (dosing pumps only)");
 
-      AppState::pumps[i].duration = pumpDurationScreen(CUR_LANGUAGE.durationTitle, i, true, 0);
-      savePumpDuration(i, AppState::pumps[i].duration);
+      AppState::pumps[i].setDuration(pumpDurationScreen(CUR_LANGUAGE.durationTitle, i, true, 0));
+      savePumpDuration(i, AppState::pumps[i].getDuration());
 
-      SerialPrint("[SETUP] pump ", i, " duration = ", (unsigned long)AppState::pumps[i].duration);
+      SerialPrint("[SETUP] pump ", i, " duration = ", (unsigned long)AppState::pumps[i].getDuration());
 
       SerialPrint("[SETUP] set pump ", i, " amount (dosing pumps only)");
 
-      AppState::pumps[i].amount = pumpAmountScreen(CUR_LANGUAGE.amountTitle, i, true, 0);
-      savePumpAmount(i, AppState::pumps[i].amount);
+      AppState::pumps[i].setAmount(pumpAmountScreen(CUR_LANGUAGE.amountTitle, i, true, 0));
+      savePumpAmount(i, AppState::pumps[i].getAmount());
 
-      SerialPrint("[SETUP] pump[", i, "] amount = ", AppState::pumps[i].amount);
+      SerialPrint("[SETUP] pump[", i, "] amount = ", AppState::pumps[i].getAmount());
     } else {
       // Load existing configuration into AppState
-      AppState::pumps[i].duration = loadPumpDuration(i);
-      AppState::pumps[i].amount = loadPumpAmount(i);
-      SerialPrint("[SETUP] Loaded pump[", i, "] duration = ", (unsigned long)AppState::pumps[i].duration);
-      SerialPrint("[SETUP] Loaded pump[", i, "] amount = ", AppState::pumps[i].amount);
+      AppState::pumps[i].setDuration(loadPumpDuration(i));
+      AppState::pumps[i].setAmount(loadPumpAmount(i));
+      SerialPrint("[SETUP] Loaded pump[", i, "] duration = ", (unsigned long)AppState::pumps[i].getDuration());
+      SerialPrint("[SETUP] Loaded pump[", i, "] amount = ", AppState::pumps[i].getAmount());
     }
   }
-  
+
   char amountTitle[LANG_AMOUNTTITLE_LEN + 1];
   readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_LEN);
 
@@ -177,7 +177,7 @@ void loop() {
    * === SYSTEM MAINTENANCE ===
    * *: Factory reset (confirm with #)
    */
-  
+
   // Pobierz tylko potrzebne pola mainScreen i noTask
   char mainScreen[LANG_MAINSCREEN_LEN + 1];
   char noTask[LANG_NOTASK_LEN + 1];
@@ -213,23 +213,23 @@ void loop() {
   // 4 key: Toggle water inlet pump mode
   else if (k == '4') {
     Serial.println("[LOOP] Toggle water inlet pump");
-    toggleInletPumpMode();
+    // Inlet pump is always automatic
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Inlet Pump:");
     lcd.setCursor(0, 1);
-    lcd.print(getInletPumpMode() ? "AUTO" : "MANUAL");
+    lcd.print("AUTO");
     delay(1000);
   }
   // 5 key: Toggle water outlet pump mode
   else if (k == '5') {
     Serial.println("[LOOP] Toggle water outlet pump");
-    toggleOutletPumpMode();
+    // Outlet pump is always automatic
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Outlet Pump:");
     lcd.setCursor(0, 1);
-    lcd.print(getOutletPumpMode() ? "AUTO" : "MANUAL");
+    lcd.print("AUTO");
     delay(1000);
   }
   // D key: Edit tank volume (hold for water thresholds)
@@ -237,20 +237,20 @@ void loop() {
     Serial.println("[LOOP] D key pressed - checking for hold");
     unsigned long pressTime = millis();
     bool held = false;
-    
+
     // Wait to see if key is held
     while (keypad.getKey() == 'D' && millis() - pressTime < 1000) {
       delay(10);
     }
-    
+
     if (millis() - pressTime >= 1000) {
       // Key was held - configure water thresholds
       Serial.println("[LOOP] D key held -> water thresholds");
       char thresholdTitle[16];
       readLanguageField(AppState::languageIndex, offsetof(Language, mainScreen), thresholdTitle, 16);
       // For now, using mainScreen as placeholder - should add proper field
-      int8_t result = waterThresholdScreen("Water Thresh", true, 
-                                           getLowThreshold(), 
+      int8_t result = waterThresholdScreen("Water Thresh", true,
+                                           getLowThreshold(),
                                            getHighThreshold());
       lcd.clear();
       if (result == 1) {
@@ -262,13 +262,13 @@ void loop() {
     } else {
       // Quick press - edit tank volume
       Serial.println("[LOOP] D quick press -> tank volume");
-      handleEditTankVolume();
+      handleEditTankVolume(CUR_LANGUAGE.tankVolumeTitle);
     }
   }
   // C key: Measure water level
   else if (k == 'C') {
     Serial.println("[LOOP] Measuring water level");
-    long waterLevel = read_water_sensor();
+    uint8_t waterLevel = calculateWaterLevel();
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Water Level:");

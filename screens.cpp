@@ -778,7 +778,7 @@ void handleEditAmount(uint8_t idx) {
   lcd.clear();
 }
 
-void handleEditTankVolume(char* tankTitle[LANG_TANKTITLE_LEN + 1]) {
+void handleEditTankVolume(const char* tankTitle) {
   lcd.clear();
 
   lcd.setCursor(0, 0);
