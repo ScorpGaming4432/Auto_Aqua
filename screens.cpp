@@ -221,9 +221,9 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
  * @param value Initial/current value
  * @param editMode If true, allows editing; if false, shows value only
  * @param unit Optional unit label (e.g., \"ml\", \"l\") displayed after digits
- * @return Entered value, or -1 if cancelled
+ * @return Entered value, or UNSET_U32 if cancelled
  */
-int32_t editNumberScreen(const char *label, const char *format,
+uint32_t editNumberScreen(const char *label, const char *format,
                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
                          bool editMode, const char *unit = nullptr) {
   lcd.clear();
@@ -250,7 +250,7 @@ int32_t editNumberScreen(const char *label, const char *format,
   bool showCursor = false;
   // Treat sentinel (0xFFFFFFFF) as "no value"; otherwise consider existing
   // value present (including zero).
-  bool digitsEntered = (value != (uint32_t)-1);
+  bool digitsEntered = (value != UNSET_U32);
   // Position of the last digit entered (for cursor placement)
   uint8_t lastDigitPos = entryCol + maxDigits - 1;
   // Character at last digit position (for cursor restoration)
@@ -365,7 +365,7 @@ int32_t editNumberScreen(const char *label, const char *format,
         // Enter edit mode
         localEdit = true;
         // Consider any non-sentinel value (including 0) as entered
-        if (number != (uint32_t)-1)
+        if (number != UNSET_U32)
           digitsEntered = true;
         else {
           digitsEntered = false;
@@ -373,7 +373,7 @@ int32_t editNumberScreen(const char *label, const char *format,
         }
         redrawNumber(number);
       } else if (key == '*') {
-        return -1;
+        return UNSET_U32;
       }
       continue;
     }
@@ -382,7 +382,7 @@ int32_t editNumberScreen(const char *label, const char *format,
     if (key == '*') {
       // Backspace: cancel if nothing entered, otherwise clear to zero
       if (!digitsEntered)
-        return -1;
+        return UNSET_U32;
       number = 0;
       digitsEntered = false;
       redrawNumber(number);
@@ -392,14 +392,14 @@ int32_t editNumberScreen(const char *label, const char *format,
     if (key == '#') {
       // Confirm: must have entered digits (zero is valid)
       if (!digitsEntered)
-        return -1;
-      return (int32_t)number;
+        return UNSET_U32;
+      return number;
     }
 
     // Digit entry: 0-9
     if (key >= '0' && key <= '9') {
       // Start from zero if we had sentinel
-      if (number == (uint32_t)-1) number = 0;
+      if (number == UNSET_U32) number = 0;
       // Check if we have room for more digits
       if (curLen < maxDigits) {
         digitsEntered = true;
@@ -408,20 +408,20 @@ int32_t editNumberScreen(const char *label, const char *format,
         redrawNumber(number);
       } else {
         // Too many digits
-        number = (uint32_t)-1;
-        return -1;
+        number = UNSET_U32;
+        return UNSET_U32;
       }
       continue;
     }
   }
 }
 
-int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume) {
+uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume) {
   Serial.print("[TANK] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" tankVolume=");
   Serial.println(tankVolume);
-  if (tankVolume == (uint32_t)-1ULL) {
+  if (tankVolume == UNSET_U32) {
     Serial.println("[TANK] sentinel passed -> start edit mode at 0");
     tankVolume = 0;
     editMode = true;
@@ -430,7 +430,7 @@ int32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tank
                           editMode, "l");
 }
 
-int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
+uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
                          uint32_t amount) {
   Serial.print("[AM] entry: editMode=");
   Serial.print(editMode);
@@ -448,7 +448,7 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
       break;
     }
   }
-  if (amount == (uint32_t)-1ULL) {
+  if (amount == UNSET_U32) {
     Serial.println("[AM] sentinel passed -> start edit mode at 0");
     amount = 0;
     editMode = true;
@@ -580,7 +580,7 @@ uint64_t timeSetupScreen() {
     }
     if (key == '*') {
       Serial.println("[TIME] edit cancelled");
-      return (uint32_t)-1;
+      return UNSET_U64;
     }
     if (key == '#') {
       uint8_t nh = (digits[0] - '0') * 10 + (digits[1] - '0');

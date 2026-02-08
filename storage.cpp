@@ -60,6 +60,7 @@ bool isConfigurationValid(const Configuration& config) {
   for (uint8_t i = 0; i < PUMP_COUNT; i++) {
     if (config.pumpAmounts[i] == UNSET_U16) return false;
     if (config.pumpDurations[i] == UNSET_U64) return false;
+    if (config.pumpDosingIntervals[i] == UNSET_U32) return false;
   }
 
   if (config.lowThreshold == UNSET_U16) return false;
@@ -84,6 +85,7 @@ void loadConfigurationToAppState() {
     for (uint8_t i = 0; i < PUMP_COUNT; i++) {
       AppState::pumps[i].setAmount(config.pumpAmounts[i]);
       AppState::pumps[i].setDuration(config.pumpDurations[i]);
+      AppState::pumps[i].setDosingInterval(config.pumpDosingIntervals[i]);
     }
 
     Serial.println("[STORAGE] Configuration applied to AppState");
@@ -99,6 +101,7 @@ void loadConfigurationToAppState() {
     for (uint8_t i = 0; i < PUMP_COUNT; i++) {
       AppState::pumps[i].setAmount(DEFAULT_CONFIG.pumpAmounts[i]);
       AppState::pumps[i].setDuration(DEFAULT_CONFIG.pumpDurations[i]);
+      AppState::pumps[i].setDosingInterval(DEFAULT_CONFIG.pumpDosingIntervals[i]);
     }
   }
 }
@@ -117,6 +120,7 @@ void saveAppStateToConfiguration() {
   for (uint8_t i = 0; i < PUMP_COUNT; i++) {
     config.pumpAmounts[i] = AppState::pumps[i].getAmount();
     config.pumpDurations[i] = AppState::pumps[i].getDuration();
+    config.pumpDosingIntervals[i] = AppState::pumps[i].getDosingInterval();
   }
 
   saveConfiguration(config);
@@ -138,6 +142,7 @@ void factoryReset() {
   for (uint8_t i = 0; i < PUMP_COUNT; i++) {
     resetConfig.pumpAmounts[i] = UNSET_U16;
     resetConfig.pumpDurations[i] = UNSET_U64;
+    resetConfig.pumpDosingIntervals[i] = UNSET_U32;
   }
 
   saveConfiguration(resetConfig);

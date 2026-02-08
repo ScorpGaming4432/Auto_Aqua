@@ -25,6 +25,8 @@
  * ============================================================================
 **/
 
+void(* resetFunc) (void) = 0;
+
 #include "debug.h"
 #include "screens.h"
 #include "display.h"
@@ -54,29 +56,30 @@ void setup() {
   bool needsSetup = !isConfigurationValid(config);
 
   if (needsSetup) {
-    Serial.print(SETUP);Serial.println("Configuration invalid - running setup screens");
+    Serial.print(SETUP);Serial.println(" Configuration invalid - running setup screens");
 
     // Language setup
     AppState::languageIndex = langConfigScreen(0);
-    Serial.print(SETUP);Serial.print("Language index set to ");Serial.println(AppState::languageIndex);
-
+    Serial.print(SETUP);Serial.print(" Language index set to ");Serial.println(AppState::languageIndex);
     // Load language after setting it
     LANG_BUFFER = readLanguage(AppState::languageIndex);
-    Serial.print(SETUP);Serial.print("Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
+    Serial.print(SETUP);Serial.print(" Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
+    Serial.println(LANG_BUFFER.langName);
+
     // Tank volume setup
     AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
     Serial.print(SETUP);Serial.print("tankVolume = ");Serial.println(AppState::tankVolume);
 
     // Pump setup
     for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
-      Serial.print(SETUP);Serial.print("[SETUP] set pump ");Serial.print(i);Serial.println(" amount (dosing pumps only)");
+      Serial.print(SETUP);Serial.print(" set pump ");Serial.print(i);Serial.println(" amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
-      Serial.print(SETUP);Serial.print("[SETUP] pump[");Serial.print(i);Serial.print("] amount = ");Serial.println(AppState::pumps[i].getAmount());
+      Serial.print(SETUP);Serial.print(" pump[");Serial.print(i);Serial.print("] amount = ");Serial.println(AppState::pumps[i].getAmount());
     }
 
     // Time offset setup
     AppState::timeOffset = timeSetupScreen();
-    Serial.print(SETUP);Serial.print("Time offset set: ");Serial.println((uint32_t) AppState::timeOffset);
+    Serial.print(SETUP);Serial.print(" Time offset set: ");Serial.println((uint32_t) AppState::timeOffset);
 
     // Save the complete configuration
     saveAppStateToConfiguration();
@@ -142,36 +145,7 @@ void loop() {
     Serial.print("[LOOP] Editing pump amount for pump "); Serial.println(pumpIndex);
     handleEditAmount(pumpIndex);
   }
-  // Letter keys (4-6): Edit dosing pump durations
-  // else if (k >= '4' && k <= '6') {
-  //   Serial.print("[LOOP] Editing pump duration for pump "); Serial.println(k - '4');
-  //   uint8_t pumpIndex = k - '4';
-  //   handleEditPumpDuration(pumpIndex);
-  // }
 
-  // // === WATER MANAGEMENT KEYS ===
-  // // 4 key: Toggle water inlet pump mode
-  // else if (k == '4') {
-  //   Serial.println("[LOOP] Toggle water inlet pump");
-  //   // Inlet pump is always automatic
-  //   lcd.clear();
-  //   lcd.setCursor(0, 0);
-  //   lcd.print("Inlet Pump:");
-  //   lcd.setCursor(0, 1);
-  //   lcd.print("AUTO");
-  //   delay(1000);
-  // }
-  // // 5 key: Toggle water outlet pump mode
-  // else if (k == '5') {
-  //   Serial.println("[LOOP] Toggle water outlet pump");
-  //   // Outlet pump is always automatic
-  //   lcd.clear();
-  //   lcd.setCursor(0, 0);
-  //   lcd.print("Outlet Pump:");
-  //   lcd.setCursor(0, 1);
-  //   lcd.print("AUTO");
-  //   delay(1000);
-  // }
   // D key: Edit tank volume (hold for water thresholds)
   else if (k == '7') {
     Serial.println("[LOOP] Edit low water threshold");
@@ -187,7 +161,7 @@ void loop() {
         AppState::highThreshold = high;
         saveAppStateToConfiguration();
         break;
-      } else if (low == 255 || high == 255) {
+      } else if (low == UNSET_U8 || high == UNSET_U8) {
         Serial.println("[LOOP] Water threshold edit cancelled.");
       } else if (low >= high || high > 100) {
         Serial.println("[LOOP] Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
@@ -263,7 +237,7 @@ void loop() {
         Serial.println("[LOOP] factory reset confirmed");
         factoryReset();
         delay(100);
-        setup();
+        resetFunc();
         break;
       } else if (key == '*') {
         Serial.println("[LOOP] factory reset cancelled");
@@ -275,6 +249,9 @@ void loop() {
 
   // Check water level periodically for automatic pump control
   checkWaterLevel();
+
+  // Check dosing schedule for automatic dosing pumps
+  checkDosingSchedule();
 
 
   delay(100);

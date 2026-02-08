@@ -19,8 +19,9 @@ struct Configuration {
   uint8_t languageIndex;
   uint32_t tankVolume;
   int64_t timeOffset;
-  uint16_t pumpAmounts[PUMP_COUNT];
-  uint64_t pumpDurations[PUMP_COUNT];
+  uint16_t pumpAmounts[PUMP_COUNT-2];
+  uint64_t pumpDurations[PUMP_COUNT-2];
+  uint32_t pumpDosingIntervals[PUMP_COUNT-2]; // Dosing intervals in hours
   uint16_t lowThreshold;
   uint16_t highThreshold;
 };
@@ -30,8 +31,9 @@ const Configuration DEFAULT_CONFIG = {
   .languageIndex = 0,
   .tankVolume = 0,
   .timeOffset = 0,
-  .pumpAmounts = { 0, 0, 0, 0, 0 },
-  .pumpDurations = { 0, 0, 0, 0, 0 },
+  .pumpAmounts = { 0, 0, 0},
+  .pumpDurations = { 0, 0, 0},
+  .pumpDosingIntervals = { 0, 0, 0},
   .lowThreshold = 0,
   .highThreshold = 0
 };

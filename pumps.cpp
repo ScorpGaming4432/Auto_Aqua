@@ -28,6 +28,52 @@ void initPumpModes() {
   AppState::pumps[OUTLET_PUMP_PIN].setOutlet(true);  // Outlet pump - always automatic
 }
 
+// Map logical pump index (0..PUMP_COUNT-3) to physical pin numbers
+static uint8_t pumpIndexToPin(uint8_t pumpIndex) {
+  // Dosing pumps are wired to pins 2,3,4 (pumpIndex 0->2, 1->3, 2->4)
+  return (uint8_t)(2 + pumpIndex);
+}
+
+// Scheduler: check dosing pumps and run them when interval elapsed
+void checkDosingSchedule() {
+  uint64_t now = seconds();
+
+  // Dosing pumps are the first PUMP_COUNT-2 pumps
+  for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {
+    Pump &p = AppState::pumps[i];
+
+    // Skip if marked as let pump or interval disabled
+    if (p.getIfLet()) continue;
+    uint32_t intervalHours = p.getDosingInterval();
+    if (intervalHours == 0) continue;
+
+    if (!p.shouldDose(now)) continue;
+
+    uint16_t amount = p.getAmount();
+    if (amount == 0) {
+      // Nothing to dose; update last dosing time to avoid repeated checks
+      p.setLastDosingTime(now);
+      continue;
+    }
+
+    // Calculate duration in milliseconds using flowrate PRZEPLYW (ml/s)
+    // duration_ms = (amount_ml * 1000) / flow_ml_per_s
+    uint64_t durationMs = ((uint64_t)amount * 1000ULL) / (uint64_t)PRZEPLYW;
+    if (durationMs > MAX_PUMP_RUN_TIME_MS) durationMs = MAX_PUMP_RUN_TIME_MS;
+
+    p.setDuration(durationMs);
+    p.setLastDosingTime(now);
+
+    uint8_t pin = pumpIndexToPin(i);
+    Serial.print("[PUMPS] Scheduled dosing pump "); Serial.print(i);
+    Serial.print(" on pin "); Serial.print(pin);
+    Serial.print(" for "); Serial.print((unsigned long)durationMs); Serial.println(" ms");
+
+    // Run safely (this will open/close electrovalve via runPumpSafely)
+    runPumpSafely(pin, (uint16_t)durationMs);
+  }
+}
+
 Pump::Pump()
   : amount(0), duration(0) {}
 
@@ -99,6 +145,29 @@ bool Pump::getIfInlet() const {
 
 bool Pump::getIfLet() const {
   return isLet;
+}
+
+void Pump::setDosingInterval(uint32_t interval) {
+  dosingInterval = interval;
+}
+
+uint32_t Pump::getDosingInterval() const {
+  return dosingInterval;
+}
+
+void Pump::setLastDosingTime(uint64_t time) {
+  lastDosingTime = time;
+}
+
+uint64_t Pump::getLastDosingTime() const {
+  return lastDosingTime;
+}
+
+bool Pump::shouldDose(uint64_t currentSeconds) const {
+  if (dosingInterval == 0) return false;
+  uint64_t intervalSeconds = (uint64_t)dosingInterval * 3600ULL; // hours -> seconds
+  if (currentSeconds < lastDosingTime) return true; // clock reset or never set -> allow
+  return (currentSeconds - lastDosingTime) >= intervalSeconds;
 }
 
 void pumpWork(uint8_t pump_pin, uint16_t duration_ms) {
