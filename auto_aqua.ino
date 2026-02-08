@@ -75,6 +75,10 @@ void setup() {
       Serial.print(SETUP);Serial.print(" set pump ");Serial.print(i);Serial.println(" amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
       Serial.print(SETUP);Serial.print(" pump[");Serial.print(i);Serial.print("] amount = ");Serial.println(AppState::pumps[i].getAmount());
+
+      Serial.print(SETUP);Serial.print(" set pump ");Serial.print(i);Serial.println(" interval (dosing pumps only)");
+      AppState::pumps[i].setDosingInterval(pumpAmountScreen(LANG_BUFFER.intervalTitle, i, true, 0));
+      Serial.print(SETUP);Serial.print(" pump[");Serial.print(i);Serial.print("] interval = ");Serial.println(AppState::pumps[i].getAmount());
     }
 
     // Time offset setup
@@ -102,7 +106,7 @@ void loop() {
    * 
    * === PUMP CONFIGURATION ===
    * 1-3: Edit dosing pump amounts (ml)
-   * 4-6: Edit dosing pump durations (ms)
+   * 4-6: Edit dosing pump intervals (ms)
    * 
    * === WATER MANAGEMENT ===
    * Unused: Toggle water inlet pump (auto/manual mode)
@@ -112,8 +116,7 @@ void loop() {
    * 9: Toggle electrovalve
    *
    * === WATER THRESHOLD CONFIGURATION ===
-   * 7: Configure lower threshold
-   * 8: Configure upper threshold
+   * D: Configure thresholds
    * 
    * === SYSTEM STATUS ===
    * 0: Show current time
@@ -147,29 +150,9 @@ void loop() {
   }
 
   // D key: Edit tank volume (hold for water thresholds)
-  else if (k == '7') {
-    Serial.println("[LOOP] Edit low water threshold");
-    editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
-  } else if (k == 'D') {
-    Serial.println("[LOOP] Edit high water threshold");
-    while (true) {
-      uint8_t low = (uint8_t)editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
-      uint8_t high = (uint8_t)editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%");
-      Serial.print("[LOOP] Entered thresholds - Low: "); Serial.print(low); Serial.print("% High: "); Serial.print(high); Serial.println("%");
-      if (low > 0 && high > low && high <= 100) {
-        AppState::lowThreshold = low;
-        AppState::highThreshold = high;
-        saveAppStateToConfiguration();
-        break;
-      } else if (low == UNSET_U8 || high == UNSET_U8) {
-        Serial.println("[LOOP] Water threshold edit cancelled.");
-      } else if (low >= high || high > 100) {
-        Serial.println("[LOOP] Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
-      }
-
-      Serial.println("[LOOP] Invalid thresholds entered. Cannot allow. Try again.");
-    }
-    AppState::highThreshold = editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 2, AppState::highThreshold, true, "%");
+  else if (k == 'D') {
+    handleThreshold();
+    saveAppStateToConfiguration();
   }
   // C key: Measure water level
   else if (k == 'C') {

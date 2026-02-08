@@ -50,7 +50,7 @@ extern Language LANG_BUFFER;  // Declare extern reference to global language buf
  * @param len Number of bytes to copy
  */
 void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
-  Serial.print("READLANGUAGEFIELD CALLED REPORT TO POLICE");
+  Serial.println("READLANGUAGEFIELD CALLED REPORT!!!!");
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
@@ -93,6 +93,7 @@ bool editFlag = false;
 void splashScreen() {
   // Initialize LCD display and turn on backlight
   lcd.init();
+  Serial.println("LCD Initialized!");
   lcd.backlight();
   lcd.clear();
 
@@ -224,8 +225,8 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
  * @return Entered value, or UNSET_U32 if cancelled
  */
 uint32_t editNumberScreen(const char *label, const char *format,
-                         uint8_t entryCol, uint8_t maxDigits, uint32_t value,
-                         bool editMode, const char *unit = nullptr) {
+                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
+                          bool editMode, const char *unit = nullptr) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(label);
@@ -431,7 +432,7 @@ uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tan
 }
 
 uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
-                         uint32_t amount) {
+                          uint32_t amount) {
   Serial.print("[AM] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" amount=");
@@ -818,24 +819,47 @@ void handleEditTankVolume(const char *tankTitle) {
   lcd.clear();
 }
 
-// void handleEditPumpDuration(uint8_t idx) {
-//   lcd.clear();
-//   lcd.setCursor(0, 0);
-//   Serial.print("[DUR] enter handleEditPumpDuration idx=");
-//   Serial.println(idx);
+void handleEditPumpInterval(uint8_t idx) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  Serial.print("[INTERVAL] enter handleEditPumpInterval idx=");
+  Serial.println(idx);
 
-//   uint64_t duration = AppState::pumps[idx].getDuration();
-//   uint64_t newDuration = pumpDurationScreen(LANG_BUFFER.durationTitle, idx, true, duration);
+  uint64_t interval = AppState::pumps[idx].getDosingInterval();
+  uint64_t newInterval = pumpAmountScreen(LANG_BUFFER.intervalTitle, idx, true, interval);
 
-//   Serial.print("[DUR] edited idx=");
-//   Serial.print(idx);
-//   Serial.print(" -> ");
-//   Serial.println((unsigned long)newDuration);
+  Serial.print("[INTERVAL] edited idx=");
+  Serial.print(idx);
+  Serial.print(" -> ");
+  Serial.println((unsigned long)newInterval);
 
-//   if (newDuration != (uint64_t)-1) {
-//     AppState::pumps[idx].setDuration(newDuration);
-//     savePumpDuration(idx, newDuration);
-//   }
+  if (newInterval != UNSET_U64) {
+    AppState::pumps[idx].setDosingInterval(newInterval);
+  }
 
-//   lcd.clear();
-// }
+  lcd.clear();
+}
+
+void handleThreshold() {
+  Serial.println("[LOOP] Edit high water threshold");
+  while (true) {
+    uint8_t low = (uint8_t)editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
+    uint8_t high = (uint8_t)editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%");
+    Serial.print("[LOOP] Entered thresholds - Low: ");
+    Serial.print(low);
+    Serial.print("% High: ");
+    Serial.print(high);
+    Serial.println("%");
+    if (low > 0 && high > low && high <= 100) {
+      AppState::lowThreshold = low;
+      AppState::highThreshold = high;
+      break;
+    } else if (low == UNSET_U8 || high == UNSET_U8) {
+      Serial.println("[LOOP] Water threshold edit cancelled.");
+    } else if (low >= high || high > 100) {
+      Serial.println("[LOOP] Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
+    }
+
+    Serial.println("[LOOP] Invalid thresholds entered. Cannot allow. Try again.");
+  }
+}

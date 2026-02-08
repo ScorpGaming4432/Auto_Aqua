@@ -54,12 +54,13 @@ struct Language {
   char pumpWorking[LANG_PUMPWORKING_LEN];           ///< Message when pump is running
   char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN];    ///< Message for low water threshold
   char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN];  ///< Message for high water threshold
+  char intervalTitle[16];
 };
 
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
   // langName,    prompt,    tank title,       amount title,      main screen,       no task,          pump working,     low thresh,           high thresh
-  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica " },
+  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica ", "Interwal pompy #" },
   { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Main screen    ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold" },
   { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "", "" },
   { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Hauptbildschir ", "Keine Aufgabe ", "Pumpe laeuft   ", "", "" },

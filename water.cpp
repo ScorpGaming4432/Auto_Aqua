@@ -350,6 +350,12 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
     return;
   }
 
+  // Check if electrovalve is disabled - if so, prevent pump operation
+  if (!isElectrovalveOpen()) {
+    Serial.println("[WATER] Electrovalve is OFF - pump operation blocked for safety");
+    return;
+  }
+
   if (duration > MAX_PUMP_RUN_TIME_MS) {
     Serial.println("[WATER] Pump duration too long - limiting");
     duration = MAX_PUMP_RUN_TIME_MS;

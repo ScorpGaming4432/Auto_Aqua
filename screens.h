@@ -70,8 +70,7 @@ uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tan
  * @param amount Current amount value
  * @return Entered amount, or -1 if cancelled
  */
-uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
-                         uint32_t amount);
+uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode, uint32_t amount);
 
 /**
  * Display pump duration input screen
@@ -139,8 +138,7 @@ inline uint64_t seconds() {
  * @param highThreshold Current high threshold value
  * @return 1 if modified, 0 if not modified, -1 if cancelled
  */
-uint8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                            int16_t lowThreshold, int16_t highThreshold);
+uint8_t waterThresholdScreen(const char *thresholdBuf, bool editMode, int16_t lowThreshold, int16_t highThreshold);
 
 /**
  * Handle editing pump amount (view + optional edit on followup key)
@@ -170,8 +168,14 @@ void handleEditTankVolume(const char *tankTitle);
  * @param unit Optional unit label (e.g., "ml", "l") displayed after digits
  * @return Entered value, or -1 if cancelled
  */
-uint32_t editNumberScreen(const char *label, const char *format,
-                         uint8_t entryCol, uint8_t maxDigits, uint32_t value,
-                         bool editMode, const char *unit = nullptr);
+uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCol, uint8_t maxDigits, uint32_t value, bool editMode, const char *unit = nullptr);
+
+
+/*
+  * Handle editing water thresholds (view + optional edit on followup key)
+  * User edits Inlet and Outlet thresholds sequentially.
+  * If user enters invalid values, calls police.
+*/
+void handleThreshold();
 
 #endif

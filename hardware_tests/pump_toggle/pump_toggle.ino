@@ -15,16 +15,16 @@ void setup() {
 
 void loop() {
   Serial.println("Turning inlet ON");
-  digitalWrite(INLET_PIN, HIGH);
-  delay(1000);
   digitalWrite(INLET_PIN, LOW);
+  delay(1000);
+  digitalWrite(INLET_PIN, HIGH);
   Serial.println("Turning inlet OFF");
   delay(500);
 
   Serial.println("Turning outlet ON");
-  digitalWrite(OUTLET_PIN, HIGH);
-  delay(1000);
   digitalWrite(OUTLET_PIN, LOW);
+  delay(1000);
+  digitalWrite(OUTLET_PIN, HIGH);
   Serial.println("Turning outlet OFF");
   delay(1500);
 }

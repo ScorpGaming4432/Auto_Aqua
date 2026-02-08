@@ -42,7 +42,7 @@ public:
   bool getIfLet() const;
 
   // Automatic dosing functionality
-  void setDosingInterval(uint32_t interval);
+  void setDosingInterval(uint64_t interval);
   uint32_t getDosingInterval() const;
   void setLastDosingTime(uint64_t time);
   uint64_t getLastDosingTime() const;
@@ -53,7 +53,7 @@ private:
   uint64_t duration;           // Calculated duration based on amount and flow rate
   bool isLet = false;          // True = in/out let pump, False = dosing pump
   bool isOutLet;               // True = outlet pump, False = inlet pump (only relevant if isLet is true)
-  uint32_t dosingInterval = 0; // Interval between doses in hours (0 = disabled)
+  uint64_t dosingInterval = 0; // Interval between doses in hours (0 = disabled)
   uint64_t lastDosingTime = 0; // Last time this pump was activated (seconds)
 };
 

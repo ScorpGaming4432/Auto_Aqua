@@ -147,7 +147,7 @@ bool Pump::getIfLet() const {
   return isLet;
 }
 
-void Pump::setDosingInterval(uint32_t interval) {
+void Pump::setDosingInterval(uint64_t interval) {
   dosingInterval = interval;
 }
 
@@ -165,15 +165,15 @@ uint64_t Pump::getLastDosingTime() const {
 
 bool Pump::shouldDose(uint64_t currentSeconds) const {
   if (dosingInterval == 0) return false;
-  uint64_t intervalSeconds = (uint64_t)dosingInterval * 3600ULL; // hours -> seconds
+  uint64_t intervalSeconds = (uint64_t)dosingInterval * 86400ULL; // days -> seconds
   if (currentSeconds < lastDosingTime) return true; // clock reset or never set -> allow
   return (currentSeconds - lastDosingTime) >= intervalSeconds;
 }
 
 void pumpWork(uint8_t pump_pin, uint16_t duration_ms) {
-  digitalWrite(pump_pin, HIGH);  // Activate pump (assuming active HIGH)
+  digitalWrite(pump_pin, LOW);  // Activate pump (assuming active LOW)
   delay(duration_ms);            // Run for specified duration
-  digitalWrite(pump_pin, LOW);   // Deactivate pump
+  digitalWrite(pump_pin, HIGH);   // Deactivate pump
 }
 
 // void runPumpSafely(uint8_t pump_pin, uint16_t duration_ms, uint16_t amount) {
