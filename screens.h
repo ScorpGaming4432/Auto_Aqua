@@ -12,16 +12,7 @@
  *   7  8  9  C
  *   *  0  #  D
  * 
- * Key Mappings:
- *   1-5: Edit pump amounts
- *   0:   Show current time
- *   D:   Edit tank volume
- *   A/B: Navigate menus
- *   #:   Confirm selection
- *   *:   Cancel/Back
- *   C:   Water level measurement
- *   P:   Edit pump duration
- */
+*/
 
 #ifndef SCREENS_H
 #define SCREENS_H

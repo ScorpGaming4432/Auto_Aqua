@@ -61,10 +61,10 @@ struct Language {
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
   // langName,    prompt,    tank title,       amount title,      duration title,     main screen,       no task,          pump working,     low thresh,           high thresh
-  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Czas pompy #    ", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica wody", "Gorna granica wody" },
+  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Czas pompy #    ", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica" },
   { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Pump duration # ", "Main screen    ", "No task       ", "Pump running   ", "", "" },
   { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Vremya pompy #  ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "", "" },
-  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Pumpenzeit #    ", "Hauptbildschirm", "Keine Aufgabe ", "Pumpe laeuft   ", "", "" },
+  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Pumpenzeit #    ", "Hauptbildschir", "Keine Aufgabe ", "Pumpe laeuft   ", "", "" },
   { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Duree pompa #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "", "" },
   { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Duracion bomba #", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "", "" },
   { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Durata pompa #  ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "", "" },

@@ -46,9 +46,9 @@
  * @param dest Destination RAM buffer
  * @param len Number of bytes to copy
  */
-void readLanguageField(uint8_t idx, char *dest, uint8_t len) {
+void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
-  memcpy_P(dest, (const void *)((uintptr_t)base + offsetof(Language, dest)), len);
+  memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
 }
 
@@ -68,8 +68,13 @@ Language readLanguage(uint8_t languageIndex) {
 // Keypad and global state
 // ============================================================================
 
+// External declarations for keypad arrays defined in screens.h
+extern const char keys[ROWS][COLS];
+extern const byte rowPins[ROWS];
+extern const byte colPins[COLS];
+
 // Global keypad object - shared across all screen functions
-Keypad keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+Keypad keypad(makeKeymap(keys), const_cast<byte*>(rowPins), const_cast<byte*>(colPins), ROWS, COLS);
 // Global edit mode flag
 bool editFlag = false;
 
@@ -134,8 +139,8 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
-  readLanguageField(languageIndex, langName, LANG_NAME_LEN);
-  readLanguageField(languageIndex, langPrompt, LANG_PROMPT_LEN);
+  readLanguageField(languageIndex, 0, langName, LANG_NAME_LEN);
+  readLanguageField(languageIndex, LANG_NAME_LEN, langPrompt, LANG_PROMPT_LEN);
 
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
@@ -175,8 +180,8 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
       if (newlang != languageIndex) {
         languageIndex = newlang;
         loadGlyphSet(languageIndex);
-        readLanguageField(languageIndex, langName, LANG_NAME_LEN);
-        readLanguageField(languageIndex, langPrompt, LANG_PROMPT_LEN);
+        readLanguageField(languageIndex, 0, langName, LANG_NAME_LEN);
+        readLanguageField(languageIndex, LANG_NAME_LEN, langPrompt, LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);
         lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
         lcd.setCursor(4, 1);
