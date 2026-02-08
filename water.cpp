@@ -7,10 +7,11 @@
  * aquarium system. Reads water level sensors and manages inlet/outlet pumps
  * based on configurable thresholds.
  */
- 
+
 
 #include "storage.h"
 #include "water.h"
+#include "appstate.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <EEPROM.h>
@@ -24,9 +25,7 @@ bool WaterSensor::initialized = false;
 // Configuration Constants
 // ============================================================================
 
-// Pump pin assignments (adjust for your hardware)
-#define INLET_PUMP_PIN 38
-#define OUTLET_PUMP_PIN 39
+
 
 // I2C sensor addresses
 #define ATTINY1_HIGH_ADDR 0x78
@@ -43,9 +42,7 @@ bool WaterSensor::initialized = false;
 // Global State Variables
 // ============================================================================
 
-// Water level thresholds (percentage, 0-100)
-static int16_t lowThreshold = 40;
-static int16_t highThreshold = 80;
+// Water level thresholds are now stored in AppState
 
 // Last water check time (for periodic checks)
 static unsigned long lastWaterCheck = 0;
@@ -64,6 +61,10 @@ static WaterError currentError = WATER_ERROR_NONE;
 // Hysteresis state
 static bool inletPumpWasActive = false;
 static bool outletPumpWasActive = false;
+
+// Electrovalve state
+static bool electrovalveActive = false;
+static uint32_t electrovalveTotalRuntime = 0;
 
 // ============================================================================
 // WaterSensor class implementation
@@ -259,29 +260,21 @@ void initWaterManagement() {
   // Initialize pump control pins
   pinMode(INLET_PUMP_PIN, OUTPUT);
   pinMode(OUTLET_PUMP_PIN, OUTPUT);
+  pinMode(ELECTROVALVE_PIN, OUTPUT);
   digitalWrite(INLET_PUMP_PIN, LOW);
   digitalWrite(OUTLET_PUMP_PIN, LOW);
+  digitalWrite(ELECTROVALVE_PIN, LOW);
 
   // Initialize pump configurations
   initPumpModes();
 
-  // Load water level thresholds from EEPROM
-  uint16_t lowStored = (EEPROM.read(EEPROM_ADDR_LOW_THRESHOLD) << 8) | EEPROM.read(EEPROM_ADDR_LOW_THRESHOLD + 1);
-  uint16_t highStored = (EEPROM.read(EEPROM_ADDR_HIGH_THRESHOLD) << 8) | EEPROM.read(EEPROM_ADDR_HIGH_THRESHOLD + 1);
-
-  // Use stored values if valid, otherwise keep defaults
-  if (lowStored != 0xFFFF && lowStored >= 0 && lowStored <= 100) {
-    lowThreshold = lowStored;
-  }
-  if (highStored != 0xFFFF && highStored >= 0 && highStored <= 100) {
-    highThreshold = highStored;
-  }
+  // Water level thresholds are now loaded from AppState via loadConfigurationToAppState()
 
   // Validate threshold relationship
-  if (lowThreshold >= highThreshold) {
+  if (AppState::lowThreshold >= AppState::highThreshold) {
     // Reset to safe defaults
-    lowThreshold = 30;
-    highThreshold = 70;
+    AppState::lowThreshold = 30;
+    AppState::highThreshold = 70;
     Serial.println("[WATER] Invalid thresholds - reset to defaults");
   }
 
@@ -293,9 +286,9 @@ void initWaterManagement() {
   Serial.println("[WATER] Inlet pump: AUTO");
   Serial.println("[WATER] Outlet pump: AUTO");
   Serial.print("[WATER] Thresholds: ");
-  Serial.print(lowThreshold);
+  Serial.print(AppState::lowThreshold);
   Serial.print("% - ");
-  Serial.print(highThreshold);
+  Serial.print(AppState::highThreshold);
   Serial.println("%");
   Serial.print("[WATER] Hysteresis margin: ");
   Serial.print(HYSTERESIS_MARGIN);
@@ -323,26 +316,29 @@ void checkWaterLevel() {
   Serial.println("%");
 
   // Inlet pump control with hysteresis (always automatic)
-  if (currentLevel < lowThreshold - HYSTERESIS_MARGIN) {
+  if (currentLevel < AppState::lowThreshold - HYSTERESIS_MARGIN) {
     if (!inletPumpWasActive) {
       Serial.println("[WATER] Inlet pump ON (level too low)");
-      runPumpSafely(INLET_PUMP_PIN, calculatePumpDuration(currentLevel, lowThreshold));
+      runPumpSafely(INLET_PUMP_PIN, calculatePumpDuration(currentLevel, AppState::lowThreshold));
       inletPumpWasActive = true;
     }
-  } else if (currentLevel > lowThreshold + HYSTERESIS_MARGIN) {
+  } else if (currentLevel > AppState::lowThreshold + HYSTERESIS_MARGIN) {
     inletPumpWasActive = false;
   }
 
   // Outlet pump control with hysteresis (always automatic)
-  if (currentLevel > highThreshold + HYSTERESIS_MARGIN) {
+  if (currentLevel > AppState::highThreshold + HYSTERESIS_MARGIN) {
     if (!outletPumpWasActive) {
       Serial.println("[WATER] Outlet pump ON (level too high)");
-      runPumpSafely(OUTLET_PUMP_PIN, calculatePumpDuration(currentLevel, highThreshold));
+      runPumpSafely(OUTLET_PUMP_PIN, calculatePumpDuration(currentLevel, AppState::highThreshold));
       outletPumpWasActive = true;
     }
-  } else if (currentLevel < highThreshold - HYSTERESIS_MARGIN) {
+  } else if (currentLevel < AppState::highThreshold - HYSTERESIS_MARGIN) {
     outletPumpWasActive = false;
   }
+
+  // Electrovalve control is now handled in runPumpSafely()
+  // It opens before pump starts and closes after pump stops
 }
 
 // Pump mode functions moved to pumps module
@@ -362,6 +358,10 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
   pumpActive = true;
   activePumpPin = pumpPin;
   pumpStartTime = millis();
+
+  // Open electrovalve before starting pump
+  controlElectrovalve(true);
+  delay(500);  // Small delay to ensure valve is fully open
 
   digitalWrite(pumpPin, HIGH);
 
@@ -384,6 +384,33 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
 
   digitalWrite(pumpPin, LOW);
   pumpActive = false;
+
+  // Close electrovalve after pump operation
+  controlElectrovalve(false);
+}
+
+/**
+ * Control electrovalve (open/close)
+ * @param open true to open valve, false to close
+ */
+void controlElectrovalve(bool open) {
+  if (open) {
+    digitalWrite(ELECTROVALVE_PIN, HIGH);
+    electrovalveActive = true;
+    Serial.println("[WATER] Electrovalve OPENED");
+  } else {
+    digitalWrite(ELECTROVALVE_PIN, LOW);
+    electrovalveActive = false;
+    Serial.println("[WATER] Electrovalve CLOSED");
+  }
+}
+
+/**
+ * Get electrovalve status
+ * @return true if electrovalve is open, false if closed
+ */
+bool isElectrovalveOpen() {
+  return electrovalveActive;
 }
 
 /**
@@ -413,18 +440,17 @@ uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t target) {
 }
 
 int16_t getLowThreshold() {
-  return lowThreshold;
+  return AppState::lowThreshold;
 }
 
 int16_t getHighThreshold() {
-  return highThreshold;
+  return AppState::highThreshold;
 }
 
 void setLowThreshold(int16_t threshold) {
-  if (threshold >= 0 && threshold < highThreshold) {
-    lowThreshold = threshold;
-    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD, (threshold >> 8) & 0xFF);
-    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD + 1, threshold & 0xFF);
+  if (threshold >= 0 && threshold < AppState::highThreshold) {
+    AppState::lowThreshold = threshold;
+    saveAppStateToConfiguration();
     Serial.print("[WATER] Low threshold set to: ");
     Serial.print(threshold);
     Serial.println("%");
@@ -432,10 +458,9 @@ void setLowThreshold(int16_t threshold) {
 }
 
 void setHighThreshold(int16_t threshold) {
-  if (threshold > lowThreshold && threshold <= 100) {
-    highThreshold = threshold;
-    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD, (threshold >> 8) & 0xFF);
-    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD + 1, threshold & 0xFF);
+  if (threshold > AppState::lowThreshold && threshold <= 100) {
+    AppState::highThreshold = threshold;
+    saveAppStateToConfiguration();
     Serial.print("[WATER] High threshold set to: ");
     Serial.print(threshold);
     Serial.println("%");
@@ -444,12 +469,9 @@ void setHighThreshold(int16_t threshold) {
 
 void setWaterThresholds(int16_t low, int16_t high) {
   if (low >= 0 && high <= 100 && low < high) {
-    lowThreshold = low;
-    highThreshold = high;
-    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD, (low >> 8) & 0xFF);
-    EEPROM.write(EEPROM_ADDR_LOW_THRESHOLD + 1, low & 0xFF);
-    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD, (high >> 8) & 0xFF);
-    EEPROM.write(EEPROM_ADDR_HIGH_THRESHOLD + 1, high & 0xFF);
+    AppState::lowThreshold = low;
+    AppState::highThreshold = high;
+    saveAppStateToConfiguration();
     Serial.print("[WATER] Thresholds set - Low: ");
     Serial.print(low);
     Serial.print("% High: ");
@@ -540,4 +562,3 @@ void resetPumpStatistics() {
 uint8_t calculateWaterLevel() {
   return waterSensor.calculateWaterLevel();
 }
-

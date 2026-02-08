@@ -31,17 +31,12 @@ extern const char* ERROR_STRINGS[];
 void SerialPrint();
 void debugPrint(Location loc, const char* message);
 
-// Template declarations
-template<typename First, typename... Rest>
-void SerialPrint(Location loc, const char* message, Rest... rest);
+// Efficient recursive template for any number of arguments
+// Base case
+void SerialPrint();
 
-template<typename First, typename... Rest>
-void SerialPrint(First first, Rest... rest);
-
-// Specialization for long long
-template<typename... Rest>
-void SerialPrint(long long first, Rest... rest);
+// Recursive template - handles any number of arguments efficiently
+template<typename T, typename... Args>
+void SerialPrint(T first, Args... rest);
 
 #endif
-
-

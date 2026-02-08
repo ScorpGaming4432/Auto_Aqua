@@ -12,8 +12,13 @@
 
 #include <stdint.h>
 
-// Pump flow rate constant: 2000 ml/ms (adjust based on actual pump specifications)
-#define PRZEPLYW 2000
+// Pump pin assignments (adjust for your hardware)
+#define INLET_PUMP_PIN 7
+#define OUTLET_PUMP_PIN 6
+#define ELECTROVALVE_PIN 5
+
+// Pump flow rate constant: 2 ml/s (adjust based on actual pump specifications)
+#define PRZEPLYW 2
 
 class Pump {
 public:
@@ -25,7 +30,7 @@ public:
   void setAmount(uint16_t v);
   uint16_t getAmount() const;
 
-  void setDuration(uint64_t d);
+  void setDuration(uint64_t d);  // calculate
   uint64_t getDuration() const;
 
   void setOutlet(bool value);
@@ -38,9 +43,9 @@ public:
 
 private:
   uint16_t amount;
-  uint64_t duration;  // Added duration field
-  bool isLet = false; // True = in/out let pump, False = dosing pump
-  bool isOutLet; // True = outlet pump, False = inlet pump (only relevant if isLet is true)
+  uint64_t duration;   // Added duration field
+  bool isLet = false;  // True = in/out let pump, False = dosing pump
+  bool isOutLet;       // True = outlet pump, False = inlet pump (only relevant if isLet is true)
 };
 
 

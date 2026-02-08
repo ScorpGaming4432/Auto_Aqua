@@ -18,5 +18,3 @@
 
 extern Keypad keypad;
 extern LiquidCrystal_I2C lcd;
-
-

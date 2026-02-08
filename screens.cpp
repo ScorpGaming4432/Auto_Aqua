@@ -21,6 +21,7 @@
  * 
  */
 
+#include "debug.h"
 #include "screens.h"
 #include "chars.h"
 #include "display.h"
@@ -49,6 +50,7 @@ extern Language LANG_BUFFER;  // Declare extern reference to global language buf
  * @param len Number of bytes to copy
  */
 void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
+  SerialPrint("READLANGUAGEFIELD CALLED REPORT TO POLICE");
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
@@ -76,7 +78,7 @@ extern const byte rowPins[ROWS];
 extern const byte colPins[COLS];
 
 // Global keypad object - shared across all screen functions
-Keypad keypad(makeKeymap(keys), const_cast<byte*>(rowPins), const_cast<byte*>(colPins), ROWS, COLS);
+Keypad keypad(makeKeymap(keys), const_cast<byte *>(rowPins), const_cast<byte *>(colPins), ROWS, COLS);
 // Global edit mode flag
 bool editFlag = false;
 
@@ -454,46 +456,46 @@ int16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode
   return editNumberScreen(_amBuf, "<-* ________ #->", 6, 6, amount, editMode, "ml");
 }
 
-uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
-  Serial.print("[DUR] entry: pumpIndex=");
-  Serial.print(pumpIndex);
-  Serial.print(" editMode=");
-  Serial.print(editMode);
-  Serial.print(" duration=");
-  Serial.println((unsigned long)duration);
+// uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
+//   Serial.print("[DUR] entry: pumpIndex=");
+//   Serial.print(pumpIndex);
+//   Serial.print(" editMode=");
+//   Serial.print(editMode);
+//   Serial.print(" duration=");
+//   Serial.println((unsigned long)duration);
 
-  // Prepare the buffer for the title, replacing '#' with the pump index
-  // Use duration title length and ensure NUL is available
-  char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
-  strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
-  _durationBuf[sizeof(_durationBuf) - 1] = '\0';
-  for (int i = 0; _durationBuf[i] != '\0'; i++) {
-    if (_durationBuf[i] == '#') {
-      _durationBuf[i] = '1' + pumpIndex;
-      break;
-    }
-  }
+//   // Prepare the buffer for the title, replacing '#' with the pump index
+//   // Use duration title length and ensure NUL is available
+//   char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
+//   strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
+//   _durationBuf[sizeof(_durationBuf) - 1] = '\0';
+//   for (int i = 0; _durationBuf[i] != '\0'; i++) {
+//     if (_durationBuf[i] == '#') {
+//       _durationBuf[i] = '1' + pumpIndex;
+//       break;
+//     }
+//   }
 
-  // Handle sentinel value for duration
-  if (duration == (uint64_t)-1ULL) {
-    Serial.println("[DUR] sentinel passed -> start edit mode at 0");
-    duration = 0;
-    editMode = true;
-  }
+//   // Handle sentinel value for duration
+//   if (duration == (uint64_t)-1ULL) {
+//     Serial.println("[DUR] sentinel passed -> start edit mode at 0");
+//     duration = 0;
+//     editMode = true;
+//   }
 
-  // Convert duration to 32-bit if it exceeds the limit
-  uint32_t dur32 = (duration > 0xFFFFFFFFULL) ? 0xFFFFFFFFUL : (uint32_t)duration;
+//   // Convert duration to 32-bit if it exceeds the limit
+//   uint32_t dur32 = (duration > 0xFFFFFFFFULL) ? 0xFFFFFFFFUL : (uint32_t)duration;
 
-  // Call the editNumberScreen function to handle the editing
-  int32_t res = editNumberScreen(_durationBuf, "<-* ______ms #->", 4, 7, dur32, editMode, "ms");
+//   // Call the editNumberScreen function to handle the editing
+//   int32_t res = editNumberScreen(_durationBuf, "<-* ______ms #->", 4, 7, dur32, editMode, "ms");
 
-  // Handle the result
-  if (res == -1) {
-    return (uint64_t)-1;
-  }
+//   // Handle the result
+//   if (res == -1) {
+//     return (uint64_t)-1;
+//   }
 
-  return (uint64_t)(uint32_t)res;
-}
+//   return (uint64_t)(uint32_t)res;
+// }
 
 void lcdPrintWithGlyphs(const char *str, uint8_t length) {
   for (uint8_t i = 0; i < length; ++i) {
@@ -751,7 +753,7 @@ void handleEditAmount(uint8_t idx) {
   Serial.println(v);
   if (v >= 0) {
     AppState::pumps[idx].setAmount((uint16_t)v);
-    savePumpAmount(idx, (uint16_t)v);
+    saveAppStateToConfiguration();
   }
 
   unsigned long start = millis();
@@ -775,13 +777,13 @@ void handleEditAmount(uint8_t idx) {
     Serial.println(nv);
     if (nv >= 0) {
       AppState::pumps[idx].setAmount((uint16_t)nv);
-      savePumpAmount(idx, (uint16_t)nv);
+      saveAppStateToConfiguration();
     }
   }
   lcd.clear();
 }
 
-void handleEditTankVolume(const char* tankTitle) {
+void handleEditTankVolume(const char *tankTitle) {
   lcd.clear();
 
   lcd.setCursor(0, 0);
@@ -791,7 +793,7 @@ void handleEditTankVolume(const char* tankTitle) {
   Serial.println(tv);
   if (tv > 0) {
     AppState::tankVolume = (uint32_t)tv;
-    saveTankVolume(AppState::tankVolume);
+    saveAppStateToConfiguration();
   }
 
   unsigned long start = millis();
@@ -810,30 +812,30 @@ void handleEditTankVolume(const char* tankTitle) {
     Serial.println(ntv);
     if (ntv > 0) {
       AppState::tankVolume = (uint32_t)ntv;
-      saveTankVolume(AppState::tankVolume);
+      saveAppStateToConfiguration();
     }
   }
   lcd.clear();
 }
 
-void handleEditPumpDuration(uint8_t idx) {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  Serial.print("[DUR] enter handleEditPumpDuration idx=");
-  Serial.println(idx);
+// void handleEditPumpDuration(uint8_t idx) {
+//   lcd.clear();
+//   lcd.setCursor(0, 0);
+//   Serial.print("[DUR] enter handleEditPumpDuration idx=");
+//   Serial.println(idx);
 
-  uint64_t duration = AppState::pumps[idx].getDuration();
-  uint64_t newDuration = pumpDurationScreen(LANG_BUFFER.durationTitle, idx, true, duration);
+//   uint64_t duration = AppState::pumps[idx].getDuration();
+//   uint64_t newDuration = pumpDurationScreen(LANG_BUFFER.durationTitle, idx, true, duration);
 
-  Serial.print("[DUR] edited idx=");
-  Serial.print(idx);
-  Serial.print(" -> ");
-  Serial.println((unsigned long)newDuration);
+//   Serial.print("[DUR] edited idx=");
+//   Serial.print(idx);
+//   Serial.print(" -> ");
+//   Serial.println((unsigned long)newDuration);
 
-  if (newDuration != (uint64_t)-1) {
-    AppState::pumps[idx].setDuration(newDuration);
-    savePumpDuration(idx, newDuration);
-  }
+//   if (newDuration != (uint64_t)-1) {
+//     AppState::pumps[idx].setDuration(newDuration);
+//     savePumpDuration(idx, newDuration);
+//   }
 
-  lcd.clear();
-}
+//   lcd.clear();
+// }

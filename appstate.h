@@ -14,12 +14,12 @@
 #include "water.h"
 
 namespace AppState {
-  extern uint8_t languageIndex;
-  extern Pump pumps[PUMP_COUNT];
-  extern uint32_t tankVolume;
-  extern int64_t timeOffset;
-  extern uint8_t lowThreshold;
-  extern uint8_t highThreshold;
+extern uint8_t languageIndex;
+extern Pump pumps[PUMP_COUNT];
+extern uint32_t tankVolume;
+extern int64_t timeOffset;
+extern uint16_t lowThreshold;
+extern uint16_t highThreshold;
 }
 
 #endif

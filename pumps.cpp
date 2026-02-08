@@ -2,8 +2,8 @@
 
 
 // 8 - światełko
-// 6 i 7 Wpływ i Wypływ
-// 5 - elektrozawór
+// 7 Elektrozawór
+// 6, 5 - piny do wpływu i wypływu
 // 2, 3, 4 - płyny
 
 /**
@@ -24,11 +24,12 @@
 
 // Initialize pump configurations
 void initPumpModes() {
-  AppState::pumps[-1].setInlet(true);  // Inlet pump - always automatic
-  AppState::pumps[-2].setOutlet(true); // Outlet pump - always automatic
+  AppState::pumps[INLET_PUMP_PIN].setInlet(true);    // Inlet pump - always automatic
+  AppState::pumps[OUTLET_PUMP_PIN].setOutlet(true);  // Outlet pump - always automatic
 }
 
-Pump::Pump() : amount(0), duration(0) {}
+Pump::Pump()
+  : amount(0), duration(0) {}
 
 int32_t Pump::edit(uint8_t pumpIndex, const char* amountTitle) {
   if (isLet) {

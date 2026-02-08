@@ -14,30 +14,84 @@ void SerialPrint() {
   Serial.println();  // Base case
 }
 
-// Handle Location + message pairs
-template<typename First, typename... Rest>
-void SerialPrint(Location loc, const char* message, Rest... rest) {
+void SerialPrint(const char* message) {
+  Serial.println(message);
+}
+
+void SerialPrint(const char* message, int value) {
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(const char* message, unsigned int value) {
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(const char* message, long value) {
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(const char* message, unsigned long value) {
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(const char* message, const char* value) {
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(Location loc, const char* message) {
+  Serial.print(LOCATION_STRINGS[loc]);
+  Serial.print(": ");
+  Serial.println(message);
+}
+
+void SerialPrint(Location loc, const char* message, int value) {
   Serial.print(LOCATION_STRINGS[loc]);
   Serial.print(": ");
   Serial.print(message);
   Serial.print(" ");
-  SerialPrint(rest...);
+  Serial.println(value);
 }
 
-// Fallback for standalone messages
-template<typename First, typename... Rest>
-void SerialPrint(First first, Rest... rest) {
-  Serial.print(first);
+void SerialPrint(Location loc, const char* message, unsigned int value) {
+  Serial.print(LOCATION_STRINGS[loc]);
+  Serial.print(": ");
+  Serial.print(message);
   Serial.print(" ");
-  SerialPrint(rest...);
+  Serial.println(value);
 }
 
-// Specialization for numeric types to avoid ambiguity
-template<typename... Rest>
-void SerialPrint(long long first, Rest... rest) {
-  Serial.print((long)first);
+void SerialPrint(Location loc, const char* message, long value) {
+  Serial.print(LOCATION_STRINGS[loc]);
+  Serial.print(": ");
+  Serial.print(message);
   Serial.print(" ");
-  SerialPrint(rest...);
+  Serial.println(value);
+}
+
+void SerialPrint(Location loc, const char* message, unsigned long value) {
+  Serial.print(LOCATION_STRINGS[loc]);
+  Serial.print(": ");
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
+}
+
+void SerialPrint(Location loc, const char* message, const char* value) {
+  Serial.print(LOCATION_STRINGS[loc]);
+  Serial.print(": ");
+  Serial.print(message);
+  Serial.print(" ");
+  Serial.println(value);
 }
 
 void debugPrint(Location loc, const char* message) {
@@ -45,19 +99,3 @@ void debugPrint(Location loc, const char* message) {
   Serial.print(": ");
   Serial.println(message);
 }
-
-// Explicit template instantiations
-template void SerialPrint<>(Location, const char*);
-template void SerialPrint<>(const char*, const char*);
-template void SerialPrint<>(const char*, long long);
-template void SerialPrint<>(long long, const char*);
-template void SerialPrint<>(long long);
-
-// Additional template instantiations needed for compilation
-template void SerialPrint<>(const char*, unsigned char);
-template void SerialPrint<>(const char*, unsigned char, const char*);
-template void SerialPrint<>(const char*, unsigned long);
-template void SerialPrint<>(const char*, unsigned char, const char*, unsigned long);
-template void SerialPrint<>(const char*, unsigned char, const char*, unsigned int);
-template void SerialPrint<>(const char*, int);
-template void SerialPrint<>(const char*, char const*, char const*);

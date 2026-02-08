@@ -53,7 +53,7 @@ const uint8_t dropChars[4][8] PROGMEM = {
 
 // Polish glyphs for special Polish characters
 const uint8_t glyphs_polish[][8] PROGMEM = {
-  { 0x00, 0x00, 0x0e, 0x11, 0x1f, 0x10, 0x0e, 0x01 }, // ę
+  { 0x00, 0x00, 0x0e, 0x11, 0x1f, 0x10, 0x0e, 0x01 },  // ę
   { 0x00, 0x04, 0x04, 0x06, 0x0C, 0x04, 0x04, 0x06 },
   { 0x02, 0x04, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E }
 };
@@ -100,16 +100,16 @@ const uint8_t glyphs_portugues[][8] PROGMEM = {
 // ============================================================================
 // Index corresponds to LANGUAGES array indices in language.h
 static const LanguageGlyphSet GLYPH_SETS[10] PROGMEM = {
-  { glyphs_polish, 3 },          // 0: Polish
-  { nullptr, 0 },                // 1: English (uses ASCII)
-  { glyphs_russian, 8 },         // 2: Russian
-  { nullptr, 0 },                // 3: German (uses ASCII)
-  { glyphs_francais, 5 },        // 4: French
-  { glyphs_espanol, 1 },         // 5: Spanish
-  { nullptr, 0 },                // 6: Italian (uses ASCII)
-  { glyphs_portugues, 7 },       // 7: Portuguese
-  { nullptr, 0 },                // 8: Turkish (uses ASCII)
-  { nullptr, 0 }                 // 9: Czech (uses ASCII)
+  { glyphs_polish, 3 },     // 0: Polish
+  { nullptr, 0 },           // 1: English (uses ASCII)
+  { glyphs_russian, 8 },    // 2: Russian
+  { nullptr, 0 },           // 3: German (uses ASCII)
+  { glyphs_francais, 5 },   // 4: French
+  { glyphs_espanol, 1 },    // 5: Spanish
+  { nullptr, 0 },           // 6: Italian (uses ASCII)
+  { glyphs_portugues, 7 },  // 7: Portuguese
+  { nullptr, 0 },           // 8: Turkish (uses ASCII)
+  { nullptr, 0 }            // 9: Czech (uses ASCII)
 };
 
 // Temporary buffer for building animated characters

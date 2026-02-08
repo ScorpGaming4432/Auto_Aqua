@@ -161,4 +161,22 @@ void resetPumpStatistics();
  */
 uint8_t calculateWaterLevel();
 
+/**
+ * Control electrovalve (open/close)
+ * @param open true to open valve, false to close
+ */
+void controlElectrovalve(bool open);
+
+/**
+ * Get electrovalve status
+ * @return true if electrovalve is open, false if closed
+ */
+bool isElectrovalveOpen();
+
+/**
+ * Check if any pump is currently active
+ * @return true if pump is running, false otherwise
+ */
+extern bool pumpActive;
+
 #endif

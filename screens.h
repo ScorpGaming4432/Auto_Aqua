@@ -151,13 +151,13 @@ void handleEditAmount(uint8_t idx);
 /**
  * Handle editing tank volume (view + optional edit on followup key)
  */
-void handleEditTankVolume(const char* tankTitle);
+void handleEditTankVolume(const char *tankTitle);
 
-/**
- * Handle editing pump duration
- * @param idx Pump index (0-4)
- */
-void handleEditPumpDuration(uint8_t idx);
+// /**
+//  * Handle editing pump duration
+//  * @param idx Pump index (0-4)
+//  */
+// void handleEditPumpDuration(uint8_t idx);
 
 /**
  * Display a numeric input screen

@@ -10,126 +10,73 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-
 #include "appstate.h"
 #include <stdint.h>
 #include "water.h"
 
-// EEPROM addresses for different data
-#define EEPROM_ADDR_LANGUAGE_INDEX 0
-#define EEPROM_ADDR_TANK_VOLUME 1
-#define EEPROM_ADDR_TIME_OFFSET 5
-#define EEPROM_ADDR_PUMP_AMOUNTS 13
-#define EEPROM_ADDR_PUMP_DURATIONS 23
-
-// EEPROM storage addresses for water settings
-#define EEPROM_ADDR_LOW_THRESHOLD 52
-#define EEPROM_ADDR_HIGH_THRESHOLD 54
-
-// Struct definitions for better organization
-struct StorageAddresses {
-  uint8_t languageIndexAddress;
-  uint8_t tankVolumeAddress;
-  uint8_t timeOffsetAddress;
-  uint8_t pumpAmountsAddress[PUMP_COUNT];  // Assuming PUMP_COUNT = 5
-  uint8_t pumpDurationsAddress[PUMP_COUNT];
+// Configuration structure that mirrors AppState
+struct Configuration {
+  uint8_t languageIndex;
+  uint32_t tankVolume;
+  int64_t timeOffset;
+  uint16_t pumpAmounts[PUMP_COUNT];
+  uint64_t pumpDurations[PUMP_COUNT];
+  uint16_t lowThreshold;
+  uint16_t highThreshold;
 };
 
-struct StorageState {
-  bool languageIndexSet;
-  bool tankVolumeSet;
-  bool timeOffsetSet;
-  bool pumpAmountSet[PUMP_COUNT];
-  bool pumpDurationSet[PUMP_COUNT];
+// Default configuration values
+const Configuration DEFAULT_CONFIG = {
+  .languageIndex = 0,
+  .tankVolume = 0,
+  .timeOffset = 0,
+  .pumpAmounts = { 0, 0, 0, 0, 0 },
+  .pumpDurations = { 0, 0, 0, 0, 0 },
+  .lowThreshold = 0,
+  .highThreshold = 0
 };
 
-/**
- * Save language index to EEPROM
- * @param languageIndex Language index to save
- */
-void saveLanguageIndex(uint8_t languageIndex);
+// Magic values to indicate unset configuration
+const uint8_t UNSET_U8 = 0xFF;
+const uint16_t UNSET_U16 = 0xFFFF;
+const uint32_t UNSET_U32 = 0xFFFFFFFF;
+const uint64_t UNSET_U64 = 0xFFFFFFFFFFFFFFFF;
+const int64_t UNSET_I64 = 0xFFFFFFFFFFFFFFFF;
 
 /**
- * Load language index from EEPROM
- * @return Language index (0 if not set)
+ * Save configuration to EEPROM
+ * @param config Configuration struct to save
  */
-uint8_t loadLanguageIndex();
+void saveConfiguration(const Configuration& config);
 
 /**
- * Save tank volume to EEPROM
- * @param tankVolume Tank volume in liters/ml
+ * Load configuration from EEPROM
+ * @return Configuration struct (uses magic values for unset fields)
  */
-void saveTankVolume(uint32_t tankVolume);
+Configuration loadConfiguration();
 
 /**
- * Load tank volume from EEPROM
- * @return Tank volume (0xFFFFFFFF if not set, 0 is valid)
+ * Check if configuration is valid (not using magic values)
+ * @param config Configuration to check
+ * @return True if configuration is valid
  */
-uint32_t loadTankVolume();
+bool isConfigurationValid(const Configuration& config);
 
 /**
- * Save time offset to EEPROM
- * @param timeOffset Time offset in seconds
- */
-void saveTimeOffset(int64_t timeOffset);
-
-/**
- * Load time offset from EEPROM
- * @return Time offset in seconds (0 if not set)
- */
-int64_t loadTimeOffset();
-
-/**
- * Save pump amount to EEPROM
- * @param pumpIndex Index of the pump (0 to PUMP_COUNT-1)
- * @param amount Amount to dispense (0 means pump not used)
- */
-void savePumpAmount(uint8_t pumpIndex, uint16_t amount);
-
-/**
- * Load pump amount from EEPROM
- * @param pumpIndex Index of the pump (0 to PUMP_COUNT-1)
- * @return Pump amount (0xFFFF if not set, 0 means pump not used)
- */
-uint16_t loadPumpAmount(uint8_t pumpIndex);
-
-/**
- * Save pump duration to EEPROM
- * @param pumpIndex Index of the pump (0 to PUMP_COUNT-1)
- * @param duration Duration in milliseconds
- */
-void savePumpDuration(uint8_t pumpIndex, uint64_t duration);
-
-/**
- * Load pump duration from EEPROM
- * @param pumpIndex Index of the pump (0 to PUMP_COUNT-1)
- * @return Pump duration in milliseconds (0xFFFFFFFFFFFFFFFF if not set, 0 means pump not used)
- */
-uint64_t loadPumpDuration(uint8_t pumpIndex);
-
-/**
- * Load all configuration from EEPROM
+ * Load configuration and apply to AppState
  * Used during setup to restore previous settings
- * @return Bitmask indicating which values were not set (1 = not set, 0 = set)
  */
-StorageState checkAllConfiguration();
+void loadConfigurationToAppState();
 
 /**
- * Save all configuration to EEPROM
+ * Save AppState to configuration
  * Used after any change to persist settings
  */
-void saveAllConfiguration();
+void saveAppStateToConfiguration();
 
 /**
- * Factory reset - sets all EEPROM values to unset state (0xFF repeated)
+ * Factory reset - sets all EEPROM values to unset state
  */
 void factoryReset();
-
-/**
- * Save water thresholds to persistent storage.
- * @param lowThreshold Low water threshold value.
- * @param highThreshold High water threshold value.
- */
-void saveWaterThresholds(uint16_t lowThreshold, uint16_t highThreshold);
 
 #endif
