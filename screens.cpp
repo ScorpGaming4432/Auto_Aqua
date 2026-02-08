@@ -46,9 +46,9 @@
  * @param dest Destination RAM buffer
  * @param len Number of bytes to copy
  */
-void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
+void readLanguageField(uint8_t idx, char *dest, uint8_t len) {
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
-  memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
+  memcpy_P(dest, (const void *)((uintptr_t)base + offsetof(Language, dest)), len);
   dest[len] = '\0';
 }
 
@@ -126,7 +126,7 @@ void splashScreen() {
  * @param editMode If true, allows editing (required for initial setup)
  * @return Selected language index
  */
-uint8_t langConfigScreen(uint8_t languageIndex, bool editMode) {
+uint8_t langConfigScreen(uint8_t languageIndex) {
   lcd.clear();
   // Load custom glyphs for the selected language
   loadGlyphSet(languageIndex);
@@ -134,8 +134,8 @@ uint8_t langConfigScreen(uint8_t languageIndex, bool editMode) {
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
-  readLanguageField(languageIndex, offsetof(Language, langName), langName, LANG_NAME_LEN);
-  readLanguageField(languageIndex, offsetof(Language, langPrompt), langPrompt, LANG_PROMPT_LEN);
+  readLanguageField(languageIndex, langName, LANG_NAME_LEN);
+  readLanguageField(languageIndex, langPrompt, LANG_PROMPT_LEN);
 
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
@@ -175,10 +175,8 @@ uint8_t langConfigScreen(uint8_t languageIndex, bool editMode) {
       if (newlang != languageIndex) {
         languageIndex = newlang;
         loadGlyphSet(languageIndex);
-        readLanguageField(languageIndex, offsetof(Language, langName), langName,
-                          LANG_NAME_LEN);
-        readLanguageField(languageIndex, offsetof(Language, langPrompt), langPrompt,
-                          LANG_PROMPT_LEN);
+        readLanguageField(languageIndex, langName, LANG_NAME_LEN);
+        readLanguageField(languageIndex, langPrompt, LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);
         lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
         lcd.setCursor(4, 1);
@@ -627,7 +625,7 @@ void showTime(uint64_t currentTime) {
 }
 
 int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                            int16_t lowThreshold, int16_t highThreshold) {
+                            uint8_t lowThreshold, uint8_t highThreshold) {
   Serial.print("[THRESH] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" low=");
@@ -639,8 +637,8 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
   lcd.setCursor(0, 0);
   lcd.print(thresholdBuf);
 
-  uint16_t low = lowThreshold;
-  uint16_t high = highThreshold;
+  uint8_t low = lowThreshold;
+  uint8_t high = highThreshold;
   uint8_t editing = 0;  // 0=low, 1=high
   char key = 0;
   bool modified = false;
@@ -734,13 +732,11 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
 // Input Handlers - Process user interactions for editing
 // ============================================================================
 
-void handleEditAmount(uint8_t idx) {
+void handleEditAmount(uint8_t idx, const char* amountTitle) {
   lcd.clear();
   lcd.setCursor(0, 0);
   Serial.print("[AM] enter handleEditAmount idx=");
   Serial.println(idx);
-  char amountTitle[LANG_AMOUNTTITLE_LEN + 1];
-  readLanguageField(AppState::languageIndex, offsetof(Language, amountTitle), amountTitle, LANG_AMOUNTTITLE_LEN);
   int32_t v = AppState::pumps[idx].viewEdit(idx, amountTitle);
   Serial.print("[AM] current (view) idx=");
   Serial.print(idx);
@@ -813,14 +809,11 @@ void handleEditTankVolume(const char* tankTitle) {
   lcd.clear();
 }
 
-void handleEditPumpDuration(uint8_t idx) {
+void handleEditPumpDuration(uint8_t idx, const char* durationTitle) {
   lcd.clear();
   lcd.setCursor(0, 0);
   Serial.print("[DUR] enter handleEditPumpDuration idx=");
   Serial.println(idx);
-
-  char durationTitle[LANG_DURATIONTITLE_LEN + 1];
-  readLanguageField(AppState::languageIndex, offsetof(Language, durationTitle), durationTitle, LANG_DURATIONTITLE_LEN);
 
   uint64_t duration = AppState::pumps[idx].getDuration();
   uint64_t newDuration = pumpDurationScreen(durationTitle, idx, true, duration);

@@ -39,6 +39,8 @@ constexpr uint8_t LANG_DURATIONTITLE_LEN = 16;     ///< Pump duration title
 constexpr uint8_t LANG_MAINSCREEN_LEN = 15;        ///< Main screen label
 constexpr uint8_t LANG_NOTASK_LEN = 15;            ///< No task message
 constexpr uint8_t LANG_PUMPWORKING_LEN = 15;       ///< Pump active message
+constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 16;  ///< Water threshold message
+constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 16;  ///< High water threshold message
 
 /**
  * Language structure storing all UI strings for a language
@@ -52,21 +54,23 @@ struct Language {
   char mainScreen[LANG_MAINSCREEN_LEN];      ///< Main screen heading
   char noTask[LANG_NOTASK_LEN];              ///< Message when no task active
   char pumpWorking[LANG_PUMPWORKING_LEN];    ///< Message when pump is running
+  char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN];   ///< Message for low water threshold
+  char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN];  ///< Message for high water threshold
 };
 
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
-  // langName,    prompt,    tank title,       amount title,      duration title,     main screen,       no task,          pump working
-  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Czas pompy #    ", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   " },
-  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Pump duration # ", "Main screen    ", "No task       ", "Pump running   " },
-  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Vremya pompy #  ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet " },
-  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Pumpenzeit #    ", "Hauptbildschirm", "Keine Aufgabe ", "Pumpe laeuft   " },
-  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Duree pompa #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche" },
-  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Duracion bomba #", "Pantalla princ ", "Sin tarea     ", "Bomba activa   " },
-  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Durata pompa #  ", "Schermo princ  ", "Nessun compito", "Pompa attiva   " },
-  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Duracao bomba # ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    " },
-  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Pompa suresi #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor" },
-  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Delka pumpy #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     " }
+  // langName,    prompt,    tank title,       amount title,      duration title,     main screen,       no task,          pump working,     low thresh,           high thresh
+  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Czas pompy #    ", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica wody", "Gorna granica wody" },
+  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Pump duration # ", "Main screen    ", "No task       ", "Pump running   ", "", "" },
+  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Vremya pompy #  ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "", "" },
+  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Pumpenzeit #    ", "Hauptbildschirm", "Keine Aufgabe ", "Pumpe laeuft   ", "", "" },
+  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Duree pompa #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "", "" },
+  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Duracion bomba #", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "", "" },
+  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Durata pompa #  ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "", "" },
+  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Duracao bomba # ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    ", "", "" },
+  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Pompa suresi #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor", "", "" },
+  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Delka pumpy #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     ", "", "" }
 };
 
 /**

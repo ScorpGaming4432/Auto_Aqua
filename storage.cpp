@@ -212,3 +212,21 @@ void factoryReset() {
     "[STORAGE] Factory reset completed - all values set to unset state");
   Serial.println("[STORAGE] ====================================");
 }
+
+void saveWaterThresholds(uint16_t lowThreshold, uint16_t highThreshold) {
+  // Example implementation: Save thresholds to EEPROM or other storage.
+  Serial.print("Saving thresholds: Low=");
+  Serial.print(lowThreshold);
+  Serial.print(", High=");
+  Serial.println(highThreshold);
+  
+  uint16_t address = EEPROM_ADDR_LOW_THRESHOLD;
+  EEPROM.write(address, lowThreshold & 0xFF);
+  EEPROM.write(address + 1, (lowThreshold >> 8) & 0xFF);
+
+  address = EEPROM_ADDR_HIGH_THRESHOLD;
+  EEPROM.write(address, highThreshold & 0xFF);
+  EEPROM.write(address + 1, (highThreshold >> 8) & 0xFF);
+
+  Serial.println("Thresholds saved to EEPROM");
+}

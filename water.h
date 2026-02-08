@@ -25,7 +25,7 @@ enum WaterError {
 };
 
 // Safety limits
-#define MAX_PUMP_RUN_TIME_MS 30000  // 30 seconds maximum pump runtime
+#define MAX_PUMP_RUN_TIME_MS 30000   // 30 seconds maximum pump runtime
 #define SENSOR_READ_TIMEOUT_MS 1000  // 1 second timeout for sensor reads
 
 // Encapsulates low/high touch sensor data and reading logic
@@ -42,6 +42,7 @@ public:
   bool isSensorConnected() const;
 
 private:
+  static bool initialized;
   uint8_t high_data[12];
   uint8_t low_data[8];
   WaterError lastError : 3;  // Use bitfield to save memory
@@ -154,5 +155,10 @@ void getPumpStatistics(uint32_t *inletRuntime, uint32_t *outletRuntime);
  */
 void resetPumpStatistics();
 
+/**
+ * Calculate current water level percentage
+ * @return Water level percentage (0-100)
+ */
+uint8_t calculateWaterLevel();
 
 #endif

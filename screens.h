@@ -60,7 +60,7 @@ void splashScreen();
  * @param editMode Whether in edit mode or view mode
  * @return Selected language index
  */
-uint8_t langConfigScreen(uint8_t idx, bool editMode);
+uint8_t langConfigScreen(uint8_t idx);
 
 /**
  * Display tank volume input screen
@@ -167,5 +167,20 @@ void handleEditTankVolume(const char* tankTitle);
  * @param idx Pump index (0-4)
  */
 void handleEditPumpDuration(uint8_t idx);
+
+/**
+ * Display a numeric input screen
+ * @param label Title displayed on first line
+ * @param format Format string with placeholder "_" for digits (PROGMEM)
+ * @param entryCol Column where digit entry starts (LCD column 0-15)
+ * @param maxDigits Maximum number of digits allowed
+ * @param value Initial/current value
+ * @param editMode If true, allows editing; if false, shows value only
+ * @param unit Optional unit label (e.g., "ml", "l") displayed after digits
+ * @return Entered value, or -1 if cancelled
+ */
+int32_t editNumberScreen(const char *label, const char *format,
+                         uint8_t entryCol, uint8_t maxDigits, uint32_t value,
+                         bool editMode, const char *unit = nullptr);
 
 #endif

@@ -18,6 +18,8 @@ namespace AppState {
   extern Pump pumps[PUMP_COUNT];
   extern uint32_t tankVolume;
   extern int64_t timeOffset;
+  extern uint8_t lowThreshold;
+  extern uint8_t highThreshold;
 }
 
 #endif

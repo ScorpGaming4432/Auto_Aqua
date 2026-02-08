@@ -165,7 +165,7 @@ void loadGlyphSet(uint8_t langIndex) {
   if (!set.glyphs || set.glyphCount == 0)
     return;
   if (langIndex == 2) {
-    Serial.print("DO NOT USE loadGlyphSet for Russian\nSince Russian has too "
+    Serial.print("[CHARS] DO NOT USE loadGlyphSet for Russian\nSince Russian has too "
                  "many letters, CGRAM is insufficient.");
     Serial.print("Ignoring. Continuing...");
   };

@@ -22,6 +22,10 @@
 #define EEPROM_ADDR_PUMP_AMOUNTS 13
 #define EEPROM_ADDR_PUMP_DURATIONS 23
 
+// EEPROM storage addresses for water settings
+#define EEPROM_ADDR_LOW_THRESHOLD 52
+#define EEPROM_ADDR_HIGH_THRESHOLD 54
+
 // Struct definitions for better organization
 struct StorageAddresses {
   uint8_t languageIndexAddress;
@@ -120,5 +124,12 @@ void saveAllConfiguration();
  * Factory reset - sets all EEPROM values to unset state (0xFF repeated)
  */
 void factoryReset();
+
+/**
+ * Save water thresholds to persistent storage.
+ * @param lowThreshold Low water threshold value.
+ * @param highThreshold High water threshold value.
+ */
+void saveWaterThresholds(uint16_t lowThreshold, uint16_t highThreshold);
 
 #endif
