@@ -166,7 +166,7 @@ void loop() {
     delay(2000);  // Display the water level for 2 seconds
   }
   // 9 key: Toggle electrovalve
-  else if (k == '9') {
+  else if (k == '9') { // TODO: DO NOT IMPLEMENT
     Serial.println("[LOOP] Toggle electrovalve");
 
     // Safety check - don't allow manual operation while pumps are active
