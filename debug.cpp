@@ -52,3 +52,12 @@ template void SerialPrint<>(const char*, const char*);
 template void SerialPrint<>(const char*, long long);
 template void SerialPrint<>(long long, const char*);
 template void SerialPrint<>(long long);
+
+// Additional template instantiations needed for compilation
+template void SerialPrint<>(const char*, unsigned char);
+template void SerialPrint<>(const char*, unsigned char, const char*);
+template void SerialPrint<>(const char*, unsigned long);
+template void SerialPrint<>(const char*, unsigned char, const char*, unsigned long);
+template void SerialPrint<>(const char*, unsigned char, const char*, unsigned int);
+template void SerialPrint<>(const char*, int);
+template void SerialPrint<>(const char*, char const*, char const*);

@@ -1,3 +1,11 @@
+// 2 - 7 piny do styczników
+
+
+// 8 - światełko
+// 6 i 7 Wpływ i Wypływ
+// 5 - elektrozawór
+// 2, 3, 4 - płyny
+
 /**
  * ============================================================================
  * PUMPS.CPP - Pump Control Implementation

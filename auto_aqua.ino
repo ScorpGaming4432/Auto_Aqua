@@ -1,3 +1,5 @@
+//TODO: Wyjebać amount z pompek bo są nie ważne i essa.
+
 /**
  * ============================================================================
  * AUTO AQUA - Automatic Aquarium Management System

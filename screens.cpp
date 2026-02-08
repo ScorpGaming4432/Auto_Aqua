@@ -28,6 +28,8 @@
 #include "appstate.h"
 #include "storage.h"
 #include "pumps.h"
+
+extern Language LANG_BUFFER;  // Declare extern reference to global language buffer
 #include "water.h"
 
 #include <Arduino.h>
@@ -737,12 +739,12 @@ int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
 // Input Handlers - Process user interactions for editing
 // ============================================================================
 
-void handleEditAmount(uint8_t idx, const char* amountTitle) {
+void handleEditAmount(uint8_t idx) {
   lcd.clear();
   lcd.setCursor(0, 0);
   Serial.print("[AM] enter handleEditAmount idx=");
   Serial.println(idx);
-  int32_t v = AppState::pumps[idx].viewEdit(idx, amountTitle);
+  int32_t v = AppState::pumps[idx].viewEdit(idx, LANG_BUFFER.amountTitle);
   Serial.print("[AM] current (view) idx=");
   Serial.print(idx);
   Serial.print(" -> ");
@@ -766,7 +768,7 @@ void handleEditAmount(uint8_t idx, const char* amountTitle) {
   if (follow == '#') {
     Serial.print("[AM] entering edit mode idx=");
     Serial.println(idx);
-    int32_t nv = AppState::pumps[idx].edit(idx, amountTitle);
+    int32_t nv = AppState::pumps[idx].edit(idx, LANG_BUFFER.amountTitle);
     Serial.print("[AM] edited idx=");
     Serial.print(idx);
     Serial.print(" -> ");
@@ -814,14 +816,14 @@ void handleEditTankVolume(const char* tankTitle) {
   lcd.clear();
 }
 
-void handleEditPumpDuration(uint8_t idx, const char* durationTitle) {
+void handleEditPumpDuration(uint8_t idx) {
   lcd.clear();
   lcd.setCursor(0, 0);
   Serial.print("[DUR] enter handleEditPumpDuration idx=");
   Serial.println(idx);
 
   uint64_t duration = AppState::pumps[idx].getDuration();
-  uint64_t newDuration = pumpDurationScreen(durationTitle, idx, true, duration);
+  uint64_t newDuration = pumpDurationScreen(LANG_BUFFER.durationTitle, idx, true, duration);
 
   Serial.print("[DUR] edited idx=");
   Serial.print(idx);
