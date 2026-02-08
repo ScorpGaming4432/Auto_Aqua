@@ -42,9 +42,9 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();  // start I2C
 
-  SerialPrint(SETUP, "Serial started");
+  Serial.print(SETUP);Serial.println("Serial started");
 
-  SerialPrint(SETUP, "showing splash screen");
+  Serial.print(SETUP);Serial.println("showing splash screen");
   splashScreen();
   // Load configuration from EEPROM and apply to AppState
   loadConfigurationToAppState();
@@ -54,38 +54,37 @@ void setup() {
   bool needsSetup = !isConfigurationValid(config);
 
   if (needsSetup) {
-    SerialPrint(SETUP, "Configuration invalid - running setup screens");
+    Serial.print(SETUP);Serial.println("Configuration invalid - running setup screens");
 
     // Language setup
     AppState::languageIndex = langConfigScreen(0);
-    SerialPrint(SETUP, "Language index set to", AppState::languageIndex);
+    Serial.print(SETUP);Serial.print("Language index set to ");Serial.println(AppState::languageIndex);
 
     // Load language after setting it
     LANG_BUFFER = readLanguage(AppState::languageIndex);
-    SerialPrint(SETUP, "Language", AppState::languageIndex, "loaded from PROGMEM");
-
+    Serial.print(SETUP);Serial.print("Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
     // Tank volume setup
     AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
-    SerialPrint(SETUP, "tankVolume", AppState::tankVolume);
+    Serial.print(SETUP);Serial.print("tankVolume = ");Serial.println(AppState::tankVolume);
 
     // Pump setup
     for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
-      SerialPrint("[SETUP] set pump ", i, " amount (dosing pumps only)");
+      Serial.print(SETUP);Serial.print("[SETUP] set pump ");Serial.print(i);Serial.println(" amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
-      SerialPrint("[SETUP] pump[", i, "] amount = ", AppState::pumps[i].getAmount());
+      Serial.print(SETUP);Serial.print("[SETUP] pump[");Serial.print(i);Serial.print("] amount = ");Serial.println(AppState::pumps[i].getAmount());
     }
 
     // Time offset setup
     AppState::timeOffset = timeSetupScreen();
-    SerialPrint("[SETUP] Time offset set: ", AppState::timeOffset);
+    Serial.print(SETUP);Serial.print("Time offset set: ");Serial.println((uint32_t) AppState::timeOffset);
 
     // Save the complete configuration
     saveAppStateToConfiguration();
   } else {
     // Configuration is valid, just load language
     LANG_BUFFER = readLanguage(AppState::languageIndex);
-    SerialPrint(SETUP, "Language", AppState::languageIndex, "loaded from PROGMEM");
-    SerialPrint(SETUP, "Configuration loaded successfully");
+    Serial.print(SETUP);Serial.print("Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
+    Serial.print(SETUP);Serial.println("Configuration loaded successfully");
   }
 
   // Initialize water management system
@@ -140,12 +139,12 @@ void loop() {
   // Number keys (1-3): Edit dosing pump amounts
   if (k >= '1' && k <= '3') {
     uint8_t pumpIndex = k - '1';
-    SerialPrint("[LOOP] Editing pump amount for pump ", pumpIndex);
+    Serial.print("[LOOP] Editing pump amount for pump "); Serial.println(pumpIndex);
     handleEditAmount(pumpIndex);
   }
   // Letter keys (4-6): Edit dosing pump durations
   // else if (k >= '4' && k <= '6') {
-  //   SerialPrint("[LOOP] Editing pump duration for pump ", k - '4');
+  //   Serial.print("[LOOP] Editing pump duration for pump "); Serial.println(k - '4');
   //   uint8_t pumpIndex = k - '4';
   //   handleEditPumpDuration(pumpIndex);
   // }
@@ -175,26 +174,26 @@ void loop() {
   // }
   // D key: Edit tank volume (hold for water thresholds)
   else if (k == '7') {
-    SerialPrint("[LOOP]", "Edit low water threshold");
+    Serial.println("[LOOP] Edit low water threshold");
     editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
   } else if (k == 'D') {
-    SerialPrint("[LOOP]", "Edit high water threshold");
+    Serial.println("[LOOP] Edit high water threshold");
     while (true) {
       uint8_t low = (uint8_t)editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
       uint8_t high = (uint8_t)editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%");
-      SerialPrint("[LOOP]", "Entered thresholds - Low: ", low, "% High: ", high, "%");
+      Serial.print("[LOOP] Entered thresholds - Low: "); Serial.print(low); Serial.print("% High: "); Serial.print(high); Serial.println("%");
       if (low > 0 && high > low && high <= 100) {
         AppState::lowThreshold = low;
         AppState::highThreshold = high;
         saveAppStateToConfiguration();
         break;
       } else if (low == 255 || high == 255) {
-        SerialPrint("[LOOP]", "Water threshold edit cancelled.", "   Cannot allow. Try again.");
+        Serial.println("[LOOP] Water threshold edit cancelled.");
       } else if (low >= high || high > 100) {
-        SerialPrint("[LOOP]", "Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
+        Serial.println("[LOOP] Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
       }
 
-      SerialPrint("[LOOP]", "Invalid thresholds entered.", "   Cannot allow. Try again.");
+      Serial.println("[LOOP] Invalid thresholds entered. Cannot allow. Try again.");
     }
     AppState::highThreshold = editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 2, AppState::highThreshold, true, "%");
   }

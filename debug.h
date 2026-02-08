@@ -28,15 +28,5 @@ enum Errors {
 extern const char* LOCATION_STRINGS[];
 extern const char* ERROR_STRINGS[];
 
-void SerialPrint();
-void debugPrint(Location loc, const char* message);
-
-// Efficient recursive template for any number of arguments
-// Base case
-void SerialPrint();
-
-// Recursive template - handles any number of arguments efficiently
-template<typename T, typename... Args>
-void SerialPrint(T first, Args... rest);
 
 #endif

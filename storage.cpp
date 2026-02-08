@@ -67,15 +67,6 @@ bool isConfigurationValid(const Configuration& config) {
 
   return true;
 }
-value |= ((uint64_t)EEPROM.read(address + 1) << 8);
-value |= ((uint64_t)EEPROM.read(address + 2) << 16);
-value |= ((uint64_t)EEPROM.read(address + 3) << 24);
-value |= ((uint64_t)EEPROM.read(address + 4) << 32);
-value |= ((uint64_t)EEPROM.read(address + 5) << 40);
-value |= ((uint64_t)EEPROM.read(address + 6) << 48);
-value |= ((uint64_t)EEPROM.read(address + 7) << 56);
-return value;
-}
 
 void loadConfigurationToAppState() {
   Serial.println("[STORAGE] Loading configuration to AppState");

@@ -50,7 +50,7 @@ extern Language LANG_BUFFER;  // Declare extern reference to global language buf
  * @param len Number of bytes to copy
  */
 void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
-  SerialPrint("READLANGUAGEFIELD CALLED REPORT TO POLICE");
+  Serial.print("READLANGUAGEFIELD CALLED REPORT TO POLICE");
   const void *base = (const void *)&LANGUAGES[idx % LANG_COUNT];
   memcpy_P(dest, (const void *)((uintptr_t)base + offset), len);
   dest[len] = '\0';
