@@ -3,6 +3,11 @@
 
 #include <Arduino.h>
 
+// Set to 0 to compile out debug serial output and related strings.
+#ifndef DEBUG_SERIAL_ENABLED
+#define DEBUG_SERIAL_ENABLED 1
+#endif
+
 enum Location {
   SETUP = 0,
   LOOP = 1,
@@ -25,10 +30,35 @@ enum Errors {
   UNKNOWN_ERROR = 4
 };
 
-extern const char* LOCATION_STRINGS[];
-extern const char* ERROR_STRINGS[];
+#if DEBUG_SERIAL_ENABLED
+inline void printLocationTag(Location tag) {
+  switch (tag) {
+    case SETUP:   Serial.print(F("SETUP")); break;
+    case LOOP:    Serial.print(F("LOOP")); break;
+    case TANK:    Serial.print(F("TANK")); break;
+    case AM:      Serial.print(F("AM")); break;
+    case THRESH:  Serial.print(F("THRESH")); break;
+    case PUMPS:   Serial.print(F("PUMPS")); break;
+    case WATER:   Serial.print(F("WATER")); break;
+    case CHARS:   Serial.print(F("CHARS")); break;
+    case TIME:    Serial.print(F("TIME")); break;
+    case DUR:     Serial.print(F("DUR")); break;
+    case STORAGE: Serial.print(F("STORAGE")); break;
+    default:      Serial.print(F("UNKNOWN")); break;
+  }
+}
 
 template<typename... Args>
-void SerialPrint(Location location, Args... args);
+inline void SerialPrint(Location tag, Args... args) {
+  Serial.print('[');
+  printLocationTag(tag);
+  Serial.print(F("] "));
+  (Serial.print(args), ...);
+  Serial.println();
+}
+#else
+template<typename... Args>
+inline void SerialPrint(Location, Args...) {}
+#endif
 
 #endif
