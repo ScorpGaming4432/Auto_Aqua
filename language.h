@@ -61,15 +61,15 @@ struct Language {
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
   // langName,    prompt,    tank title,       amount title,      main screen,       no task,          pump working,     low thresh,           high thresh
   { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica ", "Interwal pompy #" },
-  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Main screen    ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold" },
-  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "", "" },
-  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Hauptbildschir ", "Keine Aufgabe ", "Pumpe laeuft   ", "", "" },
-  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "", "" },
-  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "", "" },
-  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "", "" },
-  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    ", "", "" },
-  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor", "", "" },
-  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     ", "", "" }
+  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Main screen    ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold", "Pump interval # " },
+  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "             ", "              ", "Pump interval # " },
+  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Hauptbildschir ", "Keine Aufgabe ", "Pumpe laeuft   ", "             ", "              ", "Pump interval # " },
+  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "             ", "              ", "Pump interval # " },
+  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "             ", "              ", "Pump interval # " },
+  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "             ", "              ", "Pump interval # " },
+  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    ", "             ", "              ", "Pump interval # " },
+  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor", "             ", "              ", "Pump interval # " },
+  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     ", "             ", "              ", "Pump interval # " }
 };
 
 /**

@@ -44,9 +44,9 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();  // start I2C
 
-  Serial.print(SETUP);Serial.println("Serial started");
+  SerialPrint(SETUP, "Serial started");
 
-  Serial.print(SETUP);Serial.println("showing splash screen");
+  SerialPrint(SETUP, "showing splash screen");
   splashScreen();
   // Load configuration from EEPROM and apply to AppState
   loadConfigurationToAppState();
@@ -56,42 +56,42 @@ void setup() {
   bool needsSetup = !isConfigurationValid(config);
 
   if (needsSetup) {
-    Serial.print(SETUP);Serial.println(" Configuration invalid - running setup screens");
+    SerialPrint(SETUP, "Configuration invalid - running setup screens");
 
     // Language setup
     AppState::languageIndex = langConfigScreen(0);
-    Serial.print(SETUP);Serial.print(" Language index set to ");Serial.println(AppState::languageIndex);
+    SerialPrint(SETUP, "Language index set to ", AppState::languageIndex);
     // Load language after setting it
     LANG_BUFFER = readLanguage(AppState::languageIndex);
-    Serial.print(SETUP);Serial.print(" Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
-    Serial.println(LANG_BUFFER.langName);
+    SerialPrint(SETUP, " Language ", AppState::languageIndex, " loaded from PROGMEM");
+    SerialPrint(SETUP, "Language name: ", LANG_BUFFER.langName);
 
     // Tank volume setup
     AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
-    Serial.print(SETUP);Serial.print("tankVolume = ");Serial.println(AppState::tankVolume);
+    SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
 
     // Pump setup
     for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
-      Serial.print(SETUP);Serial.print(" set pump ");Serial.print(i);Serial.println(" amount (dosing pumps only)");
+      SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
-      Serial.print(SETUP);Serial.print(" pump[");Serial.print(i);Serial.print("] amount = ");Serial.println(AppState::pumps[i].getAmount());
+      SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getAmount());
 
-      Serial.print(SETUP);Serial.print(" set pump ");Serial.print(i);Serial.println(" interval (dosing pumps only)");
+      SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
       AppState::pumps[i].setDosingInterval(pumpAmountScreen(LANG_BUFFER.intervalTitle, i, true, 0));
-      Serial.print(SETUP);Serial.print(" pump[");Serial.print(i);Serial.print("] interval = ");Serial.println(AppState::pumps[i].getAmount());
+      SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getDosingInterval());
     }
 
     // Time offset setup
     AppState::timeOffset = timeSetupScreen();
-    Serial.print(SETUP);Serial.print(" Time offset set: ");Serial.println((uint32_t) AppState::timeOffset);
+    SerialPrint(SETUP, " Time offset set: ", (uint32_t) AppState::timeOffset);
 
     // Save the complete configuration
     saveAppStateToConfiguration();
   } else {
     // Configuration is valid, just load language
     LANG_BUFFER = readLanguage(AppState::languageIndex);
-    Serial.print(SETUP);Serial.print("Language ");Serial.print(AppState::languageIndex);Serial.println(" loaded from PROGMEM");
-    Serial.print(SETUP);Serial.println("Configuration loaded successfully");
+    SerialPrint(SETUP, "Language ", AppState::languageIndex, " loaded from PROGMEM");
+    SerialPrint(SETUP, "Configuration loaded successfully");
   }
 
   // Initialize water management system
@@ -137,26 +137,26 @@ void loop() {
 
   char k = keypad.getKey();
   if (k) {
-    Serial.print("[LOOP] key -> ");
-    Serial.println(k);
+    SerialPrint(LOOP, "key -> ", k);
   }
 
   // === PUMP CONFIGURATION KEYS (DOSING PUMPS ONLY) ===
   // Number keys (1-3): Edit dosing pump amounts
   if (k >= '1' && k <= '3') {
     uint8_t pumpIndex = k - '1';
-    Serial.print("[LOOP] Editing pump amount for pump "); Serial.println(pumpIndex);
+    SerialPrint(LOOP, "Editing pump amount for pump ", pumpIndex);
     handleEditAmount(pumpIndex);
   }
 
-  // D key: Edit tank volume (hold for water thresholds)
+  // D key: Edit tank thresholds
   else if (k == 'D') {
+    SerialPrint(LOOP, "Editing tank thresholds");
     handleThreshold();
     saveAppStateToConfiguration();
   }
   // C key: Measure water level
   else if (k == 'C') {
-    Serial.println("[LOOP] Measuring water level");
+    SerialPrint(LOOP, "Measuring water level");
     uint8_t waterLevel = calculateWaterLevel();
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -191,14 +191,14 @@ void loop() {
   // === SYSTEM STATUS KEYS ===
   // 0 key: Show current time
   else if (k == '0') {
-    Serial.println("[LOOP] Showing Current Time");
+    SerialPrint(LOOP, "Showing Current Time");
     showTime(seconds() + AppState::timeOffset);
     delay(1000);
   }
   // === SYSTEM CONFIGURATION KEYS ===
   // B key: Change language
   else if (k == 'B') {
-    Serial.println("[LOOP] Language configuration");
+    SerialPrint(LOOP, "Language configuration");
     AppState::languageIndex = langConfigScreen(AppState::languageIndex);
     saveAppStateToConfiguration();
     lcd.clear();
@@ -217,13 +217,13 @@ void loop() {
     while (true) {
       char key = keypad.getKey();
       if (key == '#') {
-        Serial.println("[LOOP] factory reset confirmed");
+        SerialPrint(LOOP, "Factory reset confirmed");
         factoryReset();
         delay(100);
         resetFunc();
         break;
       } else if (key == '*') {
-        Serial.println("[LOOP] factory reset cancelled");
+        SerialPrint(LOOP, "Factory reset cancelled");
         break;
       }
       delay(10);

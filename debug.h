@@ -28,5 +28,7 @@ enum Errors {
 extern const char* LOCATION_STRINGS[];
 extern const char* ERROR_STRINGS[];
 
+template<typename... Args>
+void SerialPrint(Location location, Args... args);
 
 #endif
