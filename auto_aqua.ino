@@ -25,7 +25,7 @@
  * ============================================================================
 **/
 
-void(* resetFunc) (void) = 0;
+void (*resetFunc)(void) = 0;
 
 #include "debug.h"
 #include "screens.h"
@@ -49,12 +49,12 @@ void setup() {
   SerialPrint(SETUP, "showing splash screen");
   splashScreen();
   // Load configuration from EEPROM and apply to AppState
-  loadConfigurationToAppState();
 
   // Check if configuration is valid, if not, run setup screens
   Configuration config = loadConfiguration();
   bool needsSetup = !isConfigurationValid(config);
 
+  loadConfigurationToAppState();
   if (needsSetup) {
     SerialPrint(SETUP, "Configuration invalid - running setup screens");
 
@@ -74,16 +74,20 @@ void setup() {
     for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
       SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
+      lcd.clear();
       SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getAmount());
 
       SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
-      AppState::pumps[i].setDosingInterval(pumpAmountScreen(LANG_BUFFER.intervalTitle, i, true, 0));
+      AppState::pumps[i].setDosingInterval(pumpIntervalScreen(LANG_BUFFER.intervalTitle, i, true, 0));
+      lcd.clear();
       SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getDosingInterval());
     }
 
     // Time offset setup
     AppState::timeOffset = timeSetupScreen();
-    SerialPrint(SETUP, " Time offset set: ", (uint32_t) AppState::timeOffset);
+    SerialPrint(SETUP, " Time offset set: ", (uint32_t)AppState::timeOffset);
+
+    handleThreshold(); // Set water thresholds
 
     // Save the complete configuration
     saveAppStateToConfiguration();
@@ -98,6 +102,7 @@ void setup() {
   initWaterManagement();
 
   lcd.clear();
+
 }
 
 void loop() {
@@ -113,7 +118,7 @@ void loop() {
    * Unused: Toggle water outlet pump (auto/manual mode)
    * A: Edit tank volume
    * C: Measure water level
-   * 9: Toggle electrovalve
+   * Unused: Toggle electrovalve
    *
    * === WATER THRESHOLD CONFIGURATION ===
    * D: Configure thresholds
@@ -146,6 +151,7 @@ void loop() {
     uint8_t pumpIndex = k - '1';
     SerialPrint(LOOP, "Editing pump amount for pump ", pumpIndex);
     handleEditAmount(pumpIndex);
+    saveAppStateToConfiguration();
   }
 
   // D key: Edit tank thresholds
@@ -166,28 +172,28 @@ void loop() {
     delay(2000);  // Display the water level for 2 seconds
   }
   // 9 key: Toggle electrovalve
-  else if (k == '9') { // TODO: DO NOT IMPLEMENT
-    Serial.println("[LOOP] Toggle electrovalve");
+  // else if (k == '9') { // TODO: DO NOT IMPLEMENT
+  //   Serial.println("[LOOP] Toggle electrovalve");
 
-    // Safety check - don't allow manual operation while pumps are active
-    if (pumpActive) {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Pump Active!");
-      lcd.setCursor(0, 1);
-      lcd.print("Wait to finish");
-      delay(2000);
-    } else {
-      bool currentState = isElectrovalveOpen();
-      controlElectrovalve(!currentState);
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Electrovalve:");
-      lcd.setCursor(0, 1);
-      lcd.print(currentState ? "CLOSED" : "OPENED");
-      delay(1000);
-    }
-  }
+  //   // Safety check - don't allow manual operation while pumps are active
+  //   if (pumpActive) {
+  //     lcd.clear();
+  //     lcd.setCursor(0, 0);
+  //     lcd.print("Pump Active!");
+  //     lcd.setCursor(0, 1);
+  //     lcd.print("Wait to finish");
+  //     delay(2000);
+  //   } else {
+  //     bool currentState = isElectrovalveOpen();
+  //     controlElectrovalve(!currentState);
+  //     lcd.clear();
+  //     lcd.setCursor(0, 0);
+  //     lcd.print("Electrovalve:");
+  //     lcd.setCursor(0, 1);
+  //     lcd.print(currentState ? "CLOSED" : "OPENED");
+  //     delay(1000);
+  //   }
+  // }
   // === SYSTEM STATUS KEYS ===
   // 0 key: Show current time
   else if (k == '0') {

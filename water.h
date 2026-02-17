@@ -173,10 +173,10 @@ void controlElectrovalve(bool open);
  */
 bool isElectrovalveOpen();
 
-/**
- * Check if any pump is currently active
- * @return true if pump is running, false otherwise
- */
-extern bool pumpActive;
+// /**
+//  * Check if any pump is currently active
+//  * @return true if pump is running, false otherwise
+//  */
+// extern bool pumpActive;
 
 #endif

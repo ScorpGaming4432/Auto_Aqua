@@ -96,6 +96,7 @@ void splashScreen() {
   Serial.println("LCD Initialized!");
   lcd.backlight();
   lcd.clear();
+  uint8_t scratch[8];
 
   // Display title
   lcd.setCursor(3, 0);
@@ -145,7 +146,7 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
   readLanguageField(languageIndex, 0, langName, LANG_NAME_LEN);
-  readLanguageField(languageIndex, LANG_NAME_LEN, langPrompt, LANG_PROMPT_LEN);
+  readLanguageField(languageIndex, LANG_NAME_LEN + 1, langPrompt, LANG_PROMPT_LEN);
 
   // Display language name and navigation instructions
   lcd.setCursor(0, 0);
@@ -186,7 +187,7 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
         languageIndex = newlang;
         loadGlyphSet(languageIndex);
         readLanguageField(languageIndex, 0, langName, LANG_NAME_LEN);
-        readLanguageField(languageIndex, LANG_NAME_LEN, langPrompt, LANG_PROMPT_LEN);
+        readLanguageField(languageIndex, LANG_NAME_LEN + 1, langPrompt, LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);
         lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
         lcd.setCursor(4, 1);
@@ -224,9 +225,7 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
  * @param unit Optional unit label (e.g., \"ml\", \"l\") displayed after digits
  * @return Entered value, or UNSET_U32 if cancelled
  */
-uint32_t editNumberScreen(const char *label, const char *format,
-                          uint8_t entryCol, uint8_t maxDigits, uint32_t value,
-                          bool editMode, const char *unit = nullptr) {
+uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCol, uint8_t maxDigits, uint32_t value, bool editMode, const char *unit = nullptr) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(label);
@@ -234,8 +233,8 @@ uint32_t editNumberScreen(const char *label, const char *format,
 
   // Copy format into a local RAM buffer so we can inspect characters
   char fmtBuf[17];
-  strncpy(fmtBuf, format, sizeof(fmtBuf) - 1);
-  fmtBuf[sizeof(fmtBuf) - 1] = '\0';
+  strncpy(fmtBuf, format, 16);
+  fmtBuf[16] = '\0';  // Proper null termination
   lcd.print(fmtBuf);
 
   // Determine whether the format already contains a unit character right
@@ -432,7 +431,7 @@ uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tan
 }
 
 uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode,
-                          uint32_t amount) {
+                          uint16_t amount) {
   Serial.print("[AM] entry: editMode=");
   Serial.print(editMode);
   Serial.print(" amount=");
@@ -440,16 +439,15 @@ uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMod
   Serial.print(" index=");
   Serial.println(pumpIndex);
   // Make buffer large enough to include terminating NUL and copy full string (so '#' isn't lost)
-  char _amBuf[LANG_AMOUNTTITLE_LEN + 1];
-  strncpy(_amBuf, amountBuf, sizeof(_amBuf) - 1);
-  _amBuf[sizeof(_amBuf) - 1] = '\0';
+  char _amBuf[LANG_AMOUNTTITLE_LEN];
+  strncpy(_amBuf, amountBuf, LANG_AMOUNTTITLE_LEN);
   for (int i = 0; _amBuf[i] != '\0'; i++) {
     if (_amBuf[i] == '#') {
       _amBuf[i] = '1' + pumpIndex;
       break;
     }
   }
-  if (amount == UNSET_U32) {
+  if (amount == UNSET_U16) {
     Serial.println("[AM] sentinel passed -> start edit mode at 0");
     amount = 0;
     editMode = true;
@@ -457,52 +455,37 @@ uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMod
   return editNumberScreen(_amBuf, "<-* ________ #->", 6, 6, amount, editMode, "ml");
 }
 
-// uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration) {
-//   Serial.print("[DUR] entry: pumpIndex=");
-//   Serial.print(pumpIndex);
-//   Serial.print(" editMode=");
-//   Serial.print(editMode);
-//   Serial.print(" duration=");
-//   Serial.println((unsigned long)duration);
-
-//   // Prepare the buffer for the title, replacing '#' with the pump index
-//   // Use duration title length and ensure NUL is available
-//   char _durationBuf[LANG_DURATIONTITLE_LEN + 1];
-//   strncpy(_durationBuf, durationBuf, sizeof(_durationBuf) - 1);
-//   _durationBuf[sizeof(_durationBuf) - 1] = '\0';
-//   for (int i = 0; _durationBuf[i] != '\0'; i++) {
-//     if (_durationBuf[i] == '#') {
-//       _durationBuf[i] = '1' + pumpIndex;
-//       break;
-//     }
-//   }
-
-//   // Handle sentinel value for duration
-//   if (duration == (uint64_t)-1ULL) {
-//     Serial.println("[DUR] sentinel passed -> start edit mode at 0");
-//     duration = 0;
-//     editMode = true;
-//   }
-
-//   // Convert duration to 32-bit if it exceeds the limit
-//   uint32_t dur32 = (duration > 0xFFFFFFFFULL) ? 0xFFFFFFFFUL : (uint32_t)duration;
-
-//   // Call the editNumberScreen function to handle the editing
-//   int32_t res = editNumberScreen(_durationBuf, "<-* ______ms #->", 4, 7, dur32, editMode, "ms");
-
-//   // Handle the result
-//   if (res == -1) {
-//     return (uint64_t)-1;
-//   }
-
-//   return (uint64_t)(uint32_t)res;
-// }
+uint16_t pumpIntervalScreen(const char *intervalBuf, uint8_t pumpIndex, bool editMode,
+                            uint16_t duration) {
+  Serial.print("[INT] entry: editMode=");
+  Serial.print(editMode);
+  Serial.print(" duration=");
+  Serial.print(duration);
+  Serial.print(" index=");
+  Serial.println(pumpIndex);
+  // Make buffer large enough to include terminating NUL and copy full string (so '#' isn't lost)
+  char _intBuf[LANG_INTERVALTITLE_LEN];
+  strncpy(_intBuf, intervalBuf, LANG_INTERVALTITLE_LEN);
+  for (int i = 0; _intBuf[i] != '\0'; i++) {
+    if (_intBuf[i] == '#') {
+      _intBuf[i] = '1' + pumpIndex;
+      break;
+    }
+  }
+  if (duration == UNSET_U16) {
+    Serial.println("[AM] sentinel passed -> start edit mode at 0");
+    duration = 0;
+    editMode = true;
+  }
+  return editNumberScreen(_intBuf, "<-* ________ #->", 6, 6, duration, editMode, "d");
+}
 
 void lcdPrintWithGlyphs(const char *str, uint8_t length) {
   for (uint8_t i = 0; i < length; ++i) {
     lcd.write((uint8_t)str[i]);
   }
 }
+
 
 uint64_t timeSetupScreen() {
   uint64_t nowSecs = seconds();
@@ -634,110 +617,6 @@ void showTime(uint64_t currentTime) {
   lcd.print(ss);
 }
 
-int8_t waterThresholdScreen(const char *thresholdBuf, bool editMode,
-                            uint8_t lowThreshold, uint8_t highThreshold) {
-  Serial.print("[THRESH] entry: editMode=");
-  Serial.print(editMode);
-  Serial.print(" low=");
-  Serial.print(lowThreshold);
-  Serial.print(" high=");
-  Serial.println(highThreshold);
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(thresholdBuf);
-
-  uint8_t low = lowThreshold;
-  uint8_t high = highThreshold;
-  uint8_t editing = 0;  // 0=low, 1=high
-  char key = 0;
-  bool modified = false;
-
-  while (true) {
-    lcd.setCursor(0, 1);
-    if (editing == 0) {
-      lcd.print("L:");
-      if (low < 100) lcd.print('0');
-      if (low < 10) lcd.print('0');
-      lcd.print(low);
-      lcd.print(" H:");
-      if (high < 100) lcd.print('0');
-      if (high < 10) lcd.print('0');
-      lcd.print(high);
-    } else {
-      lcd.print("L:");
-      if (low < 100) lcd.print('0');
-      if (low < 10) lcd.print('0');
-      lcd.print(low);
-      lcd.print(" H:");
-      if (high < 100) lcd.print('0');
-      if (high < 10) lcd.print('0');
-      lcd.print(high);
-    }
-
-    if (editMode) {
-      // Blink cursor on current value
-      if (millis() % 1000 < 500) {
-        lcd.setCursor(editing == 0 ? 2 : 7, 1);
-        lcd.print("   ");
-      }
-    }
-
-    key = keypad.getKey();
-    if (!key) {
-      delay(10);
-      continue;
-    }
-
-    Serial.print("[THRESH] key: ");
-    Serial.println(key);
-
-    if (key >= '0' && key <= '9') {
-      if (editMode) {
-        uint8_t digit = key - '0';
-        if (editing == 0) {
-          low = (low * 10 + digit) % 1000;
-        } else {
-          high = (high * 10 + digit) % 1000;
-        }
-        modified = true;
-      }
-    } else if (key == '#') {
-      if (editMode) {
-        editing = 1 - editing;  // Toggle between low and high
-      }
-    } else if (key == '*') {
-      Serial.println("[THRESH] cancelled");
-      return -1;
-    } else if (key == 'D') {
-      if (editMode) {
-        if (editing == 0 && low > 0) low /= 10;
-        else if (editing == 1 && high > 0) high /= 10;
-        modified = true;
-      }
-    } else if (key == 'A') {
-      if (modified) {
-        // Validate thresholds
-        if (low < high) {
-          setWaterThresholds(low, high);
-          Serial.print("[THRESH] saved - Low: ");
-          Serial.print(low);
-          Serial.print(", High: ");
-          Serial.println(high);
-          return 1;
-        } else {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Error: Low >= High");
-          delay(2000);
-        }
-      }
-      break;
-    }
-  }
-
-  return modified ? 1 : 0;
-}
 // ============================================================================
 // Input Handlers - Process user interactions for editing
 // ============================================================================
@@ -825,16 +704,17 @@ void handleEditPumpInterval(uint8_t idx) {
   Serial.print("[INTERVAL] enter handleEditPumpInterval idx=");
   Serial.println(idx);
 
-  uint64_t interval = AppState::pumps[idx].getDosingInterval();
-  uint64_t newInterval = pumpAmountScreen(LANG_BUFFER.intervalTitle, idx, true, interval);
+  uint32_t interval = AppState::pumps[idx].getDosingInterval();                               // FIX: Correct type (uint32_t)
+  uint32_t newInterval = pumpIntervalScreen(LANG_BUFFER.intervalTitle, idx, true, interval);  // FIX: Correct function
 
   Serial.print("[INTERVAL] edited idx=");
   Serial.print(idx);
   Serial.print(" -> ");
   Serial.println((unsigned long)newInterval);
 
-  if (newInterval != UNSET_U64) {
+  if (newInterval != UNSET_U32) {
     AppState::pumps[idx].setDosingInterval(newInterval);
+    saveAppStateToConfiguration();
   }
 
   lcd.clear();
@@ -843,19 +723,24 @@ void handleEditPumpInterval(uint8_t idx) {
 void handleThreshold() {
   Serial.println("[LOOP] Edit high water threshold");
   while (true) {
-    uint8_t low = (uint8_t)editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
-    uint8_t high = (uint8_t)editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%");
+    uint16_t low = (uint16_t)editNumberScreen(LANG_BUFFER.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%");
+    uint16_t high = (uint16_t)editNumberScreen(LANG_BUFFER.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%");
     Serial.print("[LOOP] Entered thresholds - Low: ");
     Serial.print(low);
     Serial.print("% High: ");
     Serial.print(high);
     Serial.println("%");
-    if (low > 0 && high > low && high <= 100) {
+    if (low != UNSET_U16 && high != UNSET_U16 && low > 0 && high > low && high <= 100) {  // FIX: Check for sentinel values
       AppState::lowThreshold = low;
       AppState::highThreshold = high;
-      break;
-    } else if (low == UNSET_U8 || high == UNSET_U8) {
+      saveAppStateToConfiguration() break;
+    } else if (low == UNSET_U16 || high == UNSET_U16) {
       Serial.println("[LOOP] Water threshold edit cancelled.");
+      if (AppState::lowThreshold == UNSET_U16 || AppState::highThreshold == UNSET_U16) {
+        SerialPrint(LOOP, "Cannot Allow. Retrying...");
+      } else {
+        break;
+      }
     } else if (low >= high || high > 100) {
       Serial.println("[LOOP] Calling Police. Fish killer detected. Thresholds must be: 0 < Low < High <= 100");
     }

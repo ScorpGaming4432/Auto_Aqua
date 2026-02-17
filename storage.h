@@ -19,21 +19,31 @@ struct Configuration {
   uint8_t languageIndex;
   uint32_t tankVolume;
   int64_t timeOffset;
-  uint16_t pumpAmounts[PUMP_COUNT-2];
-  uint64_t pumpDurations[PUMP_COUNT-2];
-  uint32_t pumpDosingIntervals[PUMP_COUNT-2]; // Dosing intervals in hours
+  uint16_t pumpAmounts[PUMP_COUNT];
+  uint64_t pumpDurations[PUMP_COUNT];
+  uint16_t pumpDosingIntervals[PUMP_COUNT]; // Dosing intervals in days
   uint16_t lowThreshold;
   uint16_t highThreshold;
 };
+
+//  COPY OF AppState FOR CORRECTNESS
+// namespace AppState {
+// uint8_t languageIndex = 0;
+// Pump pumps[PUMP_COUNT];
+// uint32_t tankVolume = 0;
+// int64_t timeOffset = 0;
+// uint16_t lowThreshold = 255;
+// uint16_t highThreshold = 255;
+// }
 
 // Default configuration values
 const Configuration DEFAULT_CONFIG = {
   .languageIndex = 0,
   .tankVolume = 0,
   .timeOffset = 0,
-  .pumpAmounts = { 0, 0, 0},
-  .pumpDurations = { 0, 0, 0},
-  .pumpDosingIntervals = { 0, 0, 0},
+  .pumpAmounts = { 0, 0, 0, 0, 0 },
+  .pumpDurations = { 0, 0, 0, 0, 0 },
+  .pumpDosingIntervals = { 0, 0, 0, 0, 0 },
   .lowThreshold = 0,
   .highThreshold = 0
 };

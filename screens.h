@@ -70,17 +70,17 @@ uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tan
  * @param amount Current amount value
  * @return Entered amount, or -1 if cancelled
  */
-uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode, uint32_t amount);
+uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMode, uint16_t amount);
 
 /**
  * Display pump duration input screen
- * @param durationBuf Localized label for duration
+ * @param intervalBuf Localized label for duration
  * @param pumpIndex Which pump (0-4)
  * @param editMode Whether to allow editing
- * @param duration Current duration value in milliseconds
+ * @param duration Current interval duration value in milliseconds
  * @return Entered duration, or -1 if cancelled
  */
-uint64_t pumpDurationScreen(const char *durationBuf, uint8_t pumpIndex, bool editMode, uint64_t duration);
+uint16_t pumpIntervalScreen(const char *intervalBuf, uint8_t pumpIndex, bool editMode, uint16_t duration);
 
 /**
  * Display main/idle screen

@@ -10,7 +10,6 @@
 #include "debug.h"
 #include "appstate.h"
 #include "storage.h"
-#include "language.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <stdint.h>
@@ -21,127 +20,116 @@
 
 // Helper function to write bytes to EEPROM
 static void writeEEPROMBytes(uint16_t address, const uint8_t* data, uint16_t size) {
-  SerialPrint(STORAGE, "Writing ",data," ; ", size, " bytes to EEPROM at address ", address);
-  Serial.print("[STORAGE] Data: ");
+  SerialPrint(STORAGE, F("Writing "), size, F(" bytes to EEPROM at address "), address);
+  SerialPrint(STORAGE, F("Data: "));
   for (uint16_t i = 0; i < size; i++) {
     Serial.print(data[i], HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
     EEPROM.write(address + i, data[i]);
   }
+  Serial.println();
 }
 
 // Helper function to read bytes from EEPROM
 static void readEEPROMBytes(uint16_t address, uint8_t* data, uint16_t size) {
-  SerialPrint(STORAGE, "Reading ", size, " bytes from EEPROM at address ", address);
-  Serial.print("[STORAGE] Data: ");
+  SerialPrint(STORAGE, F("Reading "), size, F(" bytes from EEPROM at address "), address);
+  SerialPrint(STORAGE, F("Data: "));
   for (uint16_t i = 0; i < size; i++) {
     data[i] = EEPROM.read(address + i);
     Serial.print(data[i], HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
   }
+  Serial.println();
 }
 
 void saveConfiguration(const Configuration& config) {
-  SerialPrint(STORAGE, "Saving configuration to EEPROM");
+  SerialPrint(STORAGE, F("Saving configuration to EEPROM"));
 
   // Write the entire configuration struct to EEPROM
   writeEEPROMBytes(CONFIG_START_ADDR, (const uint8_t*)&config, CONFIG_SIZE);
 
-  SerialPrint(STORAGE, "Configuration saved successfully");
+  SerialPrint(STORAGE, F("Configuration saved successfully"));
 }
 
 Configuration loadConfiguration() {
-  SerialPrint(STORAGE, "Loading configuration from EEPROM");
+  SerialPrint(STORAGE, F("Loading configuration from EEPROM"));
 
   Configuration config;
   readEEPROMBytes(CONFIG_START_ADDR, (uint8_t*)&config, CONFIG_SIZE);
 
-  SerialPrint(STORAGE, "Configuration loaded successfully");
+  SerialPrint(STORAGE, F("Configuration loaded successfully"));
   return config;
 }
 
 bool isConfigurationValid(const Configuration& config) {
-  Serial.println(F("Validating configuration..."));
+  SerialPrint(STORAGE, F("Validating configuration..."));
 
   bool valid = true;
 
   if (config.languageIndex == UNSET_U8) {
-    Serial.print(F("Invalid: languageIndex is UNSET (value="));
-    Serial.print(config.languageIndex);
-    Serial.println(F(")"));
+    SerialPrint(STORAGE, F("Invalid: languageIndex is UNSET. "), config.languageIndex);
     valid = false;
   }
 
   if (config.tankVolume == UNSET_U32) {
-    Serial.print(F("Invalid: tankVolume is UNSET (value="));
-    Serial.print(config.tankVolume);
-    Serial.println(F(")"));
+    SerialPrint(STORAGE, F("Invalid: tankVolume is UNSET. "), config.tankVolume);
     valid = false;
   }
 
   if (config.timeOffset == UNSET_I64) {
-    Serial.print(F("Invalid: timeOffset is UNSET (value="));
-    Serial.print((long long)config.timeOffset);
-    Serial.println(F(")"));
+    double value;
+    memcpy(&value, &config.timeOffset, sizeof(double));
+    SerialPrint(STORAGE, F("Invalid: timeOffset is UNSET. "), value);
+
     valid = false;
   }
 
   for (uint8_t i = 0; i < PUMP_COUNT; i++) {
-
     if (config.pumpAmounts[i] == UNSET_U16) {
-      Serial.print(F("Invalid: pumpAmounts["));
-      Serial.print(i);
-      Serial.print(F("] is UNSET (value="));
-      Serial.print(config.pumpAmounts[i]);
-      Serial.println(F(")"));
+      SerialPrint(STORAGE, F("Invalid: pumpAmounts["), i, F("] is UNSET. "), config.pumpAmounts[i]);
       valid = false;
     }
 
     if (config.pumpDurations[i] == UNSET_U64) {
-      Serial.print(F("Invalid: pumpDurations["));
-      Serial.print(i);
-      Serial.print(F("] is UNSET (value="));
-      Serial.print((unsigned long long)config.pumpDurations[i]);
-      Serial.println(F(")"));
+      double value;
+      memcpy(&value, &config.pumpDurations[i], sizeof(double));
+
+      SerialPrint(STORAGE, F("Invalid: pumpDurations["), i, F("] is UNSET. "), value);
       valid = false;
     }
 
     if (config.pumpDosingIntervals[i] == UNSET_U32) {
-      Serial.print(F("Invalid: pumpDosingIntervals["));
-      Serial.print(i);
-      Serial.print(F("] is UNSET (value="));
-      Serial.print(config.pumpDosingIntervals[i]);
-      Serial.println(F(")"));
+      SerialPrint(STORAGE, F("Invalid: pumpDosingIntervals["), i, F("] is UNSET. "), config.pumpDosingIntervals[i]);
       valid = false;
     }
   }
 
-  if (config.lowThreshold == UNSET_U16) {
-    Serial.print(F("Invalid: lowThreshold is UNSET (value="));
-    Serial.print(config.lowThreshold);
-    Serial.println(F(")"));
+  if (config.lowThreshold > config.highThreshold) {
+    SerialPrint(STORAGE, F("Invalid: Thresholds are INVALID.Low="), config.lowThreshold, F(" ; High="), config.highThreshold));
     valid = false;
   }
 
-  if (config.highThreshold == UNSET_U16) {
-    Serial.print(F("Invalid: highThreshold is UNSET (value="));
-    Serial.print(config.highThreshold);
-    Serial.println(F(")"));
+  if (config.lowThreshold >= 100) {
+    SerialPrint(STORAGE, F("Invalid: lowThreshold is UNSET. Low=", config.lowThreshold));
+    valid = false;
+  }
+
+  if (config.highThreshold > 100) {
+    SerialPrint(STORAGE, F("Invalid: highThreshold is UNSET High="), config.highThreshold);
     valid = false;
   }
 
   if (valid) {
-    Serial.println(F("Configuration is valid."));
+    SerialPrint(STORAGE, F("Configuration is valid."));
   } else {
-    Serial.println(F("Configuration validation FAILED."));
+    SerialPrint(STORAGE, F("Configuration validation FAILED."));
   }
 
   return valid;
 }
 
-
 void loadConfigurationToAppState() {
-  Serial.println("[STORAGE] Loading configuration to AppState");
+  SerialPrint(STORAGE, F("Loading configuration to AppState"));
 
   Configuration config = loadConfiguration();
 
@@ -159,9 +147,9 @@ void loadConfigurationToAppState() {
       AppState::pumps[i].setDosingInterval(config.pumpDosingIntervals[i]);
     }
 
-    Serial.println("[STORAGE] Configuration applied to AppState");
+    SerialPrint(STORAGE, F("Configuration applied to AppState"));
   } else {
-    Serial.println("[STORAGE] Invalid configuration, using defaults");
+    SerialPrint(STORAGE, F("Invalid configuration, using defaults"));
     // Apply default configuration
     AppState::languageIndex = DEFAULT_CONFIG.languageIndex;
     AppState::tankVolume = DEFAULT_CONFIG.tankVolume;
@@ -178,7 +166,7 @@ void loadConfigurationToAppState() {
 }
 
 void saveAppStateToConfiguration() {
-  Serial.println("[STORAGE] Saving AppState to configuration");
+  SerialPrint(STORAGE, F("Saving AppState to configuration"));
 
   Configuration config;
 
@@ -195,11 +183,11 @@ void saveAppStateToConfiguration() {
   }
 
   saveConfiguration(config);
-  Serial.println("[STORAGE] AppState saved to configuration");
+  SerialPrint(STORAGE, F("AppState saved to configuration"));
 }
 
 void factoryReset() {
-  Serial.println("[STORAGE] ==== FACTORY RESET =====");
+  SerialPrint(STORAGE, F("==== FACTORY RESET ====="));
 
   // Create a configuration with magic values
   Configuration resetConfig;
@@ -218,6 +206,6 @@ void factoryReset() {
 
   saveConfiguration(resetConfig);
 
-  Serial.println("[STORAGE] Factory reset completed - all values set to unset state");
-  Serial.println("[STORAGE] ====================================");
+  SerialPrint(STORAGE, F("Factory reset completed - all values set to unset state"));
+  SerialPrint(STORAGE, F("===================================="));
 }

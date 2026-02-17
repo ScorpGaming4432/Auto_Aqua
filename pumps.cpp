@@ -44,8 +44,8 @@ void checkDosingSchedule() {
 
     // Skip if marked as let pump or interval disabled
     if (p.getIfLet()) continue;
-    uint32_t intervalHours = p.getDosingInterval();
-    if (intervalHours == 0) continue;
+    uint16_t intervalDays = p.getDosingInterval();
+    if (intervalDays == 0) continue;
 
     if (!p.shouldDose(now)) continue;
 

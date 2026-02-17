@@ -8,7 +8,7 @@
  * based on configurable thresholds.
  */
 
-
+#include "debug.h"
 #include "storage.h"
 #include "water.h"
 #include "appstate.h"
@@ -46,7 +46,7 @@ bool WaterSensor::initialized = false;
 
 // Last water check time (for periodic checks)
 static unsigned long lastWaterCheck = 0;
-static const unsigned long WATER_CHECK_INTERVAL = 5000;  // 5 seconds
+static const uint8_t WATER_CHECK_INTERVAL = 5;  // 5 seconds
 
 // Pump runtime tracking
 static uint32_t inletPumpTotalRuntime = 0;
@@ -295,20 +295,25 @@ void initWaterManagement() {
   Serial.println("%");
 }
 
-void checkWaterLevel() {
-  unsigned long now = millis();
+WaterError checkWaterLevel() {
+  unsigned long now = seconds();
 
   // Throttle checks to avoid excessive I2C traffic
   if (now - lastWaterCheck < WATER_CHECK_INTERVAL) {
-    return;
+    return -1;
   }
   lastWaterCheck = now;
 
   // Check sensor health first
-  if (!checkSensorHealth()) {
-    emergencyStopLetPumps();
-    return;
+  WaterError error = waterSensor.readSensorData();
+  if (error != WATER_ERROR_NONE) {
+    currentError = error;
+    SerialPrint("[WATER] Sensor error: ", error);
+    return error;
   }
+  if (!waterSensor.isSensorConnected()) {
+    return WATER_ERROR_SENSOR_TIMEOUT
+  };
 
   uint8_t currentLevel = waterSensor.calculateWaterLevel();
   Serial.print("[WATER] Level: ");
@@ -318,7 +323,7 @@ void checkWaterLevel() {
   // Inlet pump control with hysteresis (always automatic)
   if (currentLevel < AppState::lowThreshold - HYSTERESIS_MARGIN) {
     if (!inletPumpWasActive) {
-      Serial.println("[WATER] Inlet pump ON (level too low)");
+      SerialPrint(WATER, "Inlet pump ON (level too low)");
       runPumpSafely(INLET_PUMP_PIN, calculatePumpDuration(currentLevel, AppState::lowThreshold));
       inletPumpWasActive = true;
     }
@@ -329,7 +334,7 @@ void checkWaterLevel() {
   // Outlet pump control with hysteresis (always automatic)
   if (currentLevel > AppState::highThreshold + HYSTERESIS_MARGIN) {
     if (!outletPumpWasActive) {
-      Serial.println("[WATER] Outlet pump ON (level too high)");
+      SerialPrint(WATER, "Outlet pump ON (level too high)");
       runPumpSafely(OUTLET_PUMP_PIN, calculatePumpDuration(currentLevel, AppState::highThreshold));
       outletPumpWasActive = true;
     }
@@ -453,17 +458,15 @@ int16_t getHighThreshold() {
   return AppState::highThreshold;
 }
 
-void setLowThreshold(int16_t threshold) {
-  if (threshold >= 0 && threshold < AppState::highThreshold) {
+void setLowThreshold(uint8_t threshold) {
+  if (threshold < AppState::highThreshold) {
     AppState::lowThreshold = threshold;
     saveAppStateToConfiguration();
-    Serial.print("[WATER] Low threshold set to: ");
-    Serial.print(threshold);
-    Serial.println("%");
+    SerialPrint(WATER, "Low threshold set to: ", threshold, "%");
   }
 }
 
-void setHighThreshold(int16_t threshold) {
+void setHighThreshold(uint8_t threshold) {
   if (threshold > AppState::lowThreshold && threshold <= 100) {
     AppState::highThreshold = threshold;
     saveAppStateToConfiguration();
@@ -535,8 +538,7 @@ bool checkSensorHealth() {
   WaterError error = waterSensor.readSensorData();
   if (error != WATER_ERROR_NONE) {
     currentError = error;
-    Serial.print("[WATER] Sensor error: ");
-    Serial.println(error);
+    SerialPrint("[WATER] Sensor error: ", error);
     return false;
   }
   return waterSensor.isSensorConnected();

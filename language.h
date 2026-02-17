@@ -40,36 +40,40 @@ constexpr uint8_t LANG_NOTASK_LEN = 15;         ///< No task message
 constexpr uint8_t LANG_PUMPWORKING_LEN = 15;    ///< Pump active message
 constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 16;   ///< Water threshold message
 constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 16;  ///< High water threshold message
+constexpr uint8_t LANG_INTERVALTITLE_LEN = 16;  ///< Pump interval title
 
 /**
  * Language structure storing all UI strings for a language
  */
 struct Language {
-  char langName[LANG_NAME_LEN];                     ///< Display name of language
-  char langPrompt[LANG_PROMPT_LEN];                 ///< Prompt for language selection
-  char tankVolumeTitle[LANG_TANKTITLE_LEN];         ///< Title for tank volume input
-  char amountTitle[LANG_AMOUNTTITLE_LEN];           ///< Title for pump amount input
-  char mainScreen[LANG_MAINSCREEN_LEN];             ///< Main screen heading
-  char noTask[LANG_NOTASK_LEN];                     ///< Message when no task active
-  char pumpWorking[LANG_PUMPWORKING_LEN];           ///< Message when pump is running
-  char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN];    ///< Message for low water threshold
-  char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN];  ///< Message for high water threshold
-  char intervalTitle[16];
+  char langName[LANG_NAME_LEN + 1];                     ///< Display name of language
+  char langPrompt[LANG_PROMPT_LEN + 1];                 ///< Prompt for language selection
+  char tankVolumeTitle[LANG_TANKTITLE_LEN + 1];         ///< Title for tank volume input
+  char amountTitle[LANG_AMOUNTTITLE_LEN + 1];           ///< Title for pump amount input
+  char mainScreen[LANG_MAINSCREEN_LEN + 1];             ///< Main screen heading
+  char noTask[LANG_NOTASK_LEN + 1];                     ///< Message when no task active
+  char pumpWorking[LANG_PUMPWORKING_LEN + 1];           ///< Message when pump is running
+  char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN + 1];    ///< Message for low water threshold
+  char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN + 1];  ///< Message for high water threshold
+  char intervalTitle[LANG_INTERVALTITLE_LEN + 1];       ///< Title for pump interval input
+  char criticalError[LANG_MAINSCREEN_LEN + 1];        ///< Message for critical error
+  char checkSensor[LANG_MAINSCREEN_LEN + 1];          ///< Message to check sensor
+
 };
 
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
-  // langName,    prompt,    tank title,       amount title,      main screen,       no task,          pump working,     low thresh,           high thresh
-  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica ", "Interwal pompy #" },
-  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Main screen    ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold", "Pump interval # " },
-  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "             ", "              ", "Pump interval # " },
-  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Hauptbildschir ", "Keine Aufgabe ", "Pumpe laeuft   ", "             ", "              ", "Pump interval # " },
-  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "             ", "              ", "Pump interval # " },
-  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "             ", "              ", "Pump interval # " },
-  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "             ", "              ", "Pump interval # " },
-  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    ", "             ", "              ", "Pump interval # " },
-  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor", "             ", "              ", "Pump interval # " },
-  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     ", "             ", "              ", "Pump interval # " }
+  // langName,    prompt,    tank title,       amount title,      main screen,       no task,          pump working,      low thresh,      high thresh,      interval title,     critical error,   check sensor
+  { "Polski   ", "Jezyk  ", "Poj. zbiornika", "Ilosc plynu w #", "Ekran glowny   ", "Brak zadania  ", "Pompa dziala   ", "Dolna granica", "Gorna granica ", "Interwal pompy #", "BLAD KRYTYCZNY", "SPRAWDZ SENSOR"},
+  { "English  ", "Lang   ", "Tank volume   ", "Liquid in #    ", "Main screen    ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold", "Pump interval # ", "CRITICAL ERROR", "CHECK SENSOR  "},
+  { "Russkii  ", "Yazyk  ", "Obyem baka    ", "Zhidkost v #   ", "Glavnyi ekran  ", "Net zadachi   ", "Pompa rabotaet ", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Deutsch  ", "Sprache", "Tankvolumen   ", "Fluessig in #  ", "Hauptbildschir ", "Keine Aufgabe ", "Pumpe laeuft   ", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Francais ", "Langue ", "Vol reservoir ", "Liquide en #   ", "Ecran principal", "Aucune tache  ", "Pompe en marche", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Espanol  ", "Idioma ", "Vol tanque    ", "Liquido en #   ", "Pantalla princ ", "Sin tarea     ", "Bomba activa   ", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Italiano ", "Lingua ", "Vol serbatoio ", "Liquido in #   ", "Schermo princ  ", "Nessun compito", "Pompa attiva   ", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Portugues", "Idioma ", "Vol tanque    ", "Liquido em #   ", "Tela principal ", "Sem tarefa    ", "Bomba ativa    ", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Turkce   ", "Dil    ", "Hacim         ", "Sivi icinde #  ", "Ana ekran      ", "Gorev yok     ", "Pompa calisiyor", "             ", "              ", "Pump interval # ", "              ", "              "},
+  { "Cestina  ", "Jazyk  ", "Objem nadrze  ", "Kapalina v #   ", "Hlavni obraz   ", "Zadny ukol    ", "Pumpa bezi     ", "             ", "              ", "Pump interval # ", "              ", "              "}
 };
 
 /**
