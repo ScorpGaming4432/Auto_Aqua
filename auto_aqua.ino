@@ -163,12 +163,8 @@ void loop() {
   // C key: Measure water level
   else if (k == 'C') {
     SerialPrint(LOOP, "Measuring water level");
-    uint8_t waterLevel = calculateWaterLevel();
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Water Level:");
-    lcd.setCursor(0, 1);
-    lcd.print(waterLevel);
+    WaterLevelResult result = checkWaterLevel();
+    displayWaterLevelStatus(result);
     delay(2000);  // Display the water level for 2 seconds
   }
   // 9 key: Toggle electrovalve
@@ -237,7 +233,14 @@ void loop() {
   }
 
   // Check water level periodically for automatic pump control
-  checkWaterLevel();
+  WaterLevelResult result = checkWaterLevel();
+  
+  // Display water level status if there's an error or pumps are active
+  if (result.error != WATER_ERROR_NONE || result.inletPumpActive || result.outletPumpActive) {
+    displayWaterLevelStatus(result);
+    delay(1000);  // Display for 1 second
+    lcd.clear();
+  }
 
   // Check dosing schedule for automatic dosing pumps
   checkDosingSchedule();

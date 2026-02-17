@@ -12,8 +12,12 @@
 #define WATER_H
 
 #include <stdint.h>
+#include "screens.h"
 
 #define PUMP_COUNT 5
+
+// Forward declaration so functions can reference the result type
+struct WaterLevelResult;
 
 // Error codes for water management
 enum WaterError {
@@ -61,7 +65,7 @@ void initWaterManagement();
  * Called periodically from main loop to maintain water levels
  * Only active if pumps are in AUTO mode
  */
-void checkWaterLevel();
+WaterLevelResult checkWaterLevel();
 
 // Pump mode controls moved to pumps module
 
@@ -162,6 +166,12 @@ void resetPumpStatistics();
 uint8_t calculateWaterLevel();
 
 /**
+ * Display water level status on LCD screen
+ * @param result Water level check result containing level, error, and pump status
+ */
+void displayWaterLevelStatus(const WaterLevelResult& result);
+
+/**
  * Control electrovalve (open/close)
  * @param open true to open valve, false to close
  */
@@ -178,5 +188,13 @@ bool isElectrovalveOpen();
 //  * @return true if pump is running, false otherwise
 //  */
 // extern bool pumpActive;
+
+// Structure to hold water level check results
+struct WaterLevelResult {
+  WaterError error;
+  uint8_t level;
+  bool inletPumpActive;
+  bool outletPumpActive;
+};
 
 #endif

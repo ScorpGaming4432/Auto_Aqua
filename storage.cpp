@@ -105,12 +105,12 @@ bool isConfigurationValid(const Configuration& config) {
   }
 
   if (config.lowThreshold > config.highThreshold) {
-    SerialPrint(STORAGE, F("Invalid: Thresholds are INVALID.Low="), config.lowThreshold, F(" ; High="), config.highThreshold));
+    SerialPrint(STORAGE, F("Invalid: Thresholds are INVALID.Low="), config.lowThreshold, F(" ; High="), config.highThreshold);
     valid = false;
   }
 
   if (config.lowThreshold >= 100) {
-    SerialPrint(STORAGE, F("Invalid: lowThreshold is UNSET. Low=", config.lowThreshold));
+    SerialPrint(STORAGE, F("Invalid: lowThreshold is UNSET. Low="), config.lowThreshold);
     valid = false;
   }
 

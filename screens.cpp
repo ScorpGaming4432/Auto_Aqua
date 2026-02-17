@@ -733,7 +733,8 @@ void handleThreshold() {
     if (low != UNSET_U16 && high != UNSET_U16 && low > 0 && high > low && high <= 100) {  // FIX: Check for sentinel values
       AppState::lowThreshold = low;
       AppState::highThreshold = high;
-      saveAppStateToConfiguration() break;
+      saveAppStateToConfiguration();
+      break;
     } else if (low == UNSET_U16 || high == UNSET_U16) {
       Serial.println("[LOOP] Water threshold edit cancelled.");
       if (AppState::lowThreshold == UNSET_U16 || AppState::highThreshold == UNSET_U16) {
