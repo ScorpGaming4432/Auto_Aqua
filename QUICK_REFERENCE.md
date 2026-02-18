@@ -1,49 +1,48 @@
 # Auto Aqua - Quick Reference Guide
 
 ## System Overview
-
-**Auto Aqua** is a multi-language aquarium automation system with LCD display control and pump management.
+**Auto Aqua** is an Arduino Mega aquarium automation firmware with multilingual UI, pump configuration, and automatic water-level handling.
 
 ## Quick File Reference
 
 | File | Purpose |
 |------|---------|
-| `auto_aqua.ino` | Main entry point, setup(), loop() |
-| `screens.h/.cpp` | All LCD screens and input handling |
-| `display.h/.cpp` | LCD initialization and configuration |
-| `language.h` | Multi-language support (10 languages) |
-| `chars.h` | Custom LCD characters and glyphs |
-| `sensor.h` | Water level sensor interface |
-| `pumps.h` / `water.cpp` | Pump control and I2C communication |
-| `storage.h/.cpp` | Data persistence |
+| `auto_aqua.ino` | Entry point, setup flow, main key handlers |
+| `screens.h/.cpp` | LCD screens and numeric input workflows |
+| `display.h/.cpp` | LCD initialization/configuration |
+| `language.h` | 10-language definitions in PROGMEM |
+| `chars.h` | Custom LCD glyphs |
+| `sensor.h` | Water sensor addressing/helpers |
+| `water.h/.cpp` | Water-level checks and inlet/outlet control |
+| `pumps.h` | Pump model + scheduling helpers |
+| `storage.h/.cpp` | EEPROM persistence + factory reset |
 
-## Hardware Pins
+## Hardware Snapshot
 
-### Keypad
-- **Rows**: 30, 32, 34, 36 (inputs)
-- **Cols**: 31, 33, 35, 37 (outputs)
+### Keypad pins (Arduino Mega)
+- Rows: `30, 32, 34, 36`
+- Cols: `31, 33, 35, 37`
 
-### I2C (LCD Display + Sensors)
-- **SDA (Data)**: Pin 20 (Arduino Mega)
-- **SCL (Clock)**: Pin 21 (Arduino Mega)
+### I2C bus
+- SDA: pin `20`
+- SCL: pin `21`
 
-### I2C Addresses
-- LCD: `0x27` (16x2 display)
+### I2C addresses
+- LCD: `0x27`
 - High-level sensor: `0x78`
 - Low-level sensor: `0x77`
 
 ### Serial
-- Baud rate: `9600`
+- `9600` baud
 
 ## Main Constants
 
 ```cpp
-PUMP_COUNT = 5              // Number of pumps
-LANG_COUNT = 10             // Supported languages
-SCREEN_WIDTH = 16           // LCD columns
-SCREEN_HEIGHT = 2           // LCD rows
-SCREEN_LOCATION = 0x27      // I2C address
-PRZEPLYW = 2000             // Flow rate (ml/ms)
+PUMP_COUNT = 5            // 3 dosing + inlet + outlet
+LANG_COUNT = 10           // supported languages
+SCREEN_WIDTH = 16         // LCD columns
+SCREEN_HEIGHT = 2         // LCD rows
+SCREEN_LOCATION = 0x27    // LCD I2C address
 ```
 
 ## Keypad Layout
@@ -55,184 +54,97 @@ PRZEPLYW = 2000             // Flow rate (ml/ms)
 *  0  #  D
 ```
 
-## Main Screen Commands
+## Active Main-Screen Commands
 
 | Key(s) | Function |
 |--------|----------|
-| 1-5 | Edit pump 1-5 amount |
+| 1-3 | Edit dosing pump amount |
+| D | Edit water thresholds |
+| C | Read/display water level |
 | 0 | Display current time |
-| D | Edit tank volume |
-| C | Read water level |
-| P | Edit pump duration |
-| * | Factory reset (confirm with #) |
-| # | Confirm/Enter edit mode |
+| B | Change language |
+| * | Factory reset (confirm with `#`) |
 
-## Setup Flow
+> Note: Some historical docs/comments mention keys planned for future behavior.
 
-1. Initialize serial & I2C
-2. Display splash screen
+## First-Run Setup Flow
+1. Initialize serial + I2C
+2. Show splash screen
 3. Select language
 4. Configure tank volume
-5. Set pump amounts (1-5)
-6. Synchronize time
-7. Configure pump durations
-8. Enter main loop
+5. Configure dosing amount + interval for pumps 1-3
+6. Set time offset
+7. Configure water thresholds
+8. Save configuration and enter loop
 
-## Main Loop
-
+## Main Loop Summary
 ```
-while(1) {
-  Display main screen
-  Wait for keypad input
-  Route to handler (pump edit, tank volume, time, etc.)
-  Return to main screen
+Draw main screen
+Read keypad key
+Run action (amount/threshold/level/time/language/reset)
+Run automatic water-level check
+Run dosing schedule check
+```
+
+## Numeric Input Behavior
+- **View mode**: show current value
+- **Edit mode**: digits `0-9`
+- `#`: confirm / move field (screen-dependent)
+- `*`: cancel
+- `D`: backspace (threshold editor)
+- `A`: save (threshold editor)
+
+## Core Data Structures
+
+```cpp
+struct Pump {
+  uint16_t amount;      // ml
+  uint64_t duration;    // ms / interval context
+};
+```
+
+```cpp
+namespace AppState {
+  uint8_t languageIndex;
+  Pump pumps[PUMP_COUNT];
+  uint32_t tankVolume;
+  int64_t timeOffset;
 }
 ```
 
-## Configuration Screens
-
-### Numeric Input (Tank, Amount, Duration)
-- **View mode**: See current value, press # to edit
-- **Edit mode**: Enter digits (0-9), press # to confirm, * to cancel
-- **Format**: Right-aligned with underscores
-- **Example**: `<-* _______l #->` for tank volume
-
-### Language Selection
-- **Keys A/B**: Navigate between languages
-- **Keys 0-9**: Jump to language directly
-- **Key #**: Confirm selection
-- **Key ***: Cancel
-
-### Time Setup
-- **Format**: HH:MM:SS
-- **Keys A/B**: Navigate between fields
-- **Keys 0-9**: Enter digit
-- **Key #**: Confirm
-- **Key ***: Cancel
-
-## Data Structures
-
-### Pump Configuration
-```cpp
-struct Pump {
-  uint16_t amount;      // ml (0-9999)
-  uint64_t duration;    // ms
-};
-```
-
-### Global State
-```cpp
-namespace AppState {
-  uint8_t languageIndex;        // 0-9
-  Pump pumps[PUMP_COUNT];       // 5 pumps
-  uint32_t tankVolume;          // liters
-  int64_t timeOffset;           // for RTC sync
-};
-```
-
-## Serial Debug Output
-
-Messages follow a tag format for easy filtering:
-
-- `[SETUP]` - Initialization
-- `[LOOP]` - Main loop events
-- `[AM]` - Amount editing
-- `[TANK]` - Tank volume
-- `[DUR]` - Duration editing
-- `[TIME]` - Time synchronization
-
-Example: `[SETUP] Serial started`
+## EEPROM Sentinel Values
+- Language unset: `0xFF`
+- Tank volume unset: `0xFFFFFFFF`
+- Time offset unset: `0xFFFFFFFFFFFFFFFF`
+- Pump amount unset: `0xFFFF`
+- Pump duration/interval unset: `0xFFFFFFFFFFFFFFFF`
 
 ## Supported Languages
-
-| # | Language | Native Name |
-|---|----------|-------------|
-| 0 | Polish | Polski |
-| 1 | English | English |
-| 2 | Russian | Русский |
-| 3 | German | Deutsch |
-| 4 | French | Français |
-| 5 | Spanish | Español |
-| 6 | Italian | Italiano |
-| 7 | Portuguese | Português |
-| 8 | Turkish | Türkçe |
-| 9 | Czech | Čeština |
+Polish, English, Russian, German, French, Spanish, Italian, Portuguese, Turkish, Czech.
 
 ## Common Operations
 
-### How to Select Language
-1. On splash screen, you're in language selection
-2. Press A/B to scroll or 0-9 to jump
-3. Press # to confirm
+### Change language
+`B` → choose language → confirm.
 
-### How to Configure Tank Volume
-1. From main screen, press D
-2. Current value shows in view mode
-3. Press # to edit
-4. Enter digits (0-9), press # to confirm
+### Edit pump amount
+`1`, `2`, or `3` → edit value → confirm.
 
-### How to Set Pump Amount
-1. From main screen, press 1-5 (for pump 1-5)
-2. View current amount
-3. Press # to edit
-4. Enter amount in ml
-5. Press # to confirm
+### Configure thresholds
+`D` → edit low/high fields → save with `A`.
 
-### How to Reset to Factory Defaults
-1. From main screen, press *
-2. Confirm: press # for yes, * for no
-3. System reboots to setup()
+### Factory reset
+`*` → `#` to confirm.
 
-## Troubleshooting
+## Troubleshooting Quick Table
 
 | Issue | Check |
 |-------|-------|
-| LCD not visible | I2C address (0x27), power, contrast |
-| Keypad not working | Pin connections 30-37, debounce time |
-| Language text garbled | Glyph set loaded, PROGMEM reading |
-| Water sensor not reading | I2C addresses (0x77, 0x78), wire connections |
-| Serial not working | Baud rate 9600, USB cable |
+| LCD blank | I2C address/power/contrast |
+| Keypad no response | Pins 30-37 wiring |
+| Sensor read errors | I2C addresses `0x77`/`0x78`, cabling |
+| Upload fails | Correct board/port, free serial port |
+| Serial logs missing | 9600 baud and cable quality |
 
-## Memory Usage
-
-### PROGMEM (Flash)
-- 10 Language structures (~1200 bytes)
-- Custom glyphs (Polish, Russian, French, Spanish, Portuguese)
-- Screen format strings
-
-### RAM
-- AppState + Pump array (~50 bytes)
-- Display buffers (~100 bytes)
-- Stack/heap (remaining)
-
-## Performance Notes
-
-- **Cursor blink**: 500ms period
-- **Splash animation**: 80ms per frame
-- **Key debounce**: Handled by Keypad library
-- **Serial output**: 9600 baud (19.2ms per char)
-- **I2C**: Standard 100kHz (Arduino default)
-
-## Future Enhancements
-
-- [ ] EEPROM persistence
-- [ ] Scheduled pump cycles
-- [ ] Wireless monitoring (Bluetooth/WiFi)
-- [ ] Alarm system (high/low water)
-- [ ] Pump diagnostics
-- [ ] Settings menu (no restart)
-- [ ] Data logging
-
-## Resources
-
-- **Keypad Library**: Docs in header
-- **LiquidCrystal_I2C**: Standard Arduino library
-- **Wire Library**: I2C communication
-- **Code Documentation**: See CODE_DOCUMENTATION.md
-
----
-
-**Version**: 1.0  
-**Last Updated**: January 2026  
-**Target**: Arduino Mega  
-**Language**: C++ (Arduino)
+## Suggested Documentation Practice
+When key mappings or setup flow change, update both `README.md` and this file in the same commit.
