@@ -10,7 +10,7 @@
 - **Keypad Interface**: 4x4 matrix keypad for user input
 - **Pump Management**: Control up to 5 pumps with configurable amounts and durations
 - **Water Sensing**: I2C-based water level detection
-- **Time Sync**: Built-in time management and RTC support
+- **Time Sync**: Built-in time management
 - **Configurable Settings**: Tank volume, pump amounts, pump durations
 
 ---
@@ -183,7 +183,7 @@ Pump control interface.
 
 **Functions:**
 - `pump_work()`: Activate pump for specified duration
-  - `pump_pin`: Control pin (HIGH=on, LOW=off)
+  - `pump_pin`: Control pin (HIGH=off, LOW=on)
   - `duration_ms`: Runtime in milliseconds
 
 ### Storage
