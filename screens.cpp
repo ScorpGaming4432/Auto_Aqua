@@ -140,7 +140,7 @@ void splashScreen() {
 uint8_t langConfigScreen(uint8_t languageIndex) {
   lcd.clear();
   // Load custom glyphs for the selected language
-  loadGlyphSet(languageIndex);
+  // loadGlyphSet(languageIndex);
 
   // Read language name and prompt from PROGMEM
   char langName[LANG_NAME_LEN + 1];
@@ -185,7 +185,7 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
       // Update display if language changed
       if (newlang != languageIndex) {
         languageIndex = newlang;
-        loadGlyphSet(languageIndex);
+        // loadGlyphSet(languageIndex);
         readLanguageField(languageIndex, 0, langName, LANG_NAME_LEN);
         readLanguageField(languageIndex, LANG_NAME_LEN + 1, langPrompt, LANG_PROMPT_LEN);
         lcd.setCursor(0, 0);

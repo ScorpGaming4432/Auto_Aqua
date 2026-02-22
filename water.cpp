@@ -8,6 +8,7 @@
  * based on configurable thresholds.
  */
 
+#include "language.h"
 #include "debug.h"
 #include "storage.h"
 #include "water.h"
@@ -18,6 +19,8 @@
 #include <EEPROM.h>
 #include <string.h>
 #include "pumps.h"
+
+extern Language LANG_BUF;
 
 // Static member variable definition
 bool WaterSensor::initialized = false;
@@ -640,7 +643,7 @@ void displayWaterLevelStatus(const WaterLevelResult& result) {
   if (result.error != WATER_ERROR_NONE) {
     // Display error message
     lcd.setCursor(0, 0);
-    lcd.print("Water Sensor Error");
+    lcd.print("Water Sensor Err");
     lcd.setCursor(0, 1);
     
     switch (result.error) {
