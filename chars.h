@@ -73,8 +73,7 @@ uint8_t scratch[8];
  * @param revealRows How many rows to reveal from bottom
  * @param scratchBuf Output buffer for the frame
  */
-void makeRevealFrame(uint8_t charIndex, uint8_t revealRows,
-                     uint8_t scratchBuf[]) {
+void makeRevealFrame(uint8_t charIndex, uint8_t revealRows, uint8_t scratchBuf[]) {
   // Build frame by reading drop character and masking rows
   for (uint8_t row = 0; row < 8; row++) {
     uint8_t pix = pgm_read_byte(&dropChars[charIndex][row]);
