@@ -1,383 +1,147 @@
-Below is a **rule set**, grouped by category.
-
-No fluff. Just violations.
+# Coding Guidelines
 
 ---
 
-# 🔴 SECTION 1 — Structural Size Rules
-
-These are your average anti-chaos constraints.
+# SECTION 1 — Structural Size Rules
 
 ## 1.1 Function Length
-
-* ❌ ERROR if function > 40 lines
-* ⚠ WARNING if > 30 lines
-
----
+Limit functions to 30 lines. Functions must not exceed 40 lines.
 
 ## 1.2 Function Nesting Depth
-
-* ❌ ERROR if nesting depth > 4
-* ⚠ WARNING if > 3
-
-Track `{}` depth inside function.
-
-Deep nesting = broken abstraction.
-
----
+Limit function nesting depth to 3. Nesting depth must not exceed 4.
 
 ## 1.3 Line Width
-
-* ❌ ERROR if line > 120 chars
-* ⚠ WARNING if > 100 chars
-
----
+Limit lines to 100 characters. Lines must not exceed 120 characters.
 
 ## 1.4 File Length
-
-* ⚠ WARNING if file > 500 lines
-* ❌ ERROR if > 800 lines
-
-Large files = multiple responsibilities.
+Limit files to 500 lines. Files must not exceed 800 lines.
 
 ---
 
-# 🟠 SECTION 2 — Function Discipline
+# SECTION 2 — Function Discipline
 
 ## 2.1 Parameter Count
-
-* ❌ ERROR if > 5 parameters
-* ⚠ WARNING if > 4
-
-More than 5 means:
-
-* pass struct
-* redesign interface
-
----
+Limit function parameters to 4. Functions must not exceed 5 parameters. Consider passing a struct or redesigning the interface.
 
 ## 2.2 Boolean Parameter Rule
-
-* ❌ ERROR if function has 2+ bool parameters
-
-Example of crime:
-
-```cpp
-doStuff(true, false);
-```
-
-That's unreadable intent.
-
----
+Avoid functions with two or more boolean parameters to ensure readable intent (e.g., `doStuff(true, false)` is unclear).
 
 ## 2.3 Multiple Responsibility Heuristic
-
-Flag if:
-
-* Function contains more than 1 of:
-
-  * I/O calls
-  * Logic branching
-  * Formatting strings
-  * Persistence calls
-  * Hardware interaction
-
-(Yes, heuristic-based. Good enough.)
-
----
+Functions should perform a single responsibility. Avoid combining more than one of the following: I/O calls, logic branching, string formatting, persistence calls, or hardware interaction.
 
 ## 2.4 Early Return Enforcement
-
-* ⚠ WARNING if function has nested `if` that could be early-returned
-
-Encourage:
-
-```cpp
-if (!valid)
-    return;
-```
-
-Instead of:
-
-```cpp
-if (valid) {
-    ...
-}
-```
+Favor early returns (`if (!valid) return;`) over deeply nested `if` statements.
 
 ---
 
-# 🟡 SECTION 3 — Struct / Class Discipline
+# SECTION 3 — Struct / Class Discipline
 
 ## 3.1 Field Count
-
-* ❌ ERROR if struct has > 15 fields
-* ⚠ WARNING if > 10
-
----
+Limit struct fields to 10. Structs must not exceed 15 fields.
 
 ## 3.2 Mixed Responsibility Fields
-
-Flag if struct contains:
-
-* hardware-related names (`pin`, `port`, `baud`)
-  AND
-* UI names (`screen`, `menu`, `cursor`)
-  AND
-* config names (`timeout`, `mode`, `enabled`)
-
-That's 3 domains in one blob.
-Instead you can try using namespaces as often as you can. If that's not viable, use context clues.
-
----
+Avoid structs that contain fields from different domains (e.g., hardware-related, UI-related, and configuration names). Use namespaces or context clues.
 
 ## 3.3 Width Rule
-
-* ❌ ERROR if any struct declaration line > 120 chars
-
-Kill horizontal sprawl.
-
----
+Struct declaration lines must not exceed 120 characters.
 
 ## 3.4 Public Data in Classes (C++)
-
-* ⚠ WARNING if class has > 3 public data members
-
-Encourage encapsulation.
+Limit public data members in classes to 3 or less to encourage encapsulation.
 
 ---
 
-# 🟢 SECTION 4 — Header Rules
+# SECTION 4 — Header Rules
 
 ## 4.1 Header Guard
-
-* ❌ ERROR if header lacks:
-
-  * `#pragma once`
-    OR
-  * traditional include guards
-
----
+All headers must include `#pragma once` or traditional include guards.
 
 ## 4.2 Implementation in Header
-
-* ❌ ERROR if non-inline function defined in header
-
-Except:
-
-* templates
-* constexpr
-* inline
-
----
+Do not define non-inline functions in headers. Exceptions: templates, `constexpr`, and `inline` functions.
 
 ## 4.3 Include Hygiene
-
-* ⚠ WARNING if header includes more than 8 other headers
-
-Suggest forward declarations.
-
----
+Limit header includes to 8 or less. Consider using forward declarations.
 
 ## 4.4 Using Namespace
-
-* ❌ ERROR if `using namespace` appears in header
-
-Immediate execution.
+Do not use `using namespace` in header files.
 
 ---
 
-# 🔵 SECTION 5 — C++ Modern Discipline
+# SECTION 5 — C++ Modern Discipline
 
 ## 5.1 Raw new/delete
-
-* ❌ ERROR on:
-
-  * `new`
-  * `delete`
-  * `malloc`
-  * `free`
-
-Unless explicitly marked with comment:
-
-```cpp
-// NOLINT_MANUAL_MEMORY
-```
-
-> That's a "get out of jail free" card for legacy code or special cases. Use it sparingly. But what are you, a caveman stuck with ANSI C?
-
----
+Avoid `new`, `delete`, `malloc`, or `free`. Use smart pointers. If manual memory management is essential (e.g., legacy code, special cases), mark with `// NOLINT_MANUAL_MEMORY`.
 
 ## 5.2 Owning Raw Pointer
-
-* ⚠ WARNING if class contains raw pointer member
-  Unless clearly non-owning (heuristic: name contains `* const` reference-like usage).
-
----
+Avoid owning raw pointer members in classes. Raw pointer members should be clearly non-owning (e.g., `* const` reference-like usage).
 
 ## 5.3 Macro Abuse
-
-* ❌ ERROR if project defines > 20 macros
-* ⚠ WARNING if macro defines non-constant expression logic
-
----
+Limit project macros to 20. Avoid macros that define non-constant expression logic.
 
 ## 5.4 C-Style Cast
-
-* ❌ ERROR on `(Type)value`
-  Require:
-* `static_cast`
-* `reinterpret_cast`
-* etc.
+Use `static_cast`, `reinterpret_cast`, `const_cast`, or `dynamic_cast` instead of C-style casts (`(Type)value`).
 
 ---
 
-# 🟣 SECTION 6 — Arduino-Specific Rules
-
-For **Arduino** projects.
+# SECTION 6 — Arduino-Specific Rules
 
 ## 6.1 .ino Discipline
-
-* ❌ ERROR if `.ino` contains:
-
-  * logic loops
-  * conditionals
-  * hardware calls
-
-Allow only:
-
-* includes
-* setup()
-* loop()
-* delegation calls
-
----
+`.ino` files must only contain includes, `setup()`, `loop()`, and delegation calls. Avoid logic loops, conditionals, or direct hardware calls within `.ino` files.
 
 ## 6.2 Global Variable Rule
-
-* ❌ ERROR if global non-const variable count > 5
-* ⚠ WARNING if > 3
-
----
+Limit global non-const variables to 3. Global non-const variables must not exceed 5.
 
 ## 6.3 Delay Usage
-
-* ⚠ WARNING on `delay()` usage
-  Encourage non-blocking timers.
-
----
+Prefer non-blocking timers over `delay()` calls.
 
 ## 6.4 Hardware Leakage
-
-* ⚠ WARNING if hardware pin names appear outside hardware module
-
-If `screens.cpp` references `PIN_LED`, that’s architecture rot.
+Avoid referencing hardware pin names outside dedicated hardware modules.
 
 ---
 
-# ⚫ SECTION 7 — Complexity Metrics
-
-Now we get serious.
+# SECTION 7 — Complexity Metrics
 
 ## 7.1 Cyclomatic Complexity
-
-* ❌ ERROR if > 15
-* ⚠ WARNING if > 10
-
-Count:
-
-* if
-* else if
-* for
-* while
-* case
-* &&
-* ||
-
----
+Limit cyclomatic complexity to 10. Complexity must not exceed 15. Count `if`, `else if`, `for`, `while`, `case`, `&&`, `||`.
 
 ## 7.2 Switch Case Length
-
-* ⚠ WARNING if single `case` > 15 lines
-
-Extract to function.
-
----
+Extract `case` blocks exceeding 15 lines into separate functions.
 
 ## 7.3 Magic Numbers
-
-* ⚠ WARNING on numeric literals except:
-
-  * 0
-  * 1
-  * -1
-  * powers of 2
-
-Everything else should be:
-
-```cpp
-constexpr int timeout_ms = 500;
-```
+Define numeric literals (except 0, 1, -1, and powers of 2) as `constexpr` variables. Example: `constexpr int timeout_ms = 500;`.
 
 ---
 
-# ⚪ SECTION 8 — Formatting Enforcement
+# SECTION 8 — Formatting Enforcement
 
 ## 8.1 Indentation Consistency
-
-* ❌ ERROR if tabs and spaces mixed
-
----
+Do not mix tabs and spaces for indentation.
 
 ## 8.2 Trailing Whitespace
-
-* ❌ ERROR
-
----
+Avoid trailing whitespace.
 
 ## 8.3 Multiple Blank Lines
-
-* ⚠ WARNING if > 2 consecutive blank lines
+Limit consecutive blank lines to 2.
 
 ---
 
-# 🧠 SECTION 9 — Architecture Smell Detection
-
-Heuristic-based but useful.
+# SECTION 9 — Architecture Smell Detection
 
 ## 9.1 God Module
-
-* ❌ ERROR if file:
-
-  * > 800 lines
-    > AND
-  * contains 3+ domain keywords (ui, hardware, storage)
-
----
+Avoid "God Modules": files exceeding 800 lines that contain keywords from 3 or more distinct domains (e.g., ui, hardware, storage).
 
 ## 9.2 Cyclic Include Detection
-
-* ❌ ERROR if include graph has cycle
-
----
+The include graph must not contain cycles.
 
 ## 9.3 Function Call Depth
-
-* ⚠ WARNING if call chain depth > 7
-
-Stack spaghetti detection.
+Limit function call chain depth to 7.
 
 ---
 
-# 🧨 Bonus: Personal "Discipline Mode"
-
-Add optional mode:
+# Bonus: Personal "Discipline Mode"
 
 ## Strict Mode
-
-* Function max 30 lines
-* Max nesting 3
-* Max struct fields 10
-* Max params 4
-
-Flip a config flag.
+For stricter enforcement, apply the following limits:
+*   Function max 30 lines
+*   Max nesting 3
+*   Max struct fields 10
+*   Max parameters 4
