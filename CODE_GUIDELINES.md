@@ -5,11 +5,11 @@ No fluff. Just violations.
 
 ---
 
-🔴 SECTION 1 — Structural Size Rules
+# 🔴 SECTION 1 — Structural Size Rules
 
 These are your average anti-chaos constraints.
 
-1.1 Function Length
+## 1.1 Function Length
 
 ❌ ERROR if function > 40 lines
 
@@ -18,7 +18,7 @@ These are your average anti-chaos constraints.
 
 ---
 
-1.2 Function Nesting Depth
+## 1.2 Function Nesting Depth
 
 ❌ ERROR if nesting depth > 4
 
@@ -32,7 +32,7 @@ Deep nesting = broken abstraction.
 
 ---
 
-1.3 Line Width
+## 1.3 Line Width
 
 ❌ ERROR if line > 120 chars
 
@@ -44,7 +44,7 @@ Yes, your 600-character struct dies here.
 
 ---
 
-1.4 File Length
+## 1.4 File Length
 
 ⚠ WARNING if file > 500 lines
 
@@ -56,9 +56,9 @@ Large files = multiple responsibilities.
 
 ---
 
-🟠 SECTION 2 — Function Discipline
+# 🟠 SECTION 2 — Function Discipline
 
-2.1 Parameter Count
+## 2.1 Parameter Count
 
 ❌ ERROR if > 5 parameters
 
@@ -75,7 +75,7 @@ redesign interface
 
 ---
 
-2.2 Boolean Parameter Rule
+## 2.2 Boolean Parameter Rule
 
 ❌ ERROR if function has 2+ bool parameters
 
@@ -89,7 +89,7 @@ That’s unreadable intent.
 
 ---
 
-2.3 Multiple Responsibility Heuristic
+## 2.3 Multiple Responsibility Heuristic
 
 Flag if:
 
@@ -112,7 +112,7 @@ Hardware interaction
 
 ---
 
-2.4 Early Return Enforcement
+## 2.4 Early Return Enforcement
 
 ⚠ WARNING if function has nested if that could be early-returned
 
@@ -131,9 +131,9 @@ if (valid) {
 
 ---
 
-🟡 SECTION 3 — Struct / Class Discipline
+# 🟡 SECTION 3 — Struct / Class Discipline
 
-3.1 Field Count
+## 3.1 Field Count
 
 ❌ ERROR if struct has > 15 fields
 
@@ -143,7 +143,7 @@ if (valid) {
 
 ---
 
-3.2 Mixed Responsibility Fields
+## 3.2 Mixed Responsibility Fields
 
 Flag if struct contains:
 
@@ -160,7 +160,7 @@ Instead you can try using namespaces as often as you can. If that's not viable, 
 
 ---
 
-3.3 Width Rule
+## 3.3 Width Rule
 
 ❌ ERROR if any struct declaration line > 120 chars
 
@@ -170,7 +170,7 @@ Kill horizontal sprawl.
 
 ---
 
-3.4 Public Data in Classes (C++)
+## 3.4 Public Data in Classes (C++)
 
 ⚠ WARNING if class has > 3 public data members
 
@@ -180,9 +180,9 @@ Encourage encapsulation.
 
 ---
 
-🟢 SECTION 4 — Header Rules
+# 🟢 SECTION 4 — Header Rules
 
-4.1 Header Guard
+## 4.1 Header Guard
 
 ❌ ERROR if header lacks:
 
@@ -195,7 +195,7 @@ traditional include guards
 
 ---
 
-4.2 Implementation in Header
+## 4.2 Implementation in Header
 
 ❌ ERROR if non-inline function defined in header
 
@@ -212,7 +212,7 @@ inline
 
 ---
 
-4.3 Include Hygiene
+## 4.3 Include Hygiene
 
 ⚠ WARNING if header includes more than 8 other headers
 
@@ -222,7 +222,7 @@ Suggest forward declarations.
 
 ---
 
-4.4 Using Namespace
+## 4.4 Using Namespace
 
 ❌ ERROR if using namespace appears in header
 
@@ -232,9 +232,9 @@ Immediate execution.
 
 ---
 
-🔵 SECTION 5 — C++ Modern Discipline
+# 🔵 SECTION 5 — C++ Modern Discipline
 
-5.1 Raw new/delete
+## 5.1 Raw new/delete
 
 ❌ ERROR on:
 
@@ -255,7 +255,7 @@ Unless explicitly marked with comment:
 
 ---
 
-5.2 Owning Raw Pointer
+## 5.2 Owning Raw Pointer
 
 ⚠ WARNING if class contains raw pointer member
 Unless clearly non-owning (heuristic: name contains * const reference-like usage).
@@ -264,7 +264,7 @@ Unless clearly non-owning (heuristic: name contains * const reference-like usage
 
 ---
 
-5.3 Macro Abuse
+## 5.3 Macro Abuse
 
 ❌ ERROR if project defines > 20 macros
 
@@ -274,7 +274,7 @@ Unless clearly non-owning (heuristic: name contains * const reference-like usage
 
 ---
 
-5.4 C-Style Cast
+## 5.4 C-Style Cast
 
 ❌ ERROR on (Type)value
 Require:
@@ -289,11 +289,11 @@ etc.
 
 ---
 
-🟣 SECTION 6 — Arduino-Specific Rules
+# 🟣 SECTION 6 — Arduino-Specific Rules
 
 For Arduino projects.
 
-6.1 .ino Discipline
+## 6.1 .ino Discipline
 
 ❌ ERROR if .ino contains:
 
@@ -319,7 +319,7 @@ delegation calls
 
 ---
 
-6.2 Global Variable Rule
+## 6.2 Global Variable Rule
 
 ❌ ERROR if global non-const variable count > 5
 
@@ -329,7 +329,7 @@ delegation calls
 
 ---
 
-6.3 Delay Usage
+## 6.3 Delay Usage
 
 ⚠ WARNING on delay() usage
 Encourage non-blocking timers.
@@ -338,7 +338,7 @@ Encourage non-blocking timers.
 
 ---
 
-6.4 Hardware Leakage
+## 6.4 Hardware Leakage
 
 ⚠ WARNING if hardware pin names appear outside hardware module
 
@@ -348,11 +348,11 @@ If screens.cpp references PIN_LED, that’s architecture rot.
 
 ---
 
-⚫ SECTION 7 — Complexity Metrics
+# ⚫ SECTION 7 — Complexity Metrics
 
 Now we get serious.
 
-7.1 Cyclomatic Complexity
+## 7.1 Cyclomatic Complexity
 
 ❌ ERROR if > 15
 
@@ -379,7 +379,7 @@ case
 
 ---
 
-7.2 Switch Case Length
+## 7.2 Switch Case Length
 
 ⚠ WARNING if single case > 15 lines
 
@@ -389,7 +389,7 @@ Extract to function.
 
 ---
 
-7.3 Magic Numbers
+## 7.3 Magic Numbers
 
 ⚠ WARNING on numeric literals except:
 
@@ -410,9 +410,9 @@ constexpr int timeout_ms = 500;
 
 ---
 
-⚪ SECTION 8 — Formatting Enforcement
+# ⚪ SECTION 8 — Formatting Enforcement
 
-8.1 Indentation Consistency
+## 8.1 Indentation Consistency
 
 ❌ ERROR if tabs and spaces mixed
 
@@ -420,7 +420,7 @@ constexpr int timeout_ms = 500;
 
 ---
 
-8.2 Trailing Whitespace
+## 8.2 Trailing Whitespace
 
 ❌ ERROR
 
@@ -428,7 +428,7 @@ constexpr int timeout_ms = 500;
 
 ---
 
-8.3 Multiple Blank Lines
+## 8.3 Multiple Blank Lines
 
 ⚠ WARNING if > 2 consecutive blank lines
 
@@ -436,11 +436,11 @@ constexpr int timeout_ms = 500;
 
 ---
 
-🧠 SECTION 9 — Architecture Smell Detection
+# 🧠 SECTION 9 — Architecture Smell Detection
 
 Heuristic-based but useful.
 
-9.1 God Module
+## 9.1 God Module
 
 ❌ ERROR if file:
 
@@ -455,7 +455,7 @@ contains 3+ domain keywords (ui, hardware, storage)
 
 ---
 
-9.2 Cyclic Include Detection
+## 9.2 Cyclic Include Detection
 
 ❌ ERROR if include graph has cycle
 
@@ -463,7 +463,7 @@ contains 3+ domain keywords (ui, hardware, storage)
 
 ---
 
-9.3 Function Call Depth
+## 9.3 Function Call Depth
 
 ⚠ WARNING if call chain depth > 7
 
@@ -473,7 +473,7 @@ Stack spaghetti detection.
 
 ---
 
-🧨 Bonus: Personal “Discipline Mode”
+# 🧨 Bonus: Personal “Discipline Mode”
 
 Add optional mode:
 
