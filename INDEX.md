@@ -3,6 +3,7 @@
 ## 📚 Documentation Files
 
 ### Start Here
+- **[README.md](README.md)** - Project overview, wiring, quick start, and runtime key mappings
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Fast access guide for developers (⭐ START HERE)
 - **[DOCUMENTATION_COMPLETE.md](DOCUMENTATION_COMPLETE.md)** - Overview of all documentation added
 
@@ -75,6 +76,13 @@
 ---
 
 ## 📖 Documentation Content Overview
+
+### [README.md](README.md)
+- Hardware and wiring summary
+- Current key mapping tied to implemented handlers
+- EEPROM layout and sentinel values
+- Build/upload and verification checklist
+- Recommended improvement roadmap
 
 ### [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
 - File structure and purposes
@@ -181,10 +189,11 @@ All code follows these conventions:
 ## 🚀 Getting Started
 
 ### For Coding
-1. Read [QUICK_REFERENCE.md](QUICK_REFERENCE.md) (5 minutes)
-2. Review [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md) (10 minutes)
-3. Check relevant source file comments
-4. Reference [CODE_DOCUMENTATION.md](CODE_DOCUMENTATION.md) as needed
+1. Read [README.md](README.md) (5 minutes)
+2. Read [QUICK_REFERENCE.md](QUICK_REFERENCE.md) (5 minutes)
+3. Review [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md) (10 minutes)
+4. Check relevant source file comments
+5. Reference [CODE_DOCUMENTATION.md](CODE_DOCUMENTATION.md) as needed
 
 ### For Understanding Flow
 1. [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md) - State machine
