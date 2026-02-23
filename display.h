@@ -20,11 +20,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <stdint.h>
 
-// LCD I2C address (0x27 is default for 16x2 displays)
-#define SCREEN_LOCATION 0x27
-// LCD dimensions
-#define SCREEN_WIDTH 16
-#define SCREEN_HEIGHT 2
+#include "hardware.h"
 
 // Global LCD object for display operations
 extern LiquidCrystal_I2C lcd;

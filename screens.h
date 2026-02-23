@@ -20,25 +20,29 @@
 #include <Keypad.h>
 #include <stdint.h>
 
+#include "hardware.h"
+#include "language.h"
+
 // Keypad configuration - 4x4 matrix
-const byte ROWS = 4;
-const byte COLS = 4;
+// inside hardware.h to avoid hardware leakage into screens.cpp
 
 // Keypad layout definition
-const char keys[ROWS][COLS] = { { '1', '2', '3', 'A' },
+const char keys[Hardware::KEYPAD_ROWS][Hardware::KEYPAD_COLS] = { { '1', '2', '3', 'A' },
                                 { '4', '5', '6', 'B' },
                                 { '7', '8', '9', 'C' },
                                 { '*', '0', '#', 'D' } };
 
 // Arduino pins for keypad column connections
-const byte colPins[COLS] = { 31, 33, 35, 37 };
+const byte colPins[Hardware::KEYPAD_COLS] = { Hardware::KEYPAD_COL_PINS[0], Hardware::KEYPAD_COL_PINS[1], Hardware::KEYPAD_COL_PINS[2], Hardware::KEYPAD_COL_PINS[3] };
 // Arduino pins for keypad row connections
-const byte rowPins[ROWS] = { 30, 32, 34, 36 };
+const byte rowPins[Hardware::KEYPAD_ROWS] = { Hardware::KEYPAD_ROW_PINS[0], Hardware::KEYPAD_ROW_PINS[1], Hardware::KEYPAD_ROW_PINS[2], Hardware::KEYPAD_ROW_PINS[3] };
 
 // Global keypad object
 extern Keypad keypad;
 // Flag indicating if we're in edit mode
 extern bool editFlag;
+// Language buffer loaded from PROGMEM
+extern Language LANG_BUFFER;
 
 /**
  * Display the splash screen animation on startup

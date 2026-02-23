@@ -84,7 +84,7 @@ bool isConfigurationValid(const Configuration& config) {
     valid = false;
   }
 
-  for (uint8_t i = 0; i < PUMP_COUNT; i++) {
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     if (config.pumpAmounts[i] == UNSET_U16) {
       SerialPrint(STORAGE, F("Invalid: pumpAmounts["), i, F("] is UNSET. "), config.pumpAmounts[i]);
       valid = false;
@@ -141,7 +141,7 @@ void loadConfigurationToAppState() {
     AppState::lowThreshold = config.lowThreshold;
     AppState::highThreshold = config.highThreshold;
 
-    for (uint8_t i = 0; i < PUMP_COUNT; i++) {
+    for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
       AppState::pumps[i].setAmount(config.pumpAmounts[i]);
       AppState::pumps[i].setDuration(config.pumpDurations[i]);
       AppState::pumps[i].setDosingInterval(config.pumpDosingIntervals[i]);
@@ -157,7 +157,7 @@ void loadConfigurationToAppState() {
     AppState::lowThreshold = DEFAULT_CONFIG.lowThreshold;
     AppState::highThreshold = DEFAULT_CONFIG.highThreshold;
 
-    for (uint8_t i = 0; i < PUMP_COUNT; i++) {
+    for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
       AppState::pumps[i].setAmount(DEFAULT_CONFIG.pumpAmounts[i]);
       AppState::pumps[i].setDuration(DEFAULT_CONFIG.pumpDurations[i]);
       AppState::pumps[i].setDosingInterval(DEFAULT_CONFIG.pumpDosingIntervals[i]);
@@ -176,7 +176,7 @@ void saveAppStateToConfiguration() {
   config.lowThreshold = AppState::lowThreshold;
   config.highThreshold = AppState::highThreshold;
 
-  for (uint8_t i = 0; i < PUMP_COUNT; i++) {
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     config.pumpAmounts[i] = AppState::pumps[i].getAmount();
     config.pumpDurations[i] = AppState::pumps[i].getDuration();
     config.pumpDosingIntervals[i] = AppState::pumps[i].getDosingInterval();
@@ -198,7 +198,7 @@ void factoryReset() {
   resetConfig.lowThreshold = UNSET_U16;
   resetConfig.highThreshold = UNSET_U16;
 
-  for (uint8_t i = 0; i < PUMP_COUNT; i++) {
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     resetConfig.pumpAmounts[i] = UNSET_U16;
     resetConfig.pumpDurations[i] = UNSET_U64;
     resetConfig.pumpDosingIntervals[i] = UNSET_U32;

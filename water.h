@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "screens.h"
 
-#define PUMP_COUNT 5
+#include "hardware.h"
 
 // Forward declaration so functions can reference the result type
 struct WaterLevelResult;
@@ -28,9 +28,30 @@ enum WaterError {
   WATER_ERROR_PUMP_TIMEOUT = 4
 };
 
-// Safety limits
-#define MAX_PUMP_RUN_TIME_MS 30000   // 30 seconds maximum pump runtime
-#define SENSOR_READ_TIMEOUT_MS 1000  // 1 second timeout for sensor reads
+// Consolidated pump state structure (reduces global variables from 13 to 1)
+struct WaterPumpState {
+  // Pump runtime tracking
+  uint32_t inletPumpTotalRuntime = 0;
+  uint32_t outletPumpTotalRuntime = 0;
+  unsigned long pumpStartTime = 0;
+  bool pumpActive = false;
+  uint8_t activePumpPin = 0;
+  
+  // Error tracking
+  WaterError currentError = WATER_ERROR_NONE;
+  
+  // Hysteresis state
+  bool inletPumpWasActive = false;
+  bool outletPumpWasActive = false;
+  
+  // Actual pump running state (for display purposes)
+  bool inletPumpRunning = false;
+  bool outletPumpRunning = false;
+  
+  // Electrovalve state
+  bool electrovalveActive = false;
+  uint32_t electrovalveTotalRuntime = 0;
+};
 
 // Encapsulates low/high touch sensor data and reading logic
 class WaterSensor {

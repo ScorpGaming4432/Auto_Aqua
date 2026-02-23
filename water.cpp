@@ -31,16 +31,7 @@ bool WaterSensor::initialized = false;
 
 
 
-// I2C sensor addresses
-#define ATTINY1_HIGH_ADDR 0x78
-#define ATTINY2_LOW_ADDR 0x77
-
-// Water level sensing constants
-#define NO_TOUCH 0xFE
-#define THRESHOLD 100
-
-// Hysteresis to prevent pump cycling (percentage)
-#define HYSTERESIS_MARGIN 5
+#include "hardware.h"
 
 // ============================================================================
 // Global State Variables
@@ -48,27 +39,8 @@ bool WaterSensor::initialized = false;
 
 // Water level thresholds are now stored in AppState
 
-// Pump runtime tracking
-static uint32_t inletPumpTotalRuntime = 0;
-static uint32_t outletPumpTotalRuntime = 0;
-static unsigned long pumpStartTime = 0;
-static bool pumpActive = false;
-static uint8_t activePumpPin = 0;
-
-// Error tracking
-static WaterError currentError = WATER_ERROR_NONE;
-
-// Hysteresis state
-static bool inletPumpWasActive = false;
-static bool outletPumpWasActive = false;
-
-// Actual pump running state (for display purposes)
-static bool inletPumpRunning = false;
-static bool outletPumpRunning = false;
-
-// Electrovalve state
-static bool electrovalveActive = false;
-static uint32_t electrovalveTotalRuntime = 0;
+// Consolidated pump state (replaces 13 individual static variables)
+static WaterPumpState pumpState;
 
 // ============================================================================
 // WaterSensor class implementation
@@ -96,11 +68,11 @@ WaterError WaterSensor::readSensorData() {
 
   // Read low sensor with timeout
   memset(low_data, 0, sizeof(low_data));
-  Wire.requestFrom(ATTINY2_LOW_ADDR, 8);
+  Wire.requestFrom(Hardware::WATER_SENSOR_LOW_ADDR, 8);
 
   // Wait for data with timeout
   while (8 != Wire.available()) {
-    if (millis() - startTime > SENSOR_READ_TIMEOUT_MS) {
+    if (millis() - startTime > Hardware::SENSOR_READ_TIMEOUT_MS) {
       lastError = WATER_ERROR_SENSOR_TIMEOUT;
       sensorConnected = false;
       SerialPrint(WATER, "Sensor timeout - Low sensor raw data: ");
@@ -119,11 +91,11 @@ WaterError WaterSensor::readSensorData() {
 
   // Read high sensor with timeout
   memset(high_data, 0, sizeof(high_data));
-  Wire.requestFrom(ATTINY1_HIGH_ADDR, 12);
+  Wire.requestFrom(Hardware::WATER_SENSOR_HIGH_ADDR, 12);
 
   // Wait for data with timeout
   while (12 != Wire.available()) {
-    if (millis() - startTime > SENSOR_READ_TIMEOUT_MS) {
+    if (millis() - startTime > Hardware::SENSOR_READ_TIMEOUT_MS) {
       lastError = WATER_ERROR_SENSOR_TIMEOUT;
       sensorConnected = false;
       SerialPrint(WATER, "Sensor timeout - Low sensor raw data: ");
@@ -188,13 +160,13 @@ uint8_t WaterSensor::getTouchedSections() {
   uint8_t trig_section = 0;
 
   for (int i = 0; i < 8; i++) {
-    if (low_data[i] > THRESHOLD) {
+    if (low_data[i] > Hardware::TOUCH_THRESHOLD) {
       touch_val |= 1 << i;
     }
   }
 
   for (int i = 0; i < 12; i++) {
-    if (high_data[i] > THRESHOLD) {
+    if (high_data[i] > Hardware::TOUCH_THRESHOLD) {
       touch_val |= (uint32_t)1 << (8 + i);
     }
   }
@@ -221,12 +193,12 @@ uint32_t WaterSensor::readWaterLevelRaw() {
 
   uint32_t touch_val = 0;
   for (int i = 0; i < 8; i++) {
-    if (low_data[i] > THRESHOLD) {
+    if (low_data[i] > Hardware::TOUCH_THRESHOLD) {
       touch_val |= 1 << i;
     }
   }
   for (int i = 0; i < 12; i++) {
-    if (high_data[i] > THRESHOLD) {
+    if (high_data[i] > Hardware::TOUCH_THRESHOLD) {
       touch_val |= (uint32_t)1 << (8 + i);
     }
   }
@@ -283,7 +255,7 @@ bool WaterSensor::calibrateSensor(uint8_t sensorType, uint8_t *referenceData) {
 }
 
 bool WaterSensor::isSensorConnected() const {
-  return sensorConnected && (millis() - lastSuccessfulRead < SENSOR_READ_TIMEOUT_MS * 3);
+  return sensorConnected && (millis() - lastSuccessfulRead < Hardware::SENSOR_READ_TIMEOUT_MS * 3);
 }
 
 // ============================================================================
@@ -292,12 +264,12 @@ bool WaterSensor::isSensorConnected() const {
 
 void initWaterManagement() {
   // Initialize pump control pins
-  pinMode(INLET_PUMP_PIN, OUTPUT);
-  pinMode(OUTLET_PUMP_PIN, OUTPUT);
-  pinMode(ELECTROVALVE_PIN, OUTPUT);
-  digitalWrite(INLET_PUMP_PIN, HIGH); // Assuming active LOW for pumps
-  digitalWrite(OUTLET_PUMP_PIN, HIGH); // Assuming active LOW for pumps
-  digitalWrite(ELECTROVALVE_PIN, HIGH); // Start with electrovalve closed
+  pinMode(Hardware::INLET_PUMP_PIN, OUTPUT);
+  pinMode(Hardware::OUTLET_PUMP_PIN, OUTPUT);
+  pinMode(Hardware::ELECTROVALVE_PIN, OUTPUT);
+  digitalWrite(Hardware::INLET_PUMP_PIN, HIGH); // Assuming active LOW for pumps
+  digitalWrite(Hardware::OUTLET_PUMP_PIN, HIGH); // Assuming active LOW for pumps
+  digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH); // Start with electrovalve closed
 
   // Initialize pump configurations
   initPumpModes();
@@ -313,48 +285,48 @@ void initWaterManagement() {
   }
 
   // Initialize hysteresis state
-  inletPumpWasActive = false;
-  outletPumpWasActive = false;
+  pumpState.inletPumpWasActive = false;
+  pumpState.outletPumpWasActive = false;
 
   SerialPrint(WATER, F("Water management initialized"));
   SerialPrint(WATER, F("Inlet pump: AUTO"));
   SerialPrint(WATER, F("Outlet pump: AUTO"));
   SerialPrint(WATER, F("Thresholds: "));
   SerialPrint(WATER, AppState::lowThreshold, F("% - "), AppState::highThreshold, F("%"));
-  SerialPrint(WATER, F("Hysteresis margin: "), HYSTERESIS_MARGIN, F("%"));
+  SerialPrint(WATER, F("Hysteresis margin: "), Hardware::HYSTERESIS_MARGIN_PERCENT, F("%"));
 }
 
 WaterLevelResult checkWaterLevel() {
   // Check sensor health first
   WaterError error = waterSensor.readSensorData();
   if (error != WATER_ERROR_NONE) {
-    currentError = error;
+    pumpState.currentError = error;
     SerialPrint(WATER, F("Sensor error: "), error);
-    return {error, 0, inletPumpRunning, outletPumpRunning};
+    return {error, 0, pumpState.inletPumpRunning, pumpState.outletPumpRunning};
   }
   if (!waterSensor.isSensorConnected()) {
-    return {WATER_ERROR_SENSOR_TIMEOUT, 0, inletPumpRunning, outletPumpRunning};
+    return {WATER_ERROR_SENSOR_TIMEOUT, 0, pumpState.inletPumpRunning, pumpState.outletPumpRunning};
   }
 
   uint8_t currentLevel = waterSensor.calculateWaterLevel();
   SerialPrint(WATER, F("Level: "), currentLevel, F("%"));
 
   // Inlet pump control with hysteresis (always automatic)
-  if (currentLevel < AppState::lowThreshold - HYSTERESIS_MARGIN) {
-    if (!inletPumpWasActive) {
+  if (currentLevel < AppState::lowThreshold - Hardware::HYSTERESIS_MARGIN_PERCENT) {
+    if (!pumpState.inletPumpWasActive) {
       SerialPrint(WATER, "Inlet pump ON (level too low)");
       // uint16_t pumpDuration = calculatePumpDuration(currentLevel, AppState::lowThreshold);
       // Serial.print("[WATER] Calculated pump duration: ");
       // Serial.print(pumpDuration);
       // Serial.println("ms");
-      inletPumpWasActive = true;
+      pumpState.inletPumpWasActive = true;
       // runPumpSafely(INLET_PUMP_PIN, pumpDuration);
 
       // read from sensor until level is above low threshold or timeout occurs
       unsigned long startTime = millis();
-      digitalWrite(ELECTROVALVE_PIN, LOW);  // Open electrovalve
-      digitalWrite(INLET_PUMP_PIN, LOW);  // Activate pump (assuming active LOW)
-      inletPumpRunning = true;
+      digitalWrite(Hardware::ELECTROVALVE_PIN, LOW);  // Open electrovalve
+      digitalWrite(Hardware::INLET_PUMP_PIN, LOW);  // Activate pump (assuming active LOW)
+      pumpState.inletPumpRunning = true;
       while (true) {
         uint8_t level = waterSensor.calculateWaterLevel();
         if (level >= AppState::lowThreshold) {
@@ -363,28 +335,28 @@ WaterLevelResult checkWaterLevel() {
         }
         delay(100);  // Check every 100ms
       }
-      digitalWrite(INLET_PUMP_PIN, HIGH);  // Deactivate pump
-      inletPumpRunning = false;
-      digitalWrite(ELECTROVALVE_PIN, HIGH);  // Close electrovalve
-
+      digitalWrite(Hardware::INLET_PUMP_PIN, HIGH);  // Deactivate pump
+      pumpState.inletPumpRunning = false;
+      digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH);  // Close electrovalve
+      pumpState.inletPumpWasActive = false;
     }
   }
 
   // Outlet pump control with hysteresis (always automatic)
-  if (currentLevel > AppState::highThreshold + HYSTERESIS_MARGIN) {
-    if (!outletPumpWasActive) {
+  if (currentLevel > AppState::highThreshold + Hardware::HYSTERESIS_MARGIN_PERCENT) {
+    if (!pumpState.outletPumpWasActive) {
       SerialPrint(WATER, "Outlet pump ON (level too high)");
       // uint16_t pumpDuration = calculatePumpDuration(currentLevel, AppState::highThreshold);
       // Serial.print("[WATER] Calculated pump duration: ");
       // Serial.print(pumpDuration);
       // Serial.println("ms");
-      outletPumpWasActive = true;
+      pumpState.outletPumpWasActive = true;
       // runPumpSafely(OUTLET_PUMP_PIN, pumpDuration);
 
       // read from sensor until level is below high threshold or timeout occurs
       unsigned long startTime = millis();
-      digitalWrite(OUTLET_PUMP_PIN, LOW);  // Activate pump (assuming active LOW)
-      outletPumpRunning = true;
+      digitalWrite(Hardware::OUTLET_PUMP_PIN, LOW);  // Activate pump (assuming active LOW)
+      pumpState.outletPumpRunning = true;
       while (true) {
         uint8_t level = waterSensor.calculateWaterLevel();
         if (level <= AppState::highThreshold) {
@@ -393,8 +365,8 @@ WaterLevelResult checkWaterLevel() {
         }
         delay(100);  // Check every 100ms
       }
-      digitalWrite(OUTLET_PUMP_PIN, HIGH);  // Deactivate pump
-      outletPumpRunning = false;
+      digitalWrite(Hardware::OUTLET_PUMP_PIN, HIGH);  // Deactivate pump
+      pumpState.outletPumpRunning = false;
 
     }
   }
@@ -402,14 +374,14 @@ WaterLevelResult checkWaterLevel() {
   // Electrovalve control is now handled in runPumpSafely() // we dont trust runPumpSafely() anymore so we control electrovalve directly in this function
   // It opens before pump starts and closes after pump stops
 
-  return {WATER_ERROR_NONE, currentLevel, inletPumpRunning, outletPumpRunning};
+  return {WATER_ERROR_NONE, currentLevel, pumpState.inletPumpRunning, pumpState.outletPumpRunning};
 }
 
 // Pump mode functions moved to pumps module
 
 // Helper function to safely run pumps with timeout protection
 void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
-  if (pumpActive) {
+  if (pumpState.pumpActive) {
     Serial.println("[WATER] Pump already active - skipping");
     return;
   }
@@ -418,35 +390,35 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
   controlElectrovalve(true);
   delay(500);  // Small delay to ensure valve is fully open
 
-  if (duration > MAX_PUMP_RUN_TIME_MS) {
+  if (duration > Hardware::MAX_PUMP_RUN_TIME_MS) {
     Serial.println("[WATER] Pump duration too long - limiting");
-    duration = MAX_PUMP_RUN_TIME_MS;
+    duration = Hardware::MAX_PUMP_RUN_TIME_MS;
   }
 
-  pumpActive = true;
-  activePumpPin = pumpPin;
-  pumpStartTime = millis();
+  pumpState.pumpActive = true;
+  pumpState.activePumpPin = pumpPin;
+  pumpState.pumpStartTime = millis();
 
   // Set actual running state
-  if (pumpPin == INLET_PUMP_PIN) {
-    inletPumpRunning = true;
-  } else if (pumpPin == OUTLET_PUMP_PIN) {
-    outletPumpRunning = true;
+  if (pumpPin == Hardware::INLET_PUMP_PIN) {
+    pumpState.inletPumpRunning = true;
+  } else if (pumpPin == Hardware::OUTLET_PUMP_PIN) {
+    pumpState.outletPumpRunning = true;
   }
 
   digitalWrite(pumpPin, LOW);
 
   // Track runtime
-  if (pumpPin == INLET_PUMP_PIN) {
-    inletPumpTotalRuntime += duration;
-  } else if (pumpPin == OUTLET_PUMP_PIN) {
-    outletPumpTotalRuntime += duration;
+  if (pumpPin == Hardware::INLET_PUMP_PIN) {
+    pumpState.inletPumpTotalRuntime += duration;
+  } else if (pumpPin == Hardware::OUTLET_PUMP_PIN) {
+    pumpState.outletPumpTotalRuntime += duration;
   }
 
   // Wait with timeout protection
   unsigned long startWait = millis();
   while (millis() - startWait < duration) {
-    if (millis() - pumpStartTime > MAX_PUMP_RUN_TIME_MS) {
+    if (millis() - pumpState.pumpStartTime > Hardware::MAX_PUMP_RUN_TIME_MS) {
       Serial.println("[WATER] Pump timeout - stopping");
       break;
     }
@@ -454,19 +426,19 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
   }
 
   digitalWrite(pumpPin, HIGH);
-  pumpActive = false;
+  pumpState.pumpActive = false;
 
   // Close electrovalve after pump operation
   controlElectrovalve(false);
 
   // Reset pump status variables when pump operation completes
-  if (pumpPin == INLET_PUMP_PIN) {
-    inletPumpWasActive = false;
-    inletPumpRunning = false;
+  if (pumpPin == Hardware::INLET_PUMP_PIN) {
+    pumpState.inletPumpWasActive = false;
+    pumpState.inletPumpRunning = false;
     Serial.println("[WATER] Inlet pump operation completed");
-  } else if (pumpPin == OUTLET_PUMP_PIN) {
-    outletPumpWasActive = false;
-    outletPumpRunning = false;
+  } else if (pumpPin == Hardware::OUTLET_PUMP_PIN) {
+    pumpState.outletPumpWasActive = false;
+    pumpState.outletPumpRunning = false;
     Serial.println("[WATER] Outlet pump operation completed");
   }
 }
@@ -477,12 +449,12 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
  */
 void controlElectrovalve(bool open) {
   if (open) {
-    digitalWrite(ELECTROVALVE_PIN, LOW);
-    electrovalveActive = true;
+    digitalWrite(Hardware::ELECTROVALVE_PIN, LOW);
+    pumpState.electrovalveActive = true;
     Serial.println("[WATER] Electrovalve OPENED");
   } else {
-    digitalWrite(ELECTROVALVE_PIN, HIGH);
-    electrovalveActive = false;
+    digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH);
+    pumpState.electrovalveActive = false;
     Serial.println("[WATER] Electrovalve CLOSED");
   }
 }
@@ -492,7 +464,7 @@ void controlElectrovalve(bool open) {
  * @return true if electrovalve is open, false if closed
  */
 bool isElectrovalveOpen() {
-  return electrovalveActive;
+  return pumpState.electrovalveActive;
 }
 
 /**
@@ -510,8 +482,8 @@ uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t target) {
   uint16_t duration = 1000 + (deviation * 100);
 
   // Cap at maximum runtime
-  if (duration > MAX_PUMP_RUN_TIME_MS) {
-    duration = MAX_PUMP_RUN_TIME_MS;
+  if (duration > Hardware::MAX_PUMP_RUN_TIME_MS) {
+    duration = Hardware::MAX_PUMP_RUN_TIME_MS;
   }
 
   Serial.print("[WATER] Pump duration calculated: ");
@@ -598,17 +570,17 @@ void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf) {
 }
 
 WaterError getWaterError() {
-  return currentError;
+  return pumpState.currentError;
 }
 
 void clearWaterError() {
-  currentError = WATER_ERROR_NONE;
+  pumpState.currentError = WATER_ERROR_NONE;
 }
 
 bool checkSensorHealth() {
   WaterError error = waterSensor.readSensorData();
   if (error != WATER_ERROR_NONE) {
-    currentError = error;
+    pumpState.currentError = error;
     SerialPrint(WATER, "Sensor error: ", error);
     return false;
   }
@@ -616,20 +588,20 @@ bool checkSensorHealth() {
 }
 
 void emergencyStopLetPumps() {
-  digitalWrite(INLET_PUMP_PIN, HIGH);
-  digitalWrite(OUTLET_PUMP_PIN, HIGH);
-  pumpActive = false;
+  digitalWrite(Hardware::INLET_PUMP_PIN, HIGH);
+  digitalWrite(Hardware::OUTLET_PUMP_PIN, HIGH);
+  pumpState.pumpActive = false;
   Serial.println("[WATER] Emergency stop - all pumps deactivated");
 }
 
 void getPumpStatistics(uint32_t *inletRuntime, uint32_t *outletRuntime) {
-  if (inletRuntime != NULL) *inletRuntime = inletPumpTotalRuntime;
-  if (outletRuntime != NULL) *outletRuntime = outletPumpTotalRuntime;
+  if (inletRuntime != NULL) *inletRuntime = pumpState.inletPumpTotalRuntime;
+  if (outletRuntime != NULL) *outletRuntime = pumpState.outletPumpTotalRuntime;
 }
 
 void resetPumpStatistics() {
-  inletPumpTotalRuntime = 0;
-  outletPumpTotalRuntime = 0;
+  pumpState.inletPumpTotalRuntime = 0;
+  pumpState.outletPumpTotalRuntime = 0;
   Serial.println("[WATER] Pump statistics reset");
 }
 

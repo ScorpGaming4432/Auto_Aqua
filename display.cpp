@@ -9,6 +9,6 @@
 #include "display.h"
 
 // Create global LCD object with specified I2C address and dimensions
-LiquidCrystal_I2C lcd(SCREEN_LOCATION, SCREEN_WIDTH, SCREEN_HEIGHT);
+LiquidCrystal_I2C lcd(Hardware::LCD_I2C_ADDRESS, Hardware::LCD_WIDTH, Hardware::LCD_HEIGHT);
 // Timer for display dimming/timeout functionality
 uint32_t dimTimer = 0u;

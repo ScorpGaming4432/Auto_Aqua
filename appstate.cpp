@@ -10,7 +10,7 @@
 
 namespace AppState {
 uint8_t languageIndex = 0;
-Pump pumps[PUMP_COUNT];
+Pump pumps[Hardware::PUMP_COUNT];
 uint32_t tankVolume = 0;
 int64_t timeOffset = 0;
 uint16_t lowThreshold = 255;

@@ -11,14 +11,7 @@
 #define PUMPS_H
 
 #include <stdint.h>
-
-// Pump pin assignments (adjust for your hardware)
-#define INLET_PUMP_PIN 7
-#define OUTLET_PUMP_PIN 6
-#define ELECTROVALVE_PIN 5
-
-// Pump flow rate constant: 2 ml/s (adjust based on actual pump specifications)
-#define PRZEPLYW 2
+#include "hardware.h"
 
 class Pump {
 public:

@@ -13,15 +13,16 @@
 #include "appstate.h"
 #include <stdint.h>
 #include "water.h"
+#include "hardware.h"
 
 // Configuration structure that mirrors AppState
 struct Configuration {
   uint8_t languageIndex;
   uint32_t tankVolume;
   int64_t timeOffset;
-  uint16_t pumpAmounts[PUMP_COUNT];
-  uint64_t pumpDurations[PUMP_COUNT];
-  uint16_t pumpDosingIntervals[PUMP_COUNT]; // Dosing intervals in days
+  uint16_t pumpAmounts[Hardware::PUMP_COUNT];
+  uint64_t pumpDurations[Hardware::PUMP_COUNT];
+  uint16_t pumpDosingIntervals[Hardware::PUMP_COUNT]; // Dosing intervals in days
   uint16_t lowThreshold;
   uint16_t highThreshold;
 };

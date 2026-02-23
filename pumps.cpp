@@ -25,22 +25,24 @@
 
 // Initialize pump configurations
 void initPumpModes() {
-  AppState::pumps[INLET_PUMP_PIN].setInlet(true);    // Inlet pump - always automatic
-  AppState::pumps[OUTLET_PUMP_PIN].setOutlet(true);  // Outlet pump - always automatic
+  AppState::pumps[Hardware::INLET_PUMP_PIN].setInlet(true);    // Inlet pump - always automatic
+  AppState::pumps[Hardware::OUTLET_PUMP_PIN].setOutlet(true);  // Outlet pump - always automatic
 }
 
-// Map logical pump index (0..PUMP_COUNT-3) to physical pin numbers
+// Map logical pump index (0..Hardware::DOSING_PUMP_COUNT-1) to physical pin numbers
 static uint8_t pumpIndexToPin(uint8_t pumpIndex) {
-  // Dosing pumps are wired to pins 2,3,4 (pumpIndex 0->2, 1->3, 2->4)
-  return (uint8_t)(2 + pumpIndex);
+  if (pumpIndex < Hardware::DOSING_PUMP_COUNT) {
+    return Hardware::DOSING_PUMP_PINS[pumpIndex];
+  }
+  return 0; // Invalid index
 }
 
 // Scheduler: check dosing pumps and run them when interval elapsed
 void checkDosingSchedule() {
   uint64_t now = seconds();
 
-  // Dosing pumps are the first PUMP_COUNT-2 pumps
-  for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {
+  // Dosing pumps are the first Hardware::PUMP_COUNT-2 pumps
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
     Pump& p = AppState::pumps[i];
 
     // Skip if marked as let pump or interval disabled
@@ -57,10 +59,10 @@ void checkDosingSchedule() {
       continue;
     }
 
-    // Calculate duration in milliseconds using flowrate PRZEPLYW (ml/s)
+    // Calculate duration in milliseconds using flowrate PUMP_FLOW_RATE_ML_PER_SEC (ml/s)
     // duration_ms = (amount_ml * 1000) / flow_ml_per_s
-    uint64_t durationMs = ((uint64_t)amount * 1000ULL) / (uint64_t)PRZEPLYW;
-    if (durationMs > MAX_PUMP_RUN_TIME_MS) durationMs = MAX_PUMP_RUN_TIME_MS;
+    uint64_t durationMs = ((uint64_t)amount * 1000ULL) / (uint64_t)Hardware::PUMP_FLOW_RATE_ML_PER_SEC;
+    if (durationMs > Hardware::MAX_PUMP_RUN_TIME_MS) durationMs = Hardware::MAX_PUMP_RUN_TIME_MS;
 
     p.setDuration(durationMs);
     p.setLastDosingTime(now);

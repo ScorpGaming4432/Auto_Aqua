@@ -73,14 +73,16 @@ Language readLanguage(uint8_t languageIndex) {
 // ============================================================================
 
 // External declarations for keypad arrays defined in screens.h
-extern const char keys[ROWS][COLS];
-extern const byte rowPins[ROWS];
-extern const byte colPins[COLS];
+extern const char keys[Hardware::KEYPAD_ROWS][Hardware::KEYPAD_COLS];
+extern const byte rowPins[Hardware::KEYPAD_ROWS];
+extern const byte colPins[Hardware::KEYPAD_COLS];
 
 // Global keypad object - shared across all screen functions
-Keypad keypad(makeKeymap(keys), const_cast<byte *>(rowPins), const_cast<byte *>(colPins), ROWS, COLS);
+Keypad keypad(makeKeymap(keys), const_cast<byte *>(rowPins), const_cast<byte *>(colPins), Hardware::KEYPAD_ROWS, Hardware::KEYPAD_COLS);
 // Global edit mode flag
 bool editFlag = false;
+// Language buffer loaded from PROGMEM into RAM
+Language LANG_BUFFER;
 
 // ============================================================================
 // Splash screen - displayed at startup

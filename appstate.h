@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "pumps.h"
 #include "water.h"
+#include "hardware.h"
 
 namespace AppState {
 
@@ -24,7 +25,7 @@ extern uint8_t languageIndex;
 // Array of pump configuration/state structures. Size is defined by PUMP_COUNT
 // in `pumps.h`. This holds configuration and runtime state for all pumps,
 // including dosing pumps, inlet/outlet pumps, and any user-configured pumps.
-extern Pump pumps[PUMP_COUNT];
+extern Pump pumps[Hardware::PUMP_COUNT];
 
 // Tank volume used for dosing calculations. Unit: litres. Valid range depends
 // on application but typically > 0. Used by dosing routines to convert

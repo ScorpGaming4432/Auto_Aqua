@@ -28,9 +28,6 @@
 uint64_t lightofft = 0;
 uint64_t lightont = 0;
 
-// Light control pin definition
-#define LIGHT_PIN 8
-
 void (*resetFunc)(void) = 0;
 
 #include "debug.h"
@@ -42,8 +39,10 @@ void (*resetFunc)(void) = 0;
 #include "storage.h"
 #include "appstate.h"
 #include "input.h"
+#include "hardware.h"
 
-Language LANG_BUFFER;  // Buffer to hold language data loaded from PROGMEM into RAM
+// External references
+extern Language LANG_BUFFER;  // Defined in screens.cpp
 
 
 void setup() {
@@ -77,7 +76,7 @@ void setup() {
     SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
 
     // Pump setup
-    for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
+    for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
       SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
       AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
       lcd.clear();
@@ -257,9 +256,9 @@ void loop() {
   WaterLevelResult result = checkWaterLevel();
 
   if (lightont == AppState::timeOffset + seconds()) {
-    digitalWrite(LIGHT_PIN, LOW); // Turn on the light
+    digitalWrite(Hardware::LIGHT_PIN, LOW); // Turn on the light
   } else if (lightofft == AppState::timeOffset + seconds()) {
-    digitalWrite(LIGHT_PIN, HIGH); // Turn off the light
+    digitalWrite(Hardware::LIGHT_PIN, HIGH); // Turn off the light
   }
 
   // Display water level status if there's an error or pumps are active

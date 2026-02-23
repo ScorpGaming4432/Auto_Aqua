@@ -30,7 +30,7 @@ constexpr uint8_t LANG_COUNT = 10;
 // Max characters per string (visible characters). All strings must fit in
 // MAX_LANG_CHARS characters; buffers allocate one extra byte for the null.
 constexpr uint8_t MAX_LANG_CHARS = 16;          // MAX 16 characters per field
-constexpr uint8_t LANG_NAME_LEN = 9;            ///< Language name
+constexpr uint8_t LANG_NAME_LEN = 8;            ///< Language name
 constexpr uint8_t LANG_PROMPT_LEN = 7;          ///< Input prompt
 constexpr uint8_t LANG_TANKTITLE_LEN = 14;      ///< Tank volume title
 constexpr uint8_t LANG_AMOUNTTITLE_LEN = 15;    ///< Pump amount title
