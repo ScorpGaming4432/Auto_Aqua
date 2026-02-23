@@ -182,6 +182,89 @@ Limit function call chain depth to 7.
 
 ---
 
+# SECTION 10 — Debuggability
+
+## 10.1 Required Log Levels
+
+Use exactly the following log levels and meanings:
+
+* `ERROR`: operation failed, data is invalid, safety threshold violated, or any path that returns/propagates an `Errors` value.
+* `WARN`: recoverable anomaly, fallback, retry, degraded mode, or clamped input that may affect behavior.
+* `INFO`: lifecycle milestones and user-visible actions (mode/menu changes, start/stop, configuration loaded/saved).
+* `TRACE`: high-frequency diagnostics for developers (sensor samples, loop deltas, branch tracing).
+
+`TRACE` must be compile-time gated out of release builds (see 10.5).
+
+## 10.2 Error-Path Logging Contract
+
+Every error path must emit one log line before returning/propagating the error. That line must include all of the following fields:
+
+* module/location tag (for example `Location::Sensor`, `Location::Menu`, or equivalent token),
+* stable error identifier (`Errors::Xxx` enum or a stable error code constant),
+* key runtime context required for diagnosis:
+  * inputs,
+  * current state,
+  * threshold/limit values,
+  * latest sensor snapshot (if applicable).
+
+Do not log only free-form text for errors.
+
+## 10.3 External Failure Mapping
+
+Every externally visible failure (LCD text, serial user prompt, API response, UI status) must map to:
+
+1. a user-safe message with no internal implementation details,
+2. an internal debug identifier (`Errors::Xxx` or stable code) that can be traced in logs.
+
+The user-safe message and debug identifier must be emitted together at the failure boundary.
+
+## 10.4 State Transition Logging
+
+Control loops and menu workflows must emit a one-line transition log on every state change:
+
+* format: `<component> <from_state> -> <to_state> [trigger/context]`,
+* level: `INFO` for normal transitions, `WARN` if transition is forced/recovery-based.
+
+Do not split one transition across multiple log lines.
+
+## 10.5 Compile-Time Log Gating
+
+All logging must be controlled through compile-time flags. `DEBUG_SERIAL_ENABLED` is required as the primary gate for `SerialPrint` diagnostics.
+
+Expected defaults:
+
+* development/debug builds: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, and optionally `TRACE` enabled),
+* release builds: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN` only; no `TRACE`).
+
+If additional flags are introduced (for example `TRACE_LOGS_ENABLED`), they must default to off in release builds.
+
+## 10.6 Good vs Bad Debug Statement Examples
+
+Good:
+
+```cpp
+SerialPrint::error(
+  "[Location::Sensor] code=Errors::MoistureReadFailed "
+  "input.pin=A0 state=Sampling threshold=300 sensor.raw=812"
+);
+
+SerialPrint::info(
+  "[Location::Menu] Idle -> Watering trigger=BTN_OK selectedZone=2"
+);
+```
+
+Bad:
+
+```cpp
+SerialPrint::error("read failed");
+SerialPrint::println("something went wrong");
+SerialPrint::info("state changed");
+```
+
+The bad examples are invalid because they omit `Location`, stable `Errors` code, and runtime context.
+
+---
+
 # Bonus: Personal "Discipline Mode"
 
 ## Strict Mode
