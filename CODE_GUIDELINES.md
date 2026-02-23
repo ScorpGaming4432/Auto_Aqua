@@ -323,25 +323,11 @@ SerialPrint::info("state changed");
 
 These are invalid because they omit `Location`, stable `Errors` code, and runtime context.
 
-
 ---
 
-# Bonus: Personal "Discipline Mode"
+# SECTION 11 — Enforcement & Rollout
 
-## Strict Mode — ADVISORY
-
-For stricter enforcement, apply the following limits:
-
-- Function max 30 lines
-- Max nesting 3
-- Max struct fields 10
-- Max parameters 4
-
----
-
-# SECTION 10 — Enforcement & Rollout
-
-## 10.1 Manual PR Checklist (High-Value Review Pass)
+## 11.1 Manual PR Checklist (High-Value Review Pass)
 
 Use this checklist for every PR, even when no automated checks fail:
 
@@ -351,7 +337,7 @@ Use this checklist for every PR, even when no automated checks fail:
 * [ ] Sentinel values are documented near declaration and use sites (`SECTION 7.3`).
 * [ ] State mutations include a short intent comment when side effects are not obvious (`SECTION 2.3`, `SECTION 9.1`).
 
-## 10.2 Lightweight Static-Analysis Hooks (Suggested)
+## 11.2 Lightweight Static-Analysis Hooks (Suggested)
 
 These tools are optional but recommended because they have low setup overhead and can run locally or in CI:
 
@@ -369,7 +355,7 @@ Minimal hook pattern:
 * pre-commit: run `cpplint` on changed files.
 * pre-push or CI: run `clang-tidy`/`cppcheck` on touched modules and `lizard` on diffs.
 
-## 10.3 Debug Readiness Checklist
+## 11.3 Debug Readiness Checklist
 
 Before merging, verify debug readiness on changed behavior:
 
@@ -377,7 +363,7 @@ Before merging, verify debug readiness on changed behavior:
 * [ ] Logs/events include a meaningful Location tag (module + function or subsystem).
 * [ ] Captured context is enough to replay the failure path (key inputs, state transition, and trigger).
 
-## 10.4 Legacy Migration Note
+## 11.4 Legacy Migration Note
 
 For legacy cleanups, prioritize high-churn modules first to maximize risk reduction per change:
 
@@ -386,5 +372,18 @@ For legacy cleanups, prioritize high-churn modules first to maximize risk reduct
 3. `storage.cpp`
 
 Apply the manual checklist in `10.1` when touching these files, even for small edits.
+
+---
+
+# Bonus: Personal "Discipline Mode"
+
+## Strict Mode — ADVISORY
+
+For stricter enforcement, apply the following limits:
+
+- Function max 30 lines
+- Max nesting 3
+- Max struct fields 10
+- Max parameters 4
 
 **Implement ONLY after everything seems to be intact**
