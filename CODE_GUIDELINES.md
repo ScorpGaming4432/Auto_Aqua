@@ -252,6 +252,80 @@ Limit function call chain depth to 7.
 
 ---
 
+# SECTION 10 — Debuggability
+
+## 10.1 Required Log Levels
+
+Use only these levels:
+
+* `ERROR`: failures, invalid data, safety-limit violations, or any path returning/propagating `Errors`.
+* `WARN`: recoverable anomalies (fallback, retry, clamping, degraded mode).
+* `INFO`: lifecycle/user-visible events (start/stop, mode/menu changes, config load/save).
+* `TRACE`: high-frequency diagnostics for development only.
+
+## 10.2 Error Log: Required Fields
+
+Before any error is returned/propagated, emit one error log line with:
+
+* module/location tag (for example `Location::Sensor`),
+* stable identifier (`Errors::Xxx` or stable code),
+* key context (inputs, current state, thresholds/limits, latest sensor snapshot when relevant).
+
+## 10.3 Error Log: Prohibited Style
+
+Error logs must not be free-form-only text like `"something failed"`.
+
+## 10.4 Externally Visible Failure Mapping
+
+Every externally visible failure (LCD, serial user output, API/UI status) must include both:
+
+1. a user-safe message (no internal details),
+2. an internal debug identifier (`Errors::Xxx` or stable code).
+
+## 10.5 State Transition Logging
+
+Control loops and menu workflows must log one line per state change:
+
+* format: `<component> <from_state> -> <to_state> [trigger/context]`,
+* level: `INFO` for expected transitions, `WARN` for forced/recovery transitions.
+
+## 10.6 Compile-Time Log Gating
+
+All logs must be compile-time gated. `DEBUG_SERIAL_ENABLED` is the primary gate for `SerialPrint` diagnostics.
+
+Default expectations:
+
+* development/debug: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, optional `TRACE`),
+* release: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN`; no `TRACE`).
+
+If extra flags are introduced (for example `TRACE_LOGS_ENABLED`), they must default to OFF in release.
+
+## 10.7 Good Examples
+
+```cpp
+SerialPrint::error(
+  "[Location::Sensor] code=Errors::MoistureReadFailed "
+  "input.pin=A0 state=Sampling threshold=300 sensor.raw=812"
+);
+
+SerialPrint::info(
+  "[Location::Menu] Idle -> Watering trigger=BTN_OK selectedZone=2"
+);
+```
+
+## 10.8 Bad Examples
+
+```cpp
+SerialPrint::error("read failed");
+SerialPrint::println("something went wrong");
+SerialPrint::info("state changed");
+```
+
+These are invalid because they omit `Location`, stable `Errors` code, and runtime context.
+
+
+---
+
 # Bonus: Personal "Discipline Mode"
 
 ## Strict Mode — ADVISORY
