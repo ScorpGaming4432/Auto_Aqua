@@ -5,6 +5,7 @@
 **Auto Aqua** is an Arduino-based automatic aquarium water management system. It provides multi-language support for 10 languages with an intuitive LCD interface and keypad control. The system manages multiple pumps for precise liquid dispensing and monitors water levels via I2C sensors.
 
 ### Key Features
+
 - **Multi-Language Support**: 10 languages (Polish, English, Russian, German, French, Spanish, Italian, Portuguese, Turkish, Czech)
 - **LCD Display**: 16x2 I2C LCD with custom character support
 - **Keypad Interface**: 4x4 matrix keypad for user input
@@ -20,7 +21,9 @@
 ### Main Files
 
 #### `auto_aqua.ino` - Main Sketch
+
 The entry point for the Arduino application. Contains:
+
 - `Pump` struct: Encapsulates pump configuration (amount, duration)
 - `AppState` namespace: Manages global application state
   - `languageIndex`: Currently selected language (0-9)
@@ -29,6 +32,7 @@ The entry point for the Arduino application. Contains:
   - `timeOffset`: Time synchronization offset
 
 **Key Functions:**
+
 - `setup()`: Initialization, hardware setup, and initial configuration
   - Displays splash screen
   - Language selection
@@ -43,6 +47,7 @@ The entry point for the Arduino application. Contains:
   - Dispatches to appropriate handlers
 
 **Key Event Handlers:**
+
 - `handleEditAmount(uint8_t idx)`: Edit pump amount
 - `handleEditTankVolume()`: Edit tank capacity
 - `handleEditPumpDuration(uint8_t idx)`: Configure pump runtime
@@ -50,7 +55,9 @@ The entry point for the Arduino application. Contains:
 ### Display Management
 
 #### `display.h` / `display.cpp`
+
 Configures the 16x2 I2C LCD display.
+
 - **Constants:**
   - `SCREEN_LOCATION`: I2C address (0x27)
   - `SCREEN_WIDTH`: 16 characters
@@ -62,9 +69,11 @@ Configures the 16x2 I2C LCD display.
 ### User Interface
 
 #### `screens.h` / `screens.cpp`
+
 Implements all LCD screens and user input handling.
 
 **Key Functions:**
+
 - `splashScreen()`: Animated startup screen with water drop effect
 - `langConfigScreen()`: Language selection interface
   - Keys A/B: Navigate languages
@@ -93,6 +102,7 @@ Implements all LCD screens and user input handling.
 - `lcdPrintWithGlyphs()`: Print with custom character support
 
 **Keypad Layout:**
+
 ```
 1  2  3  A
 4  5  6  B
@@ -101,6 +111,7 @@ Implements all LCD screens and user input handling.
 ```
 
 **Key Mappings (Main Screen):**
+
 - `1-5`: Edit pump 1-5 amounts
 - `0`: Display current time
 - `D`: Edit tank volume
@@ -111,13 +122,16 @@ Implements all LCD screens and user input handling.
 ### Language Support
 
 #### `language.h`
+
 Defines multi-language support infrastructure.
 
 **Constants:**
+
 - `LANG_COUNT`: 10 supported languages
 - `PUMP_COUNT`: 5 pumps
 
 **Language Structure:**
+
 ```cpp
 struct Language {
   char langName[16];              // Language display name
@@ -132,6 +146,7 @@ struct Language {
 
 **Languages (0-9):**
 0. Polski (Polish)
+
 1. English
 2. Русский (Russian)
 3. Deutsch (German)
@@ -143,20 +158,24 @@ struct Language {
 9. Čeština (Czech)
 
 **Functions:**
+
 - `readLanguage()`: Load entire language structure
 - `readLanguageField()`: Load single field (memory efficient)
 
 ### Custom Characters
 
 #### `chars.h`
+
 Manages custom LCD characters for language-specific glyphs.
 
 **Features:**
+
 - Drop animation frames for splash screen
 - Language-specific glyphs for Polish, Russian, French, Spanish, Portuguese
 - Glyph set mapping for all 10 languages
 
 **Functions:**
+
 - `makeRevealFrame()`: Create animation frame for reveal effect
 - `animateIcon()`: Generate animation frames
 - `loadCharSet()`: Load glyphs to LCD CGRAM
@@ -165,23 +184,29 @@ Manages custom LCD characters for language-specific glyphs.
 ### Sensors & Pumps
 
 #### `sensor.h` / `water.cpp`
+
 Handles water level sensing and pump control.
 
 **I2C Addresses:**
+
 - `ADDR_HIGH`: 0x78 (high-level sensor)
 - `ADDR_LOW`: 0x77 (low-level sensor)
 
 **Functions:**
+
 - `read_water_sensor()`: Get water level difference
 - `readI2CData()`: Low-level I2C communication
 
 #### `pumps.h` / `water.cpp`
+
 Pump control interface.
 
 **Constants:**
+
 - `PRZEPLYW`: Flow rate (2000 ml/ms)
 
 **Functions:**
+
 - `pump_work()`: Activate pump for specified duration
   - `pump_pin`: Control pin (HIGH=off, LOW=on)
   - `duration_ms`: Runtime in milliseconds
@@ -189,9 +214,11 @@ Pump control interface.
 ### Storage
 
 #### `storage.h` / `storage.cpp`
+
 Data persistence (currently stub).
 
 Planned features:
+
 - EEPROM storage of configuration
 - Tank volume persistence
 - Pump settings
@@ -202,21 +229,25 @@ Planned features:
 ## Architecture & Design Patterns
 
 ### State Management
+
 - `AppState` namespace encapsulates global application state
 - Pump array for managing multiple pump configurations
 - Language index for dynamic localization
 
 ### Screen Model
+
 - **View Mode**: Display current value, # to enter edit
 - **Edit Mode**: Modify values with real-time feedback
 - **Numeric Input**: Generic editor for tank, amounts, durations
 
 ### Memory Optimization
+
 - PROGMEM for all strings to save RAM
 - Language field reading for targeted access vs. full structure loading
 - Custom character caching to minimize I2C overhead
 
 ### User Interface
+
 - Menu-driven configuration
 - Real-time feedback with cursor blinking
 - Multilingual error messages and prompts
@@ -227,6 +258,7 @@ Planned features:
 ## Typical Operation Flow
 
 ### Startup (setup())
+
 1. Initialize serial and I2C
 2. Display splash screen with animation
 3. Language selection
@@ -236,6 +268,7 @@ Planned features:
 7. Pump duration configuration
 
 ### Runtime (loop())
+
 1. Display main screen ("Main screen" / "No task")
 2. Wait for keypad input
 3. Route to appropriate handler:
@@ -248,11 +281,14 @@ Planned features:
 4. Return to main screen
 
 ### Input Editing
+
 1. Show current value in view mode
 2. User presses # to enter edit mode
 3. Accept numeric input (0-9)
-4. * to clear/backspace or cancel
-5. # to confirm
+4. - to clear/backspace or cancel
+
+5. `#` to confirm
+
 6. Display returns to main screen
 
 ---
@@ -260,6 +296,7 @@ Planned features:
 ## Key Algorithms
 
 ### Numeric Input Processing
+
 ```
 1. Initialize with current value
 2. Display with cursor at last digit position
@@ -271,6 +308,7 @@ Planned features:
 ```
 
 ### Language Switching
+
 ```
 1. Load language glyphs to LCD
 2. Read language name from PROGMEM
@@ -280,6 +318,7 @@ Planned features:
 ```
 
 ### Water Level Sensing
+
 ```
 1. Read high-level sensor (12 bytes)
 2. Read low-level sensor (8 bytes)
@@ -292,11 +331,13 @@ Planned features:
 ## Keypad Architecture
 
 ### Hardware
+
 - **Rows (input)**: Arduino pins 30, 32, 34, 36
 - **Cols (output)**: Arduino pins 31, 33, 35, 37
 - **Library**: Keypad (matrix scanning)
 
 ### Features
+
 - Debouncing built into library
 - Non-blocking input checking
 - Custom keymap with symbols and letters
@@ -306,11 +347,13 @@ Planned features:
 ## Memory Considerations
 
 ### RAM Usage
+
 - Language structures stored in PROGMEM (Flash)
 - Minimal RAM buffer usage for display strings
 - Dynamic string loading on-demand
 
 ### Flash Usage
+
 - ~10 Language structures × 120 bytes each
 - Custom glyphs for 6 languages
 - Screen formatting strings
@@ -333,6 +376,7 @@ Planned features:
 ## Debugging Tips
 
 ### Serial Output Format
+
 - `[SETUP]`: Initialization phase
 - `[LOOP]`: Main loop events
 - `[AM]`: Pump amount editing
@@ -342,6 +386,7 @@ Planned features:
 - `[LOOP]`: Main loop dispatch
 
 ### Common Issues
+
 1. **LCD not displaying**: Check I2C address (0x27)
 2. **Keypad not responding**: Verify pin configuration
 3. **Language text garbled**: Glyph set not loaded for language
