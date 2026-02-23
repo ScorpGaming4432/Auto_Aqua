@@ -13,7 +13,7 @@ void setup() {
   Serial.print(F("Wrote 0x")); Serial.println(val, HEX);
 
   // read it back
-  uint16_t r = ((uint16_t)EEPROM.read(ADDR) << 8) | EEPROM.read(ADDR + 1);
+  uint16_t r = (static_cast<uint16_t>(EEPROM.read(ADDR)) << 8) | EEPROM.read(ADDR + 1);
   Serial.print(F("Read 0x")); Serial.println(r, HEX);
 }
 

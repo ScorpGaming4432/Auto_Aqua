@@ -1,34 +1,15 @@
-//TODO: Wyjebać amount z pompek bo są nie ważne i essa.
-
 /**
  * ============================================================================
  * AUTO AQUA - Automatic Aquarium Management System
- * ============================================================================
- * 
- * Main Arduino sketch for an automated aquarium water management system.
- * Features:
- *   - Multi-language support (10 languages)
- *   - LCD display interface (16x2 I2C)
- *   - 4x4 keypad for user input
- *   - Multiple pump control (up to 5 pumps)
- *   - Water level sensing via I2C
- *   - Configurable tank volume and liquid amounts
- *   - Pump duration settings
- *   - Time synchronization
- *
- * Hardware:
- *   - Arduino Mega
- *   - LiquidCrystal_I2C display (0x27)
- *   - 4x4 Matrix Keypad
- *   - I2C Water level sensors
- * 
  * ============================================================================
 **/
 
 uint64_t lightofft = 0;
 uint64_t lightont = 0;
 
-void (*resetFunc)(void) = 0;
+// Function to trigger software reset via jump to address 0
+// NOLINT_MANUAL_MEMORY: Low-level AVR reset mechanism
+void (* const softwareReset)(void) = nullptr;
 
 #include "debug.h"
 #include "screens.h"
@@ -49,7 +30,7 @@ extern Language LANG_BUFFER;  // Defined in screens.cpp
 // ============================================================================
 
 void setupSerial() {
-  Serial.begin(9600);
+  Serial.begin(Hardware::SERIAL_BAUD);
   Wire.begin();
   SerialPrint(SETUP, "Serial started");
 }
@@ -67,28 +48,32 @@ void runInitialConfiguration() {
   SerialPrint(SETUP, "Language index set to ", AppState::languageIndex);
   LANG_BUFFER = readLanguage(AppState::languageIndex);
   SerialPrint(SETUP, " Language ", AppState::languageIndex, " loaded from PROGMEM");
-  SerialPrint(SETUP, "Language name: ", LANG_BUFFER.langName);
+  SerialPrint(SETUP, "Language name: ", LANG_BUFFER.general.name);
 
   // Tank volume setup
-  AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
+  AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true, 0);
   SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
 
   // Pump setup - dosing pumps only (indices 2, 3, 4)
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
     SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
-    AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
+    DosingConfig cfg = AppState::pumps[i].getConfig();
+    cfg.amount = pumpAmountScreen(LANG_BUFFER.tank.amountTitle, i, true, 0);
+    AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getAmount());
+    SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getConfig().amount);
 
     SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
-    AppState::pumps[i].setDosingInterval(pumpIntervalScreen(LANG_BUFFER.intervalTitle, i, true, 0));
+    cfg = AppState::pumps[i].getConfig();
+    cfg.interval = pumpIntervalScreen(LANG_BUFFER.tank.intervalTitle, i, true, 0);
+    AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getDosingInterval());
+    SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getConfig().interval);
   }
 
   // Time offset and thresholds
   AppState::timeOffset = timeSetupScreen();
-  SerialPrint(SETUP, " Time offset set: ", (uint32_t)AppState::timeOffset);
+  SerialPrint(SETUP, " Time offset set: ", static_cast<uint32_t>(AppState::timeOffset));
   handleThreshold();
   lightTimeScreen(lightofft, lightont);
 
@@ -129,9 +114,9 @@ void setup() {
 
 void displayMainScreen() {
   lcd.setCursor(0, 0);
-  lcd.print(LANG_BUFFER.mainScreen);
+  lcd.print(LANG_BUFFER.status.mainScreen);
   lcd.setCursor(0, 1);
-  lcd.print(LANG_BUFFER.noTask);
+  lcd.print(LANG_BUFFER.status.noTask);
 }
 
 void handlePumpConfiguration(char k) {
@@ -146,14 +131,14 @@ void handlePumpConfiguration(char k) {
 void handleWaterManagement(char k) {
   if (k == 'A') {
     SerialPrint(LOOP, "Edit tank volume");
-    AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true,
+    AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true,
                                             AppState::tankVolume);
     saveAppStateToConfiguration();
   } else if (k == 'C') {
     SerialPrint(LOOP, "Measuring water level");
     WaterLevelResult result = checkWaterLevel();
     displayWaterLevelStatus(result);
-    delay(2000);
+    delay(Hardware::UI_DELAY_LONG_MS);
   } else if (k == 'D') {
     SerialPrint(LOOP, "Editing tank thresholds");
     handleThreshold();
@@ -165,7 +150,7 @@ void handleSystemConfiguration(char k) {
   if (k == '0') {
     SerialPrint(LOOP, "Showing Current Time");
     showTime(seconds() + AppState::timeOffset);
-    delay(1000);
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
   } else if (k == 'B') {
     SerialPrint(LOOP, "Language configuration");
     AppState::languageIndex = langConfigScreen(AppState::languageIndex);
@@ -173,7 +158,7 @@ void handleSystemConfiguration(char k) {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Language Set");
-    delay(1000);
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
   }
 }
 
@@ -188,8 +173,8 @@ void handleFactoryReset() {
     if (key == '#') {
       SerialPrint(LOOP, "Factory reset confirmed");
       factoryReset();
-      delay(100);
-      resetFunc();
+      delay(Hardware::UI_DELAY_SHORT_MS);
+      softwareReset();
       break;
     } else if (key == '*') {
       SerialPrint(LOOP, "Factory reset cancelled");
@@ -211,7 +196,7 @@ void handleWaterMonitoring() {
   if (result.error != WATER_ERROR_NONE || result.inletPumpActive ||
       result.outletPumpActive) {
     displayWaterLevelStatus(result);
-    delay(1000);
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
     lcd.clear();
   }
 
@@ -235,5 +220,5 @@ void loop() {
   }
 
   handleWaterMonitoring();
-  delay(100);
+  delay(Hardware::UI_DELAY_SHORT_MS);
 }

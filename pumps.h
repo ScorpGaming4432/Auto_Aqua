@@ -13,6 +13,19 @@
 #include <stdint.h>
 #include "hardware.h"
 
+enum class PumpRole {
+  DOSING,
+  INLET,
+  OUTLET
+};
+
+struct DosingConfig {
+  uint16_t amount = 0;
+  uint64_t duration = 0;
+  uint64_t interval = 0;
+  uint64_t lastTime = 0;
+};
+
 class Pump {
 public:
   Pump();
@@ -20,34 +33,17 @@ public:
   int32_t edit(uint8_t pumpIndex, const char* amountTitle);
   int32_t viewEdit(uint8_t pumpIndex, const char* amountTitle);
 
-  void setAmount(uint16_t v);
-  uint16_t getAmount() const;
-
-  void setDuration(uint64_t d);  // calculate
-  uint64_t getDuration() const;
-
-  void setOutlet(bool value);
-  bool getIfOutlet() const;
-
-  void setInlet(bool value);
-  bool getIfInlet() const;
-
-  bool getIfLet() const;
-
-  // Automatic dosing functionality
-  void setDosingInterval(uint64_t interval);
-  uint32_t getDosingInterval() const;
-  void setLastDosingTime(uint64_t time);
-  uint64_t getLastDosingTime() const;
+  void setConfig(const DosingConfig& config);
+  DosingConfig getConfig() const;
+  
+  void setRole(PumpRole role);
+  PumpRole getRole() const;
+  
   bool shouldDose(uint64_t currentSeconds) const;
 
 private:
-  uint16_t amount;
-  uint64_t duration;           // Calculated duration based on amount and flow rate
-  bool isLet = false;          // True = in/out let pump, False = dosing pump
-  bool isOutLet;               // True = outlet pump, False = inlet pump (only relevant if isLet is true)
-  uint64_t dosingInterval = 0; // Interval between doses in hours (0 = disabled)
-  uint64_t lastDosingTime = 0; // Last time this pump was activated (seconds)
+  DosingConfig config;
+  PumpRole role = PumpRole::DOSING;
 };
 
 

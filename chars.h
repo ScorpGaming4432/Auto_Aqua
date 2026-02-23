@@ -20,16 +20,16 @@
 #ifndef CUSTOM_CHARS_H
 #define CUSTOM_CHARS_H
 
+#pragma once
+
 #include "display.h"
 #include "debug.h"
-
-#pragma once
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <stdint.h>
 
 // Number of available custom character slots on LCD display
-#define LCD_AVAILABLE_CHAR_SLOTS 8
+constexpr uint8_t LCD_AVAILABLE_CHAR_SLOTS = 8;
 
 /**
  * Structure representing a set of custom glyphs for a language
@@ -63,9 +63,6 @@ const uint8_t special_glyphs[][8] PROGMEM = {
   { 0b00000, 0b00000, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b00000 },  // Russian: и
   { 0b01010, 0b00100, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b00000 },  // Russian: й
 };
-
-// Temporary buffer for building animated characters
-uint8_t scratch[8];
 
 /**
  * Create a frame for drop animation reveal effect

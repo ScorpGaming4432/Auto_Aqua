@@ -88,7 +88,7 @@ Do not use `using namespace` in header files.
 
 ## 5.1 Raw new/delete
 
-Avoid `new`, `delete`, `malloc`, or `free`. Use smart pointers. If manual memory management is essential (e.g., legacy code, special cases), mark with `// NOLINT_MANUAL_MEMORY`.
+Avoid `new`, `delete`, `malloc`, or `free`. Use smart pointers. If manual memory management is essential (e.g., legacy code, special cases), mark with `// RAW MANUAL MEMORY`.
 
 ## 5.2 Owning Raw Pointer
 
@@ -110,7 +110,7 @@ EXCEPTION: Low-level memory management. Use a decorator comment `// C cast: <rea
 
 ## 6.1 .ino Discipline
 
-`.ino` files must only contain includes, `setup()`, `loop()`, and delegation calls. Avoid logic loops, conditionals, or direct hardware calls within `.ino` files. 
+`.ino` files must only contain includes, `setup()`, `loop()`, and delegation calls. Avoid logic loops, conditionals, or direct hardware calls within `.ino` files.
 
 ## 6.2 Global Variable Rule
 
@@ -127,6 +127,10 @@ Avoid referencing hardware pin names outside dedicated hardware modules.
 ## 6.5 Helper functions
 
 Helper functions may be introduced into the main `.ino`. Too many helper functions should be avoided and instead split into respective files.
+
+## 6.6 LCD magic strings
+
+Avoid hardcoding LCD strings. Instead use a language struct or `constexpr` variables for all display strings.
 
 ---
 

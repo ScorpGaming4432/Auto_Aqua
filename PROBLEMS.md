@@ -181,14 +181,17 @@
 ## SUMMARY OF MAJOR ISSUES
 
 ✅ **FIXED IN PHASE 1 (Hardware Abstraction Layer)**:
+
 1. Hardware leakage - Pin references scattered across modules now centralized in `Hardware::` namespace
 2. Include hygiene - Hardware constants removed from scattered #defines
 
 ✅ **FIXED IN PHASE 2 (Global Variable Reduction)**:
+
 1. Global variable overuse in water.cpp - 13 individual statics consolidated into single `WaterPumpState` struct
 2. LANG_BUFFER relocation - Moved from auto_aqua.ino to screens.cpp (UI-appropriate module)
 
 ✅ **FIXED IN PHASE 3 (Function Decomposition)**:
+
 1. `setup()` function length - Decomposed from 66 lines to 14 lines with 5 helper functions
 2. `loop()` function length - Decomposed from 163 lines to 18 lines with 6 handler functions
 3. Function complexity violations - All functions now ≤ 30 lines per guidelines

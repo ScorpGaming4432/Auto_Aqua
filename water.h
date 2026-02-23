@@ -36,18 +36,18 @@ struct WaterPumpState {
   unsigned long pumpStartTime = 0;
   bool pumpActive = false;
   uint8_t activePumpPin = 0;
-  
+
   // Error tracking
   WaterError currentError = WATER_ERROR_NONE;
-  
+
   // Hysteresis state
   bool inletPumpWasActive = false;
   bool outletPumpWasActive = false;
-  
+
   // Actual pump running state (for display purposes)
   bool inletPumpRunning = false;
   bool outletPumpRunning = false;
-  
+
   // Electrovalve state
   bool electrovalveActive = false;
   uint32_t electrovalveTotalRuntime = 0;
@@ -190,7 +190,7 @@ uint8_t calculateWaterLevel();
  * Display water level status on LCD screen
  * @param result Water level check result containing level, error, and pump status
  */
-void displayWaterLevelStatus(const WaterLevelResult& result);
+void displayWaterLevelStatus(const WaterLevelResult &result);
 
 /**
  * Control electrovalve (open/close)

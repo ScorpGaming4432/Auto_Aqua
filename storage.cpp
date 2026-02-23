@@ -61,71 +61,43 @@ Configuration loadConfiguration() {
   return config;
 }
 
+static bool validatePumps(const Configuration& config) {
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
+    if (config.pumpAmounts[i] == UNSET_U16 ||
+        config.pumpDurations[i] == UNSET_U64 ||
+        config.pumpDosingIntervals[i] == UNSET_U32) {
+      SerialPrint(STORAGE, F("Invalid: Pump "), i, F(" data UNSET"));
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool validateThresholds(const Configuration& config) {
+  if (config.lowThreshold > config.highThreshold ||
+      config.lowThreshold >= 100 ||
+      config.highThreshold > 100) {
+    SerialPrint(STORAGE, F("Invalid: Thresholds out of range"));
+    return false;
+  }
+  return true;
+}
+
 bool isConfigurationValid(const Configuration& config) {
   SerialPrint(STORAGE, F("Validating configuration..."));
 
-  bool valid = true;
-
-  if (config.languageIndex == UNSET_U8) {
-    SerialPrint(STORAGE, F("Invalid: languageIndex is UNSET. "), config.languageIndex);
-    valid = false;
+  if (config.languageIndex == UNSET_U8 ||
+      config.tankVolume == UNSET_U32 ||
+      config.timeOffset == UNSET_I64) {
+    SerialPrint(STORAGE, F("Invalid: General data UNSET"));
+    return false;
   }
 
-  if (config.tankVolume == UNSET_U32) {
-    SerialPrint(STORAGE, F("Invalid: tankVolume is UNSET. "), config.tankVolume);
-    valid = false;
-  }
+  if (!validatePumps(config)) return false;
+  if (!validateThresholds(config)) return false;
 
-  if (config.timeOffset == UNSET_I64) {
-    double value;
-    memcpy(&value, &config.timeOffset, sizeof(double));
-    SerialPrint(STORAGE, F("Invalid: timeOffset is UNSET. "), value);
-
-    valid = false;
-  }
-
-  for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
-    if (config.pumpAmounts[i] == UNSET_U16) {
-      SerialPrint(STORAGE, F("Invalid: pumpAmounts["), i, F("] is UNSET. "), config.pumpAmounts[i]);
-      valid = false;
-    }
-
-    if (config.pumpDurations[i] == UNSET_U64) {
-      double value;
-      memcpy(&value, &config.pumpDurations[i], sizeof(double));
-
-      SerialPrint(STORAGE, F("Invalid: pumpDurations["), i, F("] is UNSET. "), value);
-      valid = false;
-    }
-
-    if (config.pumpDosingIntervals[i] == UNSET_U32) {
-      SerialPrint(STORAGE, F("Invalid: pumpDosingIntervals["), i, F("] is UNSET. "), config.pumpDosingIntervals[i]);
-      valid = false;
-    }
-  }
-
-  if (config.lowThreshold > config.highThreshold) {
-    SerialPrint(STORAGE, F("Invalid: Thresholds are INVALID.Low="), config.lowThreshold, F(" ; High="), config.highThreshold);
-    valid = false;
-  }
-
-  if (config.lowThreshold >= 100) {
-    SerialPrint(STORAGE, F("Invalid: lowThreshold is UNSET. Low="), config.lowThreshold);
-    valid = false;
-  }
-
-  if (config.highThreshold > 100) {
-    SerialPrint(STORAGE, F("Invalid: highThreshold is UNSET High="), config.highThreshold);
-    valid = false;
-  }
-
-  if (valid) {
-    SerialPrint(STORAGE, F("Configuration is valid."));
-  } else {
-    SerialPrint(STORAGE, F("Configuration validation FAILED."));
-  }
-
-  return valid;
+  SerialPrint(STORAGE, F("Configuration is valid."));
+  return true;
 }
 
 void loadConfigurationToAppState() {
@@ -142,9 +114,11 @@ void loadConfigurationToAppState() {
     AppState::highThreshold = config.highThreshold;
 
     for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
-      AppState::pumps[i].setAmount(config.pumpAmounts[i]);
-      AppState::pumps[i].setDuration(config.pumpDurations[i]);
-      AppState::pumps[i].setDosingInterval(config.pumpDosingIntervals[i]);
+      DosingConfig cfg;
+      cfg.amount = config.pumpAmounts[i];
+      cfg.duration = config.pumpDurations[i];
+      cfg.interval = config.pumpDosingIntervals[i];
+      AppState::pumps[i].setConfig(cfg);
     }
 
     SerialPrint(STORAGE, F("Configuration applied to AppState"));
@@ -158,9 +132,11 @@ void loadConfigurationToAppState() {
     AppState::highThreshold = DEFAULT_CONFIG.highThreshold;
 
     for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
-      AppState::pumps[i].setAmount(DEFAULT_CONFIG.pumpAmounts[i]);
-      AppState::pumps[i].setDuration(DEFAULT_CONFIG.pumpDurations[i]);
-      AppState::pumps[i].setDosingInterval(DEFAULT_CONFIG.pumpDosingIntervals[i]);
+      DosingConfig cfg;
+      cfg.amount = DEFAULT_CONFIG.pumpAmounts[i];
+      cfg.duration = DEFAULT_CONFIG.pumpDurations[i];
+      cfg.interval = DEFAULT_CONFIG.pumpDosingIntervals[i];
+      AppState::pumps[i].setConfig(cfg);
     }
   }
 }
@@ -177,9 +153,10 @@ void saveAppStateToConfiguration() {
   config.highThreshold = AppState::highThreshold;
 
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
-    config.pumpAmounts[i] = AppState::pumps[i].getAmount();
-    config.pumpDurations[i] = AppState::pumps[i].getDuration();
-    config.pumpDosingIntervals[i] = AppState::pumps[i].getDosingInterval();
+    DosingConfig cfg = AppState::pumps[i].getConfig();
+    config.pumpAmounts[i] = cfg.amount;
+    config.pumpDurations[i] = cfg.duration;
+    config.pumpDosingIntervals[i] = static_cast<uint16_t>(cfg.interval);
   }
 
   saveConfiguration(config);

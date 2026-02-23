@@ -48,12 +48,27 @@ inline void printLocationTag(Location tag) {
   }
 }
 
+template<typename T>
+inline void serialPrintHelper(T arg) {
+  Serial.print(arg);
+}
+
+inline void serialPrintHelper(uint64_t arg) {
+  // Simple 64-bit print by casting to unsigned long (truncates if > 2^32)
+  // or use a more robust implementation if needed.
+  Serial.print(static_cast<unsigned long>(arg));
+}
+
+inline void serialPrintHelper(int64_t arg) {
+  Serial.print(static_cast<long>(arg));
+}
+
 template<typename... Args>
 inline void SerialPrint(Location tag, Args... args) {
   Serial.print('[');
   printLocationTag(tag);
   Serial.print(F("] "));
-  (Serial.print(args), ...);
+  (serialPrintHelper(args), ...);
   Serial.println();
 }
 #else

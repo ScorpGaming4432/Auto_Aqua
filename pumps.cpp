@@ -1,17 +1,7 @@
-// 2 - 7 piny do styczników
-
-
-// 8 - światełko
-// 7 Elektrozawór
-// 6, 5 - piny do wpływu i wypływu
-// 2, 3, 4 - płyny
-
 /**
  * ============================================================================
  * PUMPS.CPP - Pump Control Implementation
  * ============================================================================
- * 
- * Implements pump activation and control for the aquarium system.
  */
 
 #include "pumps.h"
@@ -20,171 +10,69 @@
 #include "water.h"
 #include "debug.h"
 #include <Arduino.h>
-#include <EEPROM.h>
 
-
-// Initialize pump configurations
 void initPumpModes() {
-  AppState::pumps[Hardware::INLET_PUMP_PIN].setInlet(true);    // Inlet pump - always automatic
-  AppState::pumps[Hardware::OUTLET_PUMP_PIN].setOutlet(true);  // Outlet pump - always automatic
+  if (Hardware::PUMP_COUNT >= 5) {
+    AppState::pumps[3].setRole(PumpRole::INLET);
+    AppState::pumps[4].setRole(PumpRole::OUTLET);
+  }
 }
 
-// Map logical pump index (0..Hardware::DOSING_PUMP_COUNT-1) to physical pin numbers
 static uint8_t pumpIndexToPin(uint8_t pumpIndex) {
   if (pumpIndex < Hardware::DOSING_PUMP_COUNT) {
     return Hardware::DOSING_PUMP_PINS[pumpIndex];
   }
-  return 0; // Invalid index
+  return 0;
 }
 
-// Scheduler: check dosing pumps and run them when interval elapsed
 void checkDosingSchedule() {
   uint64_t now = seconds();
-
-  // Dosing pumps are the first Hardware::PUMP_COUNT-2 pumps
-  for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
+  for (uint8_t i = 0; i < Hardware::DOSING_PUMP_COUNT; ++i) {
     Pump& p = AppState::pumps[i];
+    if (p.getRole() != PumpRole::DOSING) continue;
+    
+    DosingConfig cfg = p.getConfig();
+    if (cfg.interval == 0 || !p.shouldDose(now)) continue;
 
-    // Skip if marked as let pump or interval disabled
-    if (p.getIfLet()) continue;
-    uint16_t intervalDays = p.getDosingInterval();
-    if (intervalDays == 0) continue;
-
-    if (!p.shouldDose(now)) continue;
-
-    uint16_t amount = p.getAmount();
-    if (amount == 0) {
-      // Nothing to dose; update last dosing time to avoid repeated checks
-      p.setLastDosingTime(now);
+    if (cfg.amount == 0) {
+      cfg.lastTime = now;
+      p.setConfig(cfg);
       continue;
     }
 
-    // Calculate duration in milliseconds using flowrate PUMP_FLOW_RATE_ML_PER_SEC (ml/s)
-    // duration_ms = (amount_ml * 1000) / flow_ml_per_s
-    uint64_t durationMs = ((uint64_t)amount * 1000ULL) / (uint64_t)Hardware::PUMP_FLOW_RATE_ML_PER_SEC;
+    uint64_t durationMs = (static_cast<uint64_t>(cfg.amount) * 1000ULL) / static_cast<uint64_t>(Hardware::PUMP_FLOW_RATE_ML_PER_SEC);
     if (durationMs > Hardware::MAX_PUMP_RUN_TIME_MS) durationMs = Hardware::MAX_PUMP_RUN_TIME_MS;
 
-    p.setDuration(durationMs);
-    p.setLastDosingTime(now);
+    cfg.duration = durationMs;
+    cfg.lastTime = now;
+    p.setConfig(cfg);
 
     uint8_t pin = pumpIndexToPin(i);
-    SerialPrint(PUMPS, F("Scheduled dosing pump "), i, F(" on pin "), pin, F(" for "), (unsigned long)durationMs, F(" ms"));
-
-    // Run safely (this will open/close electrovalve via runPumpSafely)
-    runPumpSafely(pin, (uint16_t)durationMs);
+    runPumpSafely(pin, static_cast<uint16_t>(durationMs));
   }
 }
 
-Pump::Pump()
-  : amount(0), duration(0) {}
+Pump::Pump() {}
 
 int32_t Pump::edit(uint8_t pumpIndex, const char* amountTitle) {
-  if (isLet) {
-    // Let pumps are not editable by user
-    return -1;
-  }
-  return pumpAmountScreen(amountTitle, pumpIndex, true, amount);
+  if (role != PumpRole::DOSING) return -1;
+  return pumpAmountScreen(amountTitle, pumpIndex, true, config.amount);
 }
 
 int32_t Pump::viewEdit(uint8_t pumpIndex, const char* amountTitle) {
-  if (isLet) {
-    // Let pumps are not viewable by user
-    return -1;
-  }
-  return pumpAmountScreen(amountTitle, pumpIndex, false, amount);
+  if (role != PumpRole::DOSING) return -1;
+  return pumpAmountScreen(amountTitle, pumpIndex, false, config.amount);
 }
 
-void Pump::setAmount(uint16_t v) {
-  if (isLet) {
-    // Let pumps amount is not settable by user
-    return;
-  }
-  amount = v;
-}
+void Pump::setConfig(const DosingConfig& c) { config = c; }
+DosingConfig Pump::getConfig() const { return config; }
 
-uint16_t Pump::getAmount() const {
-  if (isLet) {
-    // Let pumps amount is not viewable by user
-    return 0;
-  }
-  return amount;
-}
-
-void Pump::setDuration(uint64_t d) {
-  if (isLet) {
-    // Let pumps duration is not settable by user
-    return;
-  }
-  duration = d;
-}
-
-uint64_t Pump::getDuration() const {
-  if (isLet) {
-    // Let pumps duration is not viewable by user
-    return 0;
-  }
-  return duration;
-}
-
-void Pump::setOutlet(bool value) {
-  isLet = true;
-  isOutLet = value;
-}
-
-void Pump::setInlet(bool value) {
-  isLet = true;
-  isOutLet = !value;
-}
-
-bool Pump::getIfOutlet() const {
-  return isOutLet && isLet;
-}
-
-bool Pump::getIfInlet() const {
-  return !isOutLet && isLet;
-}
-
-bool Pump::getIfLet() const {
-  return isLet;
-}
-
-void Pump::setDosingInterval(uint64_t interval) {
-  dosingInterval = interval;
-}
-
-uint32_t Pump::getDosingInterval() const {
-  return dosingInterval;
-}
-
-void Pump::setLastDosingTime(uint64_t time) {
-  lastDosingTime = time;
-}
-
-uint64_t Pump::getLastDosingTime() const {
-  return lastDosingTime;
-}
+void Pump::setRole(PumpRole r) { role = r; }
+PumpRole Pump::getRole() const { return role; }
 
 bool Pump::shouldDose(uint64_t currentSeconds) const {
-  if (dosingInterval == 0) return false;
-  uint64_t intervalSeconds = (uint64_t)dosingInterval * 86400ULL;  // days -> seconds
-  if (currentSeconds < lastDosingTime) return true;                // clock reset or never set -> allow
-  return (currentSeconds - lastDosingTime) >= intervalSeconds;
+  if (config.interval == 0) return false;
+  uint64_t intervalSeconds = static_cast<uint64_t>(config.interval) * 86400ULL;
+  if (currentSeconds < config.lastTime) return true;
+  return (currentSeconds - config.lastTime) >= intervalSeconds;
 }
-
-void pumpWork(uint8_t pump_pin, uint16_t duration_ms) {
-  digitalWrite(pump_pin, LOW);   // Activate pump (assuming active LOW)
-  delay(duration_ms);            // Run for specified duration
-  digitalWrite(pump_pin, HIGH);  // Deactivate pump
-}
-
-// void runPumpSafely(uint8_t pump_pin, uint16_t duration_ms, uint16_t amount) {
-//   uint8_t originalSensorData = getTouchedSections();
-//   digitalWrite(pump_pin, HIGH);  // Activate pump (assuming active HIGH)
-//   while (getTouchedSections() - originalSensorData < amount/AppState::tankVolume && duration_ms > 0) {
-//     delay(100);  // Check every 100ms
-//     duration_ms -= 100;
-//   } else {
-//     digitalWrite(pump_pin, LOW);   // Deactivate pump
-//     Serial.println("[PUMPS] Pump run stopped due to sensor feedback or duration limit");
-//   }
-// }

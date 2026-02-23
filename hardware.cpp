@@ -14,4 +14,4 @@ namespace Hardware {
 // Hardware initialization can be added here if needed
 // Currently all configuration is defined in hardware.h
 
-} // namespace Hardware
+}  // namespace Hardware

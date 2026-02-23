@@ -5,18 +5,6 @@
  *
  * Provides support for 10 different languages in the aquarium system interface.
  * All strings are stored in PROGMEM to minimize RAM usage.
- *
- * Supported Languages (0-9):
- *   0: Polski (Polish)
- *   1: English
- *   2: Руccкий (Russian)
- *   3: Deutsch (German)
- *   4: Français (French)
- *   5: Español (Spanish)
- *   6: Italiano (Italian)
- *   7: Português (Portuguese)
- *   8: Türkçe (Turkish)
- *   9: Čeština (Czech)
  */
 
 #ifndef LANGUAGES_H
@@ -29,65 +17,131 @@ constexpr uint8_t LANG_COUNT = 10;
 
 // Max characters per string (visible characters). All strings must fit in
 // MAX_LANG_CHARS characters; buffers allocate one extra byte for the null.
-constexpr uint8_t MAX_LANG_CHARS = 16;          // MAX 16 characters per field
-constexpr uint8_t LANG_NAME_LEN = 8;            ///< Language name
-constexpr uint8_t LANG_PROMPT_LEN = 7;          ///< Input prompt
-constexpr uint8_t LANG_TANKTITLE_LEN = 14;      ///< Tank volume title
-constexpr uint8_t LANG_AMOUNTTITLE_LEN = 15;    ///< Pump amount title
-constexpr uint8_t LANG_MAINSCREEN_LEN = 15;     ///< Main screen label
-constexpr uint8_t LANG_NOTASK_LEN = 15;         ///< No task message
-constexpr uint8_t LANG_PUMPWORKING_LEN = 15;    ///< Pump active message
-constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 16;   ///< Water threshold message
-constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 16;  ///< High water threshold message
-constexpr uint8_t LANG_INTERVALTITLE_LEN = 16;  ///< Pump interval title
+constexpr uint8_t MAX_LANG_CHARS = 16 + 2;      // MAX 16 characters per field
+constexpr uint8_t LANG_NAME_LEN = 10;           ///< Language name
+constexpr uint8_t LANG_PROMPT_LEN = 9;          ///< Input prompt
+constexpr uint8_t LANG_TANKTITLE_LEN = 16;      ///< Tank volume title
+constexpr uint8_t LANG_AMOUNTTITLE_LEN = 17;    ///< Pump amount title
+constexpr uint8_t LANG_MAINSCREEN_LEN = 17;     ///< Main screen label
+constexpr uint8_t LANG_NOTASK_LEN = 17;         ///< No task message
+constexpr uint8_t LANG_PUMPWORKING_LEN = 17;    ///< Pump active message
+constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 18;   ///< Water threshold message
+constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 18;  ///< High water threshold message
+constexpr uint8_t LANG_INTERVALTITLE_LEN = 18;  ///< Pump interval title
 
 // Lengths for newly added strings
-constexpr uint8_t LANG_WATER_ERROR_LEN = 16;   ///< Water-related error messages
-constexpr uint8_t LANG_PUMP_STATUS_LEN = 14;   ///< Pump status messages
+constexpr uint8_t LANG_WATER_ERROR_LEN = 16;  ///< Water-related error messages
+constexpr uint8_t LANG_PUMP_STATUS_LEN = 14;  ///< Pump status messages
+
+/**
+ * Language sub-structures for organizational discipline (max 10 fields each)
+ */
+struct LangGeneral {
+  char name[LANG_NAME_LEN];                     ///< Display name of language
+  char prompt[LANG_PROMPT_LEN];                 ///< Prompt for language selection
+};
+
+struct LangTank {
+  char volumeTitle[LANG_TANKTITLE_LEN];         ///< Title for tank volume input
+  char amountTitle[LANG_AMOUNTTITLE_LEN];       ///< Title for pump amount input
+  char intervalTitle[LANG_INTERVALTITLE_LEN];   ///< Title for pump interval input
+  char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN]; ///< Message for low water threshold
+  char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN]; ///< Message for high water threshold
+};
+
+struct LangStatus {
+  char mainScreen[LANG_MAINSCREEN_LEN];         ///< Main screen heading
+  char noTask[LANG_NOTASK_LEN];                 ///< Message when no task active
+  char pumpWorking[LANG_PUMPWORKING_LEN];       ///< Message when pump is running
+  char waterLevel[LANG_WATER_ERROR_LEN];        ///< Water level label
+  char inletPumpOn[LANG_PUMP_STATUS_LEN];       ///< Inlet pump active
+  char outletPumpOn[LANG_PUMP_STATUS_LEN];      ///< Outlet pump active
+  char pumpsOk[LANG_PUMP_STATUS_LEN];           ///< Pumps OK status
+};
+
+struct LangError {
+  char critical[LANG_MAINSCREEN_LEN];           ///< Message for critical error
+  char checkSensor[LANG_MAINSCREEN_LEN];         ///< Message to check sensor
+  char waterSensorError[LANG_WATER_ERROR_LEN];  ///< General water sensor error
+  char sensorTimeout[LANG_WATER_ERROR_LEN];      ///< Sensor timeout message
+  char commError[LANG_WATER_ERROR_LEN];         ///< Communication error
+  char invalidData[LANG_WATER_ERROR_LEN];        ///< Invalid data message
+  char pumpTimeout[LANG_WATER_ERROR_LEN];        ///< Pump timeout message
+  char unknownError[LANG_WATER_ERROR_LEN];       ///< Unknown error message
+};
 
 /**
  * Language structure storing all UI strings for a language
  */
 struct Language {
-  char langName[LANG_NAME_LEN + 1];                     ///< Display name of language
-  char langPrompt[LANG_PROMPT_LEN + 1];                 ///< Prompt for language selection
-  char tankVolumeTitle[LANG_TANKTITLE_LEN + 1];         ///< Title for tank volume input
-  char amountTitle[LANG_AMOUNTTITLE_LEN + 1];           ///< Title for pump amount input
-  char mainScreen[LANG_MAINSCREEN_LEN + 1];             ///< Main screen heading
-  char noTask[LANG_NOTASK_LEN + 1];                     ///< Message when no task active
-  char pumpWorking[LANG_PUMPWORKING_LEN + 1];           ///< Message when pump is running
-  char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN + 1];    ///< Message for low water threshold
-  char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN + 1];  ///< Message for high water threshold
-  char intervalTitle[LANG_INTERVALTITLE_LEN + 1];       ///< Title for pump interval input
-  char criticalError[LANG_MAINSCREEN_LEN + 1];          ///< Message for critical error
-  char checkSensor[LANG_MAINSCREEN_LEN + 1];            ///< Message to check sensor
-
-  // New strings for water management
-  char waterSensorError[LANG_WATER_ERROR_LEN + 1];  ///< General water sensor error
-  char sensorTimeout[LANG_WATER_ERROR_LEN + 1];     ///< Sensor timeout message
-  char commError[LANG_WATER_ERROR_LEN + 1];         ///< Communication error
-  char invalidData[LANG_WATER_ERROR_LEN + 1];       ///< Invalid data message
-  char pumpTimeout[LANG_WATER_ERROR_LEN + 1];       ///< Pump timeout message
-  char unknownError[LANG_WATER_ERROR_LEN + 1];      ///< Unknown error message
-  char waterLevel[LANG_WATER_ERROR_LEN + 1];        ///< Water level label
-  char inletPumpOn[LANG_PUMP_STATUS_LEN + 1];       ///< Inlet pump active
-  char outletPumpOn[LANG_PUMP_STATUS_LEN + 1];      ///< Outlet pump active
-  char pumpsOk[LANG_PUMP_STATUS_LEN + 1];           ///< Pumps OK status
+  LangGeneral general;
+  LangTank tank;
+  LangStatus status;
+  LangError error;
 };
 
 // Language definitions stored in program memory (PROGMEM) to save RAM
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
-  // langName,    prompt,     tank title,       amount title,      main screen,        no task,          pump working,      low thresh,        high thresh,       interval title,     critical error,    check sensor,       waterSensorError,   sensorTimeout,     commError,          invalidData,        pumpTimeout,        unknownError,       waterLevel,       inletPumpOn,        outletPumpOn,      pumpsOK
-  { "Polski   ", "Język   ", "Poj. zbiornika", "Ilość dawki w #", "Ekran główny    ", "Brak zadania  ", "Pompa działa   ", "Dolna granica", "Górna granica ", "Interwał pompy #", "Błąd krytyczny!", "Sprawdź sensor  ", "Błąd czujnika   ", "Timeout czuj.  ", "Błąd komunik.   ", "Nieprawidl. dane", "Timeout pompy   ", "Nieznany błąd   ", "Poziom wody:  ", "Wlew ON         ", "Wylew ON       ", "Pompy: OK  " },
-  { "English  ", "Language", "Tank volume   ", "Dosage of #    ", "Main screen     ", "No task       ", "Pump running   ", "Low Threshold", "High Threshold", "Pump interval # ", "CRITICAL ERROR ", "CHECK SENSOR    ", "Sensor Error    ", "Sensor Timeout ", "Comm Error      ", "Invalid Data    ", "Pump Timeout    ", "Unknown Error   ", "Water Level:  ", "Inlet Pump ON   ", "Outlet Pump ON ", "Pumps: OK  " },
-  { "Pycckий  ", "Языk    ", "O6ъёm 6aka    ", "Дозировка #    ", "Глaвный эkpaн   ", "Heт зaдaчи    ", "Hacoc pa6oтaeт ", "Hижний пopoг ", "Bepxний пopoг ", "Интepвaл #      ", "KPИT. OШИБKA   ", "ПPOBEPЬTE ДATЧИK", "Oши6. дaтчиka   ", "Taйmayт ceнcopa", "Oши6. cвязи     ", "Heвep. дaнныe   ", "Taйmayт нacoca  ", "Heизв. oши6ka   ", "Ypoвeнь вoды: ", "Bxoд. нacoc A   ", "Bыxoд. нacoc A ", "Hacocы OK  " },
-  { "Deutsch  ", "Sprache ", "Volumen Tank  ", "Dosierung der #", "Hauptmenü       ", "Keine Aufgabe ", "Pumpe läuft    ", "Min. Schwelle", "Max. Schwelle ", "Intervall #     ", "KRIT. FEHLER   ", "SENSOR PRÜFEN   ", "Sensor Fehler   ", "Sensor Timeout ", "Komm. Fehler    ", "Ungültige Daten ", "Pumpen Timeout  ", "Unbek. Fehler   ", "Wasserstand:  ", "Zulauf Pumpe AN ", "Ablauf Pumpe AN", "Pumpen OK  " },
-  { "Français ", "Langue  ", "Vol. réservoir", "Dosage de la # ", "Écran principal ", "Aucune tâche  ", "Pompe active   ", "Seuil bas    ", "Seuil haut    ", "Intervalle #    ", "ERREUR CRITIQ  ", "VÉRIF CAPTEUR   ", "Erreur capteur  ", "Timeout capteur", "Erreur communic.", "Données inval.  ", "Timeout pompe   ", "Erreur inconnue ", "Niveau d'eau: ", "Entrée pompe A  ", "Sortie pompe A ", "Pompes OK  " },
-  { "Español  ", "Idioma  ", "Vol. depósito ", "Cantidad en #  ", "Pantalla princ. ", "Sin tarea     ", "Bomba activa   ", "Umbral mínimo", "Umbral máximo ", "Intervalo #     ", "ERROR CRÍTICO  ", "COMPROBE SENSOR ", "Error sensor    ", "Timeout sensor ", "Error de com.   ", "Datos inválidos ", "Timeout bomba   ", "Error desconoc. ", "Nivel de agua:", "Bomba entrada A ", "Bomba salida A ", "Bombas OK  " },
-  { "Italiano ", "Lingua  ", "Volume serb.  ", "Quantità in #  ", "Schermata princ.", "Nessun compito", "Pompa attiva   ", "Soglia minima", "Soglia massima", "Intervallo #    ", "ERRORE CRITICO ", "CONTROLLARE SEN ", "Errore sensore  ", "Timeout sensore", "Errore comunic. ", "Dati non validi ", "Timeout pompa   ", "Errore sconosciu", "Livello acqua:", "Pomp. ingresso A", "Pomp. uscita A ", "Pompe OK   " },
-  { "Português", "Idioma  ", "Volume tanque ", "Quantidade #   ", "Ecrã principal  ", "Sem tarefa    ", "Bomba ativa    ", "Limite mínimo", "Limite máximo ", "Intervalo #     ", "ERRO CRÍTICO   ", "VERIFI. SENSOR  ", "Erro sensor     ", "Timeout sensor ", "Erro de com.    ", "Dados inválidos ", "Timeout bomba   ", "Erro desconoc.  ", "Nível de água:", "Bomba entrada A ", "Bomba saída A  ", "Bombas OK  " },
-  { "Türkçe   ", "Dil     ", "Tank Hacmi    ", "Miktar #       ", "Ana Ekran       ", "Görev yok     ", "Pompa çalışıyor", "Alt Eşiği    ", "Üst Eşiği     ", "Aralık #        ", "KRİTİK HATA    ", "SENSÖR KONTROL  ", "Sensör Hatası   ", "Sensör Timeout ", "Hata.İletişim   ", "Geçersiz Veri   ", "Pompa Timeout   ", "Bilinmeyen Hata ", "Su Seviyesi:  ", "Giriş Pomp. A   ", "Çıkış Pomp. A  ", "Pompalar OK" },
-  { "Čeština  ", "Jazyk   ", "Objem nádrže  ", "Množství v #   ", "Hlavní obrazov. ", "Žádný úkol    ", "Čerpadlo běží  ", "Spodní práh  ", "Horní práh    ", "Interval #      ", "KRIT. CHYBA    ", "ZKONTROL ČIDLO  ", "Chyba čidla     ", "Timeout čidla  ", "Chyba komunik.  ", "Neplatná data   ", "Timeout čerpadla", "Neznámá chyba   ", "Hladina vody: ", "Vstupní čerp. A ", "Výstupní čer. A", "Čerpadla OK" }
+  {
+    { "Polski   ", "Język   " },
+    { "Poj. zbiornika", "Ilość dawki w #", "Interwał pompy #", "Dolna granica", "Górna granica " },
+    { "Ekran główny    ", "Brak zadania  ", "Pompa działa   ", "Poziom wody:  ", "Wlew ON         ", "Wylew ON       ", "Pompy: OK  " },
+    { "Błąd krytyczny!", "Sprawdź sensor  ", "Błąd czujnika   ", "Timeout czuj.  ", "Błąd komunik.   ", "Nieprawidl. dane", "Timeout pompy   ", "Nieznany błąd   " }
+  },
+  {
+    { "English  ", "Language" },
+    { "Tank volume   ", "Dosage of #    ", "Pump interval # ", "Low Threshold", "High Threshold" },
+    { "Main screen     ", "No task       ", "Pump running   ", "Water Level:  ", "Inlet Pump ON   ", "Outlet Pump ON ", "Pumps: OK  " },
+    { "CRITICAL ERROR ", "CHECK SENSOR    ", "Sensor Error    ", "Sensor Timeout ", "Comm Error      ", "Invalid Data    ", "Pump Timeout    ", "Unknown Error   " }
+  },
+  {
+    { "Pycckий  ", "Языk    " },
+    { "O6ъёm 6aka    ", "Дозировка #    ", "Интepвaл #      ", "Hижний пopoг ", "Bepxний пopoг " },
+    { "Глaвный эkpaн   ", "Heт зaдaчи    ", "Hacoc pa6oтaeт ", "Ypoвeнь вoды: ", "Bxoд. нacoc A   ", "Bыxoд. нacoc A ", "Hacocы OK  " },
+    { "KPИT. OШИBKA   ", "ПPOBEPЬTE ДATЧИK", "Oши6. дaтчиka   ", "Taйmayт ceнcopa", "Oши6. cвязи     ", "Heвep. дaнныe   ", "Taйmayт нacoca  ", "Heизв. oши6ka   " }
+  },
+  {
+    { "Deutsch  ", "Sprache " },
+    { "Volumen Tank  ", "Dosierung der #", "Intervall #     ", "Min. Schwelle", "Max. Schwelle " },
+    { "Hauptmenü       ", "Keine Aufgabe ", "Pumpe läuft    ", "Wasserstand:  ", "Zulauf Pumpe AN ", "Ablauf Pumpe AN", "Pumpen OK  " },
+    { "KRIT. FEHLER   ", "SENSOR PRÜFEN   ", "Sensor Fehler   ", "Sensor Timeout ", "Komm. Fehler    ", "Ungültige Daten ", "Pumpen Timeout  ", "Unbek. Fehler   " }
+  },
+  {
+    { "Français ", "Langue  " },
+    { "Vol. réservoir", "Dosage de la # ", "Intervalle #    ", "Seuil bas    ", "Seuil haut    " },
+    { "Écran principal ", "Aucune tâche  ", "Pompe active   ", "Niveau d'eau: ", "Entrée pompe A  ", "Sortie pompe A ", "Pompes OK  " },
+    { "ERREUR CRITIQ  ", "VÉRIF CAPTEUR   ", "Erreur capteur  ", "Timeout capteur", "Erreur communic.", "Données inval.  ", "Timeout pompe   ", "Erreur inconnue " }
+  },
+  {
+    { "Español  ", "Idioma  " },
+    { "Vol. depósito ", "Cantidad en #  ", "Intervalo #     ", "Umbral mínimo", "Umbral máximo " },
+    { "Pantalla princ. ", "Sin tarea     ", "Bomba activa   ", "Nivel de agua:", "Bomba entrada A ", "Bomba salida A ", "Bombas OK  " },
+    { "ERROR CRÍTICO  ", "COMPROBE SENSOR ", "Error sensor    ", "Timeout sensor ", "Error de com.   ", "Datos inválidos ", "Timeout bomba   ", "Error desconoc. " }
+  },
+  {
+    { "Italiano ", "Lingua  " },
+    { "Volume serb.  ", "Quantità in #  ", "Intervallo #    ", "Soglia minima", "Soglia massima" },
+    { "Schermata princ.", "Nessun compito", "Pompa attiva   ", "Livello acqua:", "Pomp. ingresso A", "Pomp. uscita A ", "Pompe OK   " },
+    { "ERRORE CRITICO ", "CONTROLLARE SEN ", "Errore sensore  ", "Timeout sensore", "Errore comunic. ", "Dati non validi ", "Timeout pompa   ", "Errore sconosciu" }
+  },
+  {
+    { "Português", "Idioma  " },
+    { "Volume tanque ", "Quantidade #   ", "Intervalo #     ", "Limite mínimo", "Limite máximo " },
+    { "Ecrã principal  ", "Sem tarefa    ", "Bomba ativa    ", "Nível de água:", "Bomba entrada A ", "Bomba saída A  ", "Bombas OK  " },
+    { "ERRO CRÍTICO   ", "VERIFI. SENSOR  ", "Erro sensor     ", "Timeout sensor ", "Erro de com.    ", "Dados inválidos ", "Timeout bomba   ", "Erro desconoc.  " }
+  },
+  {
+    { "Türkçe   ", "Dil     " },
+    { "Tank Hacmi    ", "Miktar #       ", "Aralık #        ", "Alt Eşiği    ", "Üst Eşiği     " },
+    { "Ana Ekran       ", "Görev yok     ", "Pompa çalışıyor", "Su Seviyesi:  ", "Giriş Pomp. A   ", "Çıkış Pomp. A  ", "Pompalar OK" },
+    { "KRİTİK HATA    ", "SENSÖR KONTROL  ", "Sensör Hatası   ", "Sensör Timeout ", "Hata.İletişim   ", "Geçersiz Veri   ", "Pompa Timeout   ", "Bilinmeyen Hata " }
+  },
+  {
+    { "Čeština  ", "Jazyk   " },
+    { "Objem nádrže  ", "Množství v #   ", "Interval #      ", "Spodní práh  ", "Horní práh    " },
+    { "Hlavní obrazov. ", "Žádný úkol    ", "Čerpadlo běží  ", "Hladina wody: ", "Vstupní čerp. A ", "Výstupní čer. A", "Čerpadla OK" },
+    { "KRIT. CHYBA    ", "ZKONTROL ČIDLO  ", "Chyba čidla     ", "Timeout čidla  ", "Chyba komunik.  ", "Neplatná data   ", "Timeout čerpadla", "Neznámá chyba   " }
+  }
 };
 
 /**

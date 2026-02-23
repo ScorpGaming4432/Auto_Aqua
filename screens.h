@@ -28,9 +28,9 @@
 
 // Keypad layout definition
 const char keys[Hardware::KEYPAD_ROWS][Hardware::KEYPAD_COLS] = { { '1', '2', '3', 'A' },
-                                { '4', '5', '6', 'B' },
-                                { '7', '8', '9', 'C' },
-                                { '*', '0', '#', 'D' } };
+                                                                  { '4', '5', '6', 'B' },
+                                                                  { '7', '8', '9', 'C' },
+                                                                  { '*', '0', '#', 'D' } };
 
 // Arduino pins for keypad column connections
 const byte colPins[Hardware::KEYPAD_COLS] = { Hardware::KEYPAD_COL_PINS[0], Hardware::KEYPAD_COL_PINS[1], Hardware::KEYPAD_COL_PINS[2], Hardware::KEYPAD_COL_PINS[3] };

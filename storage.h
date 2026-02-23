@@ -22,20 +22,10 @@ struct Configuration {
   int64_t timeOffset;
   uint16_t pumpAmounts[Hardware::PUMP_COUNT];
   uint64_t pumpDurations[Hardware::PUMP_COUNT];
-  uint16_t pumpDosingIntervals[Hardware::PUMP_COUNT]; // Dosing intervals in days
+  uint16_t pumpDosingIntervals[Hardware::PUMP_COUNT];  // Dosing intervals in days
   uint16_t lowThreshold;
   uint16_t highThreshold;
 };
-
-//  COPY OF AppState FOR CORRECTNESS
-// namespace AppState {
-// uint8_t languageIndex = 0;
-// Pump pumps[PUMP_COUNT];
-// uint32_t tankVolume = 0;
-// int64_t timeOffset = 0;
-// uint16_t lowThreshold = 255;
-// uint16_t highThreshold = 255;
-// }
 
 // Default configuration values
 const Configuration DEFAULT_CONFIG = {
