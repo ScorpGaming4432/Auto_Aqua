@@ -36,6 +36,8 @@ Avoid functions with two or more boolean parameters to ensure readable intent (e
 
 Functions should perform a single responsibility. Avoid combining more than one of the following: I/O calls, logic branching, string formatting, persistence calls, or hardware interaction.
 
+Files should also focus on mainly one compoment, so that responsibility is divided equally and logically.
+
 ## 2.4 Early Return Enforcement
 
 Favor early returns (`if (!valid) return;`) over deeply nested `if` statements.
@@ -100,13 +102,15 @@ Limit project macros to 20. Avoid macros that define non-constant expression log
 
 Use `static_cast`, `reinterpret_cast`, `const_cast`, or `dynamic_cast` instead of C-style casts (`(Type)value`).
 
+EXCEPTION: Low-level memory management. Use a decorator comment `// C cast: <reason>`
+
 ---
 
 # SECTION 6 — Arduino-Specific Rules
 
 ## 6.1 .ino Discipline
 
-`.ino` files must only contain includes, `setup()`, `loop()`, and delegation calls. Avoid logic loops, conditionals, or direct hardware calls within `.ino` files.
+`.ino` files must only contain includes, `setup()`, `loop()`, and delegation calls. Avoid logic loops, conditionals, or direct hardware calls within `.ino` files. 
 
 ## 6.2 Global Variable Rule
 
@@ -119,6 +123,10 @@ Prefer non-blocking timers over `delay()` calls.
 ## 6.4 Hardware Leakage
 
 Avoid referencing hardware pin names outside dedicated hardware modules.
+
+## 6.5 Helper functions
+
+Helper functions may be introduced into the main `.ino`. Too many helper functions should be avoided and instead split into respective files.
 
 ---
 
@@ -180,3 +188,5 @@ For stricter enforcement, apply the following limits:
 * Max nesting 3
 * Max struct fields 10
 * Max parameters 4
+
+**Implement ONLY after everything seems to be intact**

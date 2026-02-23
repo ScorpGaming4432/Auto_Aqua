@@ -44,168 +44,129 @@ void (*resetFunc)(void) = 0;
 // External references
 extern Language LANG_BUFFER;  // Defined in screens.cpp
 
+// ============================================================================
+// Setup Helper Functions
+// ============================================================================
 
-void setup() {
+void setupSerial() {
   Serial.begin(9600);
-  Wire.begin();  // start I2C
-
+  Wire.begin();
   SerialPrint(SETUP, "Serial started");
+}
 
+void setupInitialScreen() {
   SerialPrint(SETUP, "showing splash screen");
   splashScreen();
-  // Load configuration from EEPROM and apply to AppState
+}
 
-  // Check if configuration is valid, if not, run setup screens
-  Configuration config = loadConfiguration();
-  bool needsSetup = !isConfigurationValid(config);
+void runInitialConfiguration() {
+  SerialPrint(SETUP, "Configuration invalid - running setup screens");
 
-  loadConfigurationToAppState();
-  if (needsSetup) {
-    SerialPrint(SETUP, "Configuration invalid - running setup screens");
+  // Language setup
+  AppState::languageIndex = langConfigScreen(0);
+  SerialPrint(SETUP, "Language index set to ", AppState::languageIndex);
+  LANG_BUFFER = readLanguage(AppState::languageIndex);
+  SerialPrint(SETUP, " Language ", AppState::languageIndex, " loaded from PROGMEM");
+  SerialPrint(SETUP, "Language name: ", LANG_BUFFER.langName);
 
-    // Language setup
-    AppState::languageIndex = langConfigScreen(0);
-    SerialPrint(SETUP, "Language index set to ", AppState::languageIndex);
-    // Load language after setting it
-    LANG_BUFFER = readLanguage(AppState::languageIndex);
-    SerialPrint(SETUP, " Language ", AppState::languageIndex, " loaded from PROGMEM");
-    SerialPrint(SETUP, "Language name: ", LANG_BUFFER.langName);
+  // Tank volume setup
+  AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
+  SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
 
-    // Tank volume setup
-    AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true, 0);
-    SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
+  // Pump setup - dosing pumps only (indices 2, 3, 4)
+  for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
+    SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
+    AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
+    lcd.clear();
+    SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getAmount());
 
-    // Pump setup
-    for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {  // 2, 3, 4 - dosing pumps
-      SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
-      AppState::pumps[i].setAmount(pumpAmountScreen(LANG_BUFFER.amountTitle, i, true, 0));
-      lcd.clear();
-      SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getAmount());
-
-      SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
-      AppState::pumps[i].setDosingInterval(pumpIntervalScreen(LANG_BUFFER.intervalTitle, i, true, 0));
-      lcd.clear();
-      SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getDosingInterval());
-    }
-
-    // Time offset setup
-    AppState::timeOffset = timeSetupScreen();
-    SerialPrint(SETUP, " Time offset set: ", (uint32_t)AppState::timeOffset);
-
-    handleThreshold();  // Set water thresholds
-
-    lightTimeScreen(lightofft, lightont);
-
-    // Save the complete configuration
-    saveAppStateToConfiguration();
-  } else {
-    // Configuration is valid, just load language
-    LANG_BUFFER = readLanguage(AppState::languageIndex);
-    SerialPrint(SETUP, "Language ", AppState::languageIndex, " loaded from PROGMEM");
-    SerialPrint(SETUP, "Configuration loaded successfully");
+    SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
+    AppState::pumps[i].setDosingInterval(pumpIntervalScreen(LANG_BUFFER.intervalTitle, i, true, 0));
+    lcd.clear();
+    SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getDosingInterval());
   }
 
-  // Initialize water management system
-  initWaterManagement();
+  // Time offset and thresholds
+  AppState::timeOffset = timeSetupScreen();
+  SerialPrint(SETUP, " Time offset set: ", (uint32_t)AppState::timeOffset);
+  handleThreshold();
+  lightTimeScreen(lightofft, lightont);
 
+  saveAppStateToConfiguration();
+}
+
+void loadSavedConfiguration() {
+  LANG_BUFFER = readLanguage(AppState::languageIndex);
+  SerialPrint(SETUP, "Language ", AppState::languageIndex, " loaded from PROGMEM");
+  SerialPrint(SETUP, "Configuration loaded successfully");
+}
+
+void initializeSystem() {
+  initWaterManagement();
   lcd.clear();
 }
 
-void loop() {
-  /*
-   * KEY MAPPINGS:
-   * 
-   * === PUMP CONFIGURATION ===
-   * 1-3: Edit dosing pump amounts (ml)
-   * 4-6: Edit dosing pump intervals (ms)
-   * 
-   * === WATER MANAGEMENT ===
-   * Unused: Toggle water inlet pump (auto/manual mode)
-   * Unused: Toggle water outlet pump (auto/manual mode)
-   * A: Edit tank volume
-   * C: Measure water level
-   * Unused: Toggle electrovalve
-   *
-   * === WATER THRESHOLD CONFIGURATION ===
-   * D: Configure thresholds
-   * 
-   * === SYSTEM STATUS ===
-   * 0: Show current time
-   * 
-   * === SYSTEM CONFIGURATION ===
-   * B: Change language
-   * 
-   * === SYSTEM MAINTENANCE ===
-   * *: Factory reset (confirm with #)
-   */
+void setup() {
+  setupSerial();
+  setupInitialScreen();
 
-  // Pobierz tylko potrzebne pola mainScreen i noTask
+  Configuration config = loadConfiguration();
+  bool needsSetup = !isConfigurationValid(config);
+  loadConfigurationToAppState();
 
+  if (needsSetup) {
+    runInitialConfiguration();
+  } else {
+    loadSavedConfiguration();
+  }
+
+  initializeSystem();
+}
+
+// ============================================================================
+// Loop Helper Functions
+// ============================================================================
+
+void displayMainScreen() {
   lcd.setCursor(0, 0);
   lcd.print(LANG_BUFFER.mainScreen);
   lcd.setCursor(0, 1);
   lcd.print(LANG_BUFFER.noTask);
+}
 
-  char k = keypad.getKey();
-  if (k) {
-    SerialPrint(LOOP, "key -> ", k);
-  }
-
-  // === PUMP CONFIGURATION KEYS (DOSING PUMPS ONLY) ===
-  // Number keys (1-3): Edit dosing pump amounts
+void handlePumpConfiguration(char k) {
   if (k >= '1' && k <= '3') {
     uint8_t pumpIndex = k - '1';
     SerialPrint(LOOP, "Editing pump amount for pump ", pumpIndex);
     handleEditAmount(pumpIndex);
     saveAppStateToConfiguration();
   }
+}
 
-  // D key: Edit tank thresholds
-  else if (k == 'D') {
+void handleWaterManagement(char k) {
+  if (k == 'A') {
+    SerialPrint(LOOP, "Edit tank volume");
+    AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tankVolumeTitle, true,
+                                            AppState::tankVolume);
+    saveAppStateToConfiguration();
+  } else if (k == 'C') {
+    SerialPrint(LOOP, "Measuring water level");
+    WaterLevelResult result = checkWaterLevel();
+    displayWaterLevelStatus(result);
+    delay(2000);
+  } else if (k == 'D') {
     SerialPrint(LOOP, "Editing tank thresholds");
     handleThreshold();
     saveAppStateToConfiguration();
   }
-  // C key: Measure water level
-  else if (k == 'C') {
-    SerialPrint(LOOP, "Measuring water level");
-    WaterLevelResult result = checkWaterLevel();
-    displayWaterLevelStatus(result);
-    delay(2000);  // Display the water level for 2 seconds
-  }
-  // 9 key: Toggle electrovalve
-  // else if (k == '9') { // TODO: DO NOT IMPLEMENT
-  //   Serial.println("[LOOP] Toggle electrovalve");
+}
 
-  //   // Safety check - don't allow manual operation while pumps are active
-  //   if (pumpActive) {
-  //     lcd.clear();
-  //     lcd.setCursor(0, 0);
-  //     lcd.print("Pump Active!");
-  //     lcd.setCursor(0, 1);
-  //     lcd.print("Wait to finish");
-  //     delay(2000);
-  //   } else {
-  //     bool currentState = isElectrovalveOpen();
-  //     controlElectrovalve(!currentState);
-  //     lcd.clear();
-  //     lcd.setCursor(0, 0);
-  //     lcd.print("Electrovalve:");
-  //     lcd.setCursor(0, 1);
-  //     lcd.print(currentState ? "CLOSED" : "OPENED");
-  //     delay(1000);
-  //   }
-  // }
-  // === SYSTEM STATUS KEYS ===
-  // 0 key: Show current time
-  else if (k == '0') {
+void handleSystemConfiguration(char k) {
+  if (k == '0') {
     SerialPrint(LOOP, "Showing Current Time");
     showTime(seconds() + AppState::timeOffset);
     delay(1000);
-  }
-  // === SYSTEM CONFIGURATION KEYS ===
-  // B key: Change language
-  else if (k == 'B') {
+  } else if (k == 'B') {
     SerialPrint(LOOP, "Language configuration");
     AppState::languageIndex = langConfigScreen(AppState::languageIndex);
     saveAppStateToConfiguration();
@@ -214,63 +175,65 @@ void loop() {
     lcd.print("Language Set");
     delay(1000);
   }
-  // === SYSTEM MAINTENANCE KEYS ===
-  // * key: Factory reset
-  else if (k == '*') {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Factory Reset?");
-    lcd.setCursor(0, 1);
-    lcd.print("#=Yes  *=No");
-    while (true) {
-      char key = keypad.getKey();
-      if (key == '#') {
-        SerialPrint(LOOP, "Factory reset confirmed");
-        factoryReset();
-        delay(100);
-        resetFunc();
-        break;
-      } else if (key == '*') {
-        SerialPrint(LOOP, "Factory reset cancelled");
-        break;
-      }
-      delay(10);
+}
+
+void handleFactoryReset() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Factory Reset?");
+  lcd.setCursor(0, 1);
+  lcd.print("#=Yes  *=No");
+  while (true) {
+    char key = keypad.getKey();
+    if (key == '#') {
+      SerialPrint(LOOP, "Factory reset confirmed");
+      factoryReset();
+      delay(100);
+      resetFunc();
+      break;
+    } else if (key == '*') {
+      SerialPrint(LOOP, "Factory reset cancelled");
+      break;
     }
+    delay(10);
   }
+}
 
-  // digitalWrite(2, LOW); // Testing cos this is fuycking me up
-  // bool lightOn = false;
-  // if ((AppState::timeOffset + seconds()) % 2 == 0 && !lightOn) {
-  //   // Turn on the light at specified time (e.g., every day at 8 AM)
-  //   Serial.println("[LOOP] Turning on the light");
-  //   digitalWrite(LIGHT_PIN, LOW);
-  //   lightOn = true;
-  // } else {
-  //   // Turn off the light when not true (e.g., every day at 8 PM)
-  //   Serial.println("[LOOP] Turning off the light");
-  //   digitalWrite(LIGHT_PIN, HIGH);
-  //   lightOn = false;
-  // }
-
-  // Check water level periodically for automatic pump control
+void handleWaterMonitoring() {
   WaterLevelResult result = checkWaterLevel();
 
   if (lightont == AppState::timeOffset + seconds()) {
-    digitalWrite(Hardware::LIGHT_PIN, LOW); // Turn on the light
+    digitalWrite(Hardware::LIGHT_PIN, LOW);
   } else if (lightofft == AppState::timeOffset + seconds()) {
-    digitalWrite(Hardware::LIGHT_PIN, HIGH); // Turn off the light
+    digitalWrite(Hardware::LIGHT_PIN, HIGH);
   }
 
-  // Display water level status if there's an error or pumps are active
-  if (result.error != WATER_ERROR_NONE || result.inletPumpActive || result.outletPumpActive) {
+  if (result.error != WATER_ERROR_NONE || result.inletPumpActive ||
+      result.outletPumpActive) {
     displayWaterLevelStatus(result);
-    delay(1000);  // Display for 1 second
+    delay(1000);
     lcd.clear();
   }
 
-  // Check dosing schedule for automatic dosing pumps
   checkDosingSchedule();
+}
 
+void loop() {
+  displayMainScreen();
 
+  char k = keypad.getKey();
+  if (k) {
+    SerialPrint(LOOP, "key -> ", k);
+  }
+
+  handlePumpConfiguration(k);
+  handleWaterManagement(k);
+  handleSystemConfiguration(k);
+
+  if (k == '*') {
+    handleFactoryReset();
+  }
+
+  handleWaterMonitoring();
   delay(100);
 }
