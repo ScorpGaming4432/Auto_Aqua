@@ -186,61 +186,51 @@ Limit function call chain depth to 7.
 
 ## 10.1 Required Log Levels
 
-Use exactly the following log levels and meanings:
+Use only these levels:
 
-* `ERROR`: operation failed, data is invalid, safety threshold violated, or any path that returns/propagates an `Errors` value.
-* `WARN`: recoverable anomaly, fallback, retry, degraded mode, or clamped input that may affect behavior.
-* `INFO`: lifecycle milestones and user-visible actions (mode/menu changes, start/stop, configuration loaded/saved).
-* `TRACE`: high-frequency diagnostics for developers (sensor samples, loop deltas, branch tracing).
+* `ERROR`: failures, invalid data, safety-limit violations, or any path returning/propagating `Errors`.
+* `WARN`: recoverable anomalies (fallback, retry, clamping, degraded mode).
+* `INFO`: lifecycle/user-visible events (start/stop, mode/menu changes, config load/save).
+* `TRACE`: high-frequency diagnostics for development only.
 
-`TRACE` must be compile-time gated out of release builds (see 10.5).
+## 10.2 Error Log: Required Fields
 
-## 10.2 Error-Path Logging Contract
+Before any error is returned/propagated, emit one error log line with:
 
-Every error path must emit one log line before returning/propagating the error. That line must include all of the following fields:
+* module/location tag (for example `Location::Sensor`),
+* stable identifier (`Errors::Xxx` or stable code),
+* key context (inputs, current state, thresholds/limits, latest sensor snapshot when relevant).
 
-* module/location tag (for example `Location::Sensor`, `Location::Menu`, or equivalent token),
-* stable error identifier (`Errors::Xxx` enum or a stable error code constant),
-* key runtime context required for diagnosis:
-  * inputs,
-  * current state,
-  * threshold/limit values,
-  * latest sensor snapshot (if applicable).
+## 10.3 Error Log: Prohibited Style
 
-Do not log only free-form text for errors.
+Error logs must not be free-form-only text like `"something failed"`.
 
-## 10.3 External Failure Mapping
+## 10.4 Externally Visible Failure Mapping
 
-Every externally visible failure (LCD text, serial user prompt, API response, UI status) must map to:
+Every externally visible failure (LCD, serial user output, API/UI status) must include both:
 
-1. a user-safe message with no internal implementation details,
-2. an internal debug identifier (`Errors::Xxx` or stable code) that can be traced in logs.
+1. a user-safe message (no internal details),
+2. an internal debug identifier (`Errors::Xxx` or stable code).
 
-The user-safe message and debug identifier must be emitted together at the failure boundary.
+## 10.5 State Transition Logging
 
-## 10.4 State Transition Logging
-
-Control loops and menu workflows must emit a one-line transition log on every state change:
+Control loops and menu workflows must log one line per state change:
 
 * format: `<component> <from_state> -> <to_state> [trigger/context]`,
-* level: `INFO` for normal transitions, `WARN` if transition is forced/recovery-based.
+* level: `INFO` for expected transitions, `WARN` for forced/recovery transitions.
 
-Do not split one transition across multiple log lines.
+## 10.6 Compile-Time Log Gating
 
-## 10.5 Compile-Time Log Gating
+All logs must be compile-time gated. `DEBUG_SERIAL_ENABLED` is the primary gate for `SerialPrint` diagnostics.
 
-All logging must be controlled through compile-time flags. `DEBUG_SERIAL_ENABLED` is required as the primary gate for `SerialPrint` diagnostics.
+Default expectations:
 
-Expected defaults:
+* development/debug: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, optional `TRACE`),
+* release: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN`; no `TRACE`).
 
-* development/debug builds: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, and optionally `TRACE` enabled),
-* release builds: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN` only; no `TRACE`).
+If extra flags are introduced (for example `TRACE_LOGS_ENABLED`), they must default to OFF in release.
 
-If additional flags are introduced (for example `TRACE_LOGS_ENABLED`), they must default to off in release builds.
-
-## 10.6 Good vs Bad Debug Statement Examples
-
-Good:
+## 10.7 Good Examples
 
 ```cpp
 SerialPrint::error(
@@ -253,7 +243,7 @@ SerialPrint::info(
 );
 ```
 
-Bad:
+## 10.8 Bad Examples
 
 ```cpp
 SerialPrint::error("read failed");
@@ -261,7 +251,8 @@ SerialPrint::println("something went wrong");
 SerialPrint::info("state changed");
 ```
 
-The bad examples are invalid because they omit `Location`, stable `Errors` code, and runtime context.
+These are invalid because they omit `Location`, stable `Errors` code, and runtime context.
+
 
 ---
 
