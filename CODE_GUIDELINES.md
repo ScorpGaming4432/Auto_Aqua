@@ -263,4 +263,54 @@ For stricter enforcement, apply the following limits:
 - Max struct fields 10
 - Max parameters 4
 
-**Implement only after everything seems to be intact.**
+---
+
+# SECTION 10 — Enforcement & Rollout
+
+## 10.1 Manual PR Checklist (High-Value Review Pass)
+
+Use this checklist for every PR, even when no automated checks fail:
+
+* [ ] Long functions are split or justified (`SECTION 1.1`, `SECTION 7.1`).
+* [ ] Deep nesting is flattened with early returns or extracted helpers (`SECTION 1.2`, `SECTION 2.4`).
+* [ ] Error-path logs include context (what failed + where + key inputs) (`SECTION 2.3`).
+* [ ] Sentinel values are documented near declaration and use sites (`SECTION 7.3`).
+* [ ] State mutations include a short intent comment when side effects are not obvious (`SECTION 2.3`, `SECTION 9.1`).
+
+## 10.2 Lightweight Static-Analysis Hooks (Suggested)
+
+These tools are optional but recommended because they have low setup overhead and can run locally or in CI:
+
+* `clang-tidy` (`readability-function-size`, `readability-else-after-return`, `bugprone-branch-clone`)
+  * Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 2.4`, `SECTION 7.1`.
+* `cpplint` (line length, whitespace, include hygiene)
+  * Maps to: `SECTION 1.3`, `SECTION 4.3`, `SECTION 8.1`, `SECTION 8.2`.
+* `cppcheck --enable=warning,style,performance`
+  * Maps to: `SECTION 2.3`, `SECTION 5.1`, `SECTION 5.2`, `SECTION 9.1`.
+* `lizard` (function length / complexity trends)
+  * Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 7.1`, `SECTION 7.2`.
+
+Minimal hook pattern:
+
+* pre-commit: run `cpplint` on changed files.
+* pre-push or CI: run `clang-tidy`/`cppcheck` on touched modules and `lizard` on diffs.
+
+## 10.3 Debug Readiness Checklist
+
+Before merging, verify debug readiness on changed behavior:
+
+* [ ] Failure paths expose a reproducible error code (or equivalent stable identifier).
+* [ ] Logs/events include a meaningful Location tag (module + function or subsystem).
+* [ ] Captured context is enough to replay the failure path (key inputs, state transition, and trigger).
+
+## 10.4 Legacy Migration Note
+
+For legacy cleanups, prioritize high-churn modules first to maximize risk reduction per change:
+
+1. `screens_*.cpp`
+2. `water_*`
+3. `storage.cpp`
+
+Apply the manual checklist in `10.1` when touching these files, even for small edits.
+
+**Implement ONLY after everything seems to be intact**
