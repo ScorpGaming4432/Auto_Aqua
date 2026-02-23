@@ -75,6 +75,43 @@ Files should also focus on mainly one component, so that responsibility is divid
 
 Favor early returns (`if (!valid) return;`) over deeply nested `if` statements.
 
+## 2.5 Function Contracts
+
+Document a contract for every non-trivial function near its declaration or definition.
+
+## 2.5.1 Required Contract Items
+
+Include all of the following:
+
+* Parameter units (e.g., `ms`, `%`, `liters`).
+* Valid ranges.
+* Sentinel behavior (`-1`, `0`, special enum values).
+* Side effects (e.g., EEPROM writes, pump control).
+
+## 2.5.2 Preconditions
+
+Add explicit precondition checks for boundary-sensitive values before use.
+
+Mandatory targets:
+
+* Threshold ranges.
+* Time fields.
+* Pump indexes.
+
+## 2.5.3 Postconditions and Invariants
+
+For `AppState` updates and persistence flows, add postcondition/invariant comments that state what
+must hold after the update.
+
+## 2.5.4 Domain Examples
+
+* `lowThreshold` / `highThreshold`: `%`, range `0-100`, sentinel `-1` as "unset", invariant
+  `lowThreshold <= highThreshold`.
+* `tankVolume`: liters, positive range, define whether `0` means "empty" or "unknown", and note
+  EEPROM write side effects.
+* Scheduling intervals: `ms`, bounded interval range, documented disable sentinel, invariant that
+  interval pump actions do not overlap unsafely.
+
 ---
 
 # SECTION 3 — Struct / Class Discipline
