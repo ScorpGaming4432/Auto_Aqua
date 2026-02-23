@@ -2,7 +2,7 @@
  * ============================================================================
  * APPSTATE.CPP - Global Application State Implementation
  * ============================================================================
- * 
+ *
  * Defines global state for the aquarium system.
  */
 

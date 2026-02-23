@@ -2,7 +2,7 @@
  * ============================================================================
  * DISPLAY.CPP - LCD Display Implementation
  * ============================================================================
- * 
+ *
  * Initializes and manages the 16x2 LCD display connected via I2C.
  */
 

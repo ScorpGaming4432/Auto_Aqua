@@ -11,7 +11,7 @@
 
 uint64_t timeSetupScreen(const char *label) {
   uint64_t nowSecs = seconds();
-  uint32_t tod = (uint32_t)(nowSecs % 86400ULL);
+  uint32_t tod = static_cast<uint32_t>(nowSecs % 86400ULL);
   uint8_t hh = tod / 3600;
   uint8_t mm = (tod % 3600) / 60;
   uint8_t ss = tod % 60;
@@ -96,8 +96,8 @@ uint64_t timeSetupScreen(const char *label) {
       if (nm > 59) nm = nm % 60;
       if (ns > 59) ns = ns % 60;
 
-      uint32_t enteredSeconds = static_cast<uint32_t>(nh) * 3600UL + 
-                                static_cast<uint32_t>(nm) * 60UL + 
+      uint32_t enteredSeconds = static_cast<uint32_t>(nh) * 3600UL +
+                                static_cast<uint32_t>(nm) * 60UL +
                                 static_cast<uint32_t>(ns);
       uint64_t tmptimeoffset = seconds() - static_cast<uint64_t>(enteredSeconds);
       return (seconds() - tmptimeoffset);

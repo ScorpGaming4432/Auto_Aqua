@@ -30,7 +30,7 @@ void checkDosingSchedule() {
   for (uint8_t i = 0; i < Hardware::DOSING_PUMP_COUNT; ++i) {
     Pump& p = AppState::pumps[i];
     if (p.getRole() != PumpRole::DOSING) continue;
-    
+
     DosingConfig cfg = p.getConfig();
     if (cfg.interval == 0 || !p.shouldDose(now)) continue;
 
