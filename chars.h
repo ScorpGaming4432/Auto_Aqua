@@ -21,6 +21,7 @@
 #define CUSTOM_CHARS_H
 
 #include "display.h"
+#include "debug.h"
 
 #pragma once
 #include <Arduino.h>
@@ -165,9 +166,8 @@ void loadGlyphSet(uint8_t langIndex) {
   if (!set.glyphs || set.glyphCount == 0)
     return;
   if (langIndex == 2) {
-    Serial.print("[CHARS] DO NOT USE loadGlyphSet for Russian\nSince Russian has too "
-                 "many letters, CGRAM is insufficient.");
-    Serial.print("Ignoring. Continuing...");
+    SerialPrint(CHARS, F("DO NOT USE loadGlyphSet for Russian\nSince Russian has too many letters, CGRAM is insufficient."));
+    Serial.println(F("Ignoring. Continuing..."));
   };
   loadCharSet(set.glyphs, set.glyphCount, 0);
 }

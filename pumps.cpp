@@ -18,6 +18,7 @@
 #include "screens.h"
 #include "appstate.h"
 #include "water.h"
+#include "debug.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -40,7 +41,7 @@ void checkDosingSchedule() {
 
   // Dosing pumps are the first PUMP_COUNT-2 pumps
   for (uint8_t i = 0; i < PUMP_COUNT - 2; ++i) {
-    Pump &p = AppState::pumps[i];
+    Pump& p = AppState::pumps[i];
 
     // Skip if marked as let pump or interval disabled
     if (p.getIfLet()) continue;
@@ -65,9 +66,7 @@ void checkDosingSchedule() {
     p.setLastDosingTime(now);
 
     uint8_t pin = pumpIndexToPin(i);
-    Serial.print("[PUMPS] Scheduled dosing pump "); Serial.print(i);
-    Serial.print(" on pin "); Serial.print(pin);
-    Serial.print(" for "); Serial.print((unsigned long)durationMs); Serial.println(" ms");
+    SerialPrint(PUMPS, F("Scheduled dosing pump "), i, F(" on pin "), pin, F(" for "), (unsigned long)durationMs, F(" ms"));
 
     // Run safely (this will open/close electrovalve via runPumpSafely)
     runPumpSafely(pin, (uint16_t)durationMs);
@@ -165,15 +164,15 @@ uint64_t Pump::getLastDosingTime() const {
 
 bool Pump::shouldDose(uint64_t currentSeconds) const {
   if (dosingInterval == 0) return false;
-  uint64_t intervalSeconds = (uint64_t)dosingInterval * 86400ULL; // days -> seconds
-  if (currentSeconds < lastDosingTime) return true; // clock reset or never set -> allow
+  uint64_t intervalSeconds = (uint64_t)dosingInterval * 86400ULL;  // days -> seconds
+  if (currentSeconds < lastDosingTime) return true;                // clock reset or never set -> allow
   return (currentSeconds - lastDosingTime) >= intervalSeconds;
 }
 
 void pumpWork(uint8_t pump_pin, uint16_t duration_ms) {
-  digitalWrite(pump_pin, LOW);  // Activate pump (assuming active LOW)
+  digitalWrite(pump_pin, LOW);   // Activate pump (assuming active LOW)
   delay(duration_ms);            // Run for specified duration
-  digitalWrite(pump_pin, HIGH);   // Deactivate pump
+  digitalWrite(pump_pin, HIGH);  // Deactivate pump
 }
 
 // void runPumpSafely(uint8_t pump_pin, uint16_t duration_ms, uint16_t amount) {
