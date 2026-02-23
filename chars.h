@@ -21,6 +21,7 @@
 #define CUSTOM_CHARS_H
 
 #include "display.h"
+#include "debug.h"
 
 #pragma once
 #include <Arduino.h>
@@ -98,5 +99,27 @@ void animateIcon(uint8_t slots[4], uint8_t revealRows, uint8_t scratchBuf[]) {
   }
 }
 
+void loadCharSet(const uint8_t (*charset)[8], uint8_t count,
+                 uint8_t startSlot = 0) {
+  uint8_t buf[8];
+  for (uint8_t i = 0; i < count; i++) {
+    for (uint8_t b = 0; b < 8; b++) {
+      buf[b] = pgm_read_byte(&charset[i][b]);
+    }
+    lcd.createChar(startSlot + i, buf);
+  }
+}
+
+void loadGlyphSet(uint8_t langIndex) {
+  LanguageGlyphSet set;
+  memcpy_P(&set, &GLYPH_SETS[langIndex], sizeof(LanguageGlyphSet));
+  if (!set.glyphs || set.glyphCount == 0)
+    return;
+  if (langIndex == 2) {
+    SerialPrint(CHARS, F("DO NOT USE loadGlyphSet for Russian\nSince Russian has too many letters, CGRAM is insufficient."));
+    Serial.println(F("Ignoring. Continuing..."));
+  };
+  loadCharSet(set.glyphs, set.glyphCount, 0);
+}
 
 #endif

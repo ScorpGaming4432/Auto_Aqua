@@ -25,6 +25,12 @@
  * ============================================================================
 **/
 
+uint64_t lightofft = 0;
+uint64_t lightont = 0;
+
+// Light control pin definition
+#define LIGHT_PIN 8
+
 void (*resetFunc)(void) = 0;
 
 #include "debug.h"
@@ -87,7 +93,9 @@ void setup() {
     AppState::timeOffset = timeSetupScreen();
     SerialPrint(SETUP, " Time offset set: ", (uint32_t)AppState::timeOffset);
 
-    handleThreshold(); // Set water thresholds
+    handleThreshold();  // Set water thresholds
+
+    lightTimeScreen(lightofft, lightont);
 
     // Save the complete configuration
     saveAppStateToConfiguration();
@@ -102,7 +110,6 @@ void setup() {
   initWaterManagement();
 
   lcd.clear();
-
 }
 
 void loop() {
@@ -232,9 +239,29 @@ void loop() {
     }
   }
 
+  // digitalWrite(2, LOW); // Testing cos this is fuycking me up
+  // bool lightOn = false;
+  // if ((AppState::timeOffset + seconds()) % 2 == 0 && !lightOn) {
+  //   // Turn on the light at specified time (e.g., every day at 8 AM)
+  //   Serial.println("[LOOP] Turning on the light");
+  //   digitalWrite(LIGHT_PIN, LOW);
+  //   lightOn = true;
+  // } else {
+  //   // Turn off the light when not true (e.g., every day at 8 PM)
+  //   Serial.println("[LOOP] Turning off the light");
+  //   digitalWrite(LIGHT_PIN, HIGH);
+  //   lightOn = false;
+  // }
+
   // Check water level periodically for automatic pump control
   WaterLevelResult result = checkWaterLevel();
-  
+
+  if (lightont == AppState::timeOffset + seconds()) {
+    digitalWrite(LIGHT_PIN, LOW); // Turn on the light
+  } else if (lightofft == AppState::timeOffset + seconds()) {
+    digitalWrite(LIGHT_PIN, HIGH); // Turn off the light
+  }
+
   // Display water level status if there's an error or pumps are active
   if (result.error != WATER_ERROR_NONE || result.inletPumpActive || result.outletPumpActive) {
     displayWaterLevelStatus(result);

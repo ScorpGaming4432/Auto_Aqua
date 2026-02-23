@@ -316,17 +316,12 @@ void initWaterManagement() {
   inletPumpWasActive = false;
   outletPumpWasActive = false;
 
-  Serial.println("[WATER] Water management initialized");
-  Serial.println("[WATER] Inlet pump: AUTO");
-  Serial.println("[WATER] Outlet pump: AUTO");
-  Serial.print("[WATER] Thresholds: ");
-  Serial.print(AppState::lowThreshold);
-  Serial.print("% - ");
-  Serial.print(AppState::highThreshold);
-  Serial.println("%");
-  Serial.print("[WATER] Hysteresis margin: ");
-  Serial.print(HYSTERESIS_MARGIN);
-  Serial.println("%");
+  SerialPrint(WATER, F("Water management initialized"));
+  SerialPrint(WATER, F("Inlet pump: AUTO"));
+  SerialPrint(WATER, F("Outlet pump: AUTO"));
+  SerialPrint(WATER, F("Thresholds: "));
+  SerialPrint(WATER, AppState::lowThreshold, F("% - "), AppState::highThreshold, F("%"));
+  SerialPrint(WATER, F("Hysteresis margin: "), HYSTERESIS_MARGIN, F("%"));
 }
 
 WaterLevelResult checkWaterLevel() {
@@ -334,7 +329,7 @@ WaterLevelResult checkWaterLevel() {
   WaterError error = waterSensor.readSensorData();
   if (error != WATER_ERROR_NONE) {
     currentError = error;
-    SerialPrint(WATER, "Sensor error: ", error);
+    SerialPrint(WATER, F("Sensor error: "), error);
     return {error, 0, inletPumpRunning, outletPumpRunning};
   }
   if (!waterSensor.isSensorConnected()) {
@@ -342,9 +337,7 @@ WaterLevelResult checkWaterLevel() {
   }
 
   uint8_t currentLevel = waterSensor.calculateWaterLevel();
-  Serial.print("[WATER] Level: ");
-  Serial.print(currentLevel);
-  Serial.println("%");
+  SerialPrint(WATER, F("Level: "), currentLevel, F("%"));
 
   // Inlet pump control with hysteresis (always automatic)
   if (currentLevel < AppState::lowThreshold - HYSTERESIS_MARGIN) {
@@ -365,7 +358,7 @@ WaterLevelResult checkWaterLevel() {
       while (true) {
         uint8_t level = waterSensor.calculateWaterLevel();
         if (level >= AppState::lowThreshold) {
-          Serial.println("[WATER] Low threshold reached - stopping inlet pump");
+          SerialPrint(WATER, F("Low threshold reached - stopping inlet pump"));
           break;
         }
         delay(100);  // Check every 100ms
@@ -381,16 +374,32 @@ WaterLevelResult checkWaterLevel() {
   if (currentLevel > AppState::highThreshold + HYSTERESIS_MARGIN) {
     if (!outletPumpWasActive) {
       SerialPrint(WATER, "Outlet pump ON (level too high)");
-      uint16_t pumpDuration = calculatePumpDuration(currentLevel, AppState::highThreshold);
-      Serial.print("[WATER] Calculated pump duration: ");
-      Serial.print(pumpDuration);
-      Serial.println("ms");
+      // uint16_t pumpDuration = calculatePumpDuration(currentLevel, AppState::highThreshold);
+      // Serial.print("[WATER] Calculated pump duration: ");
+      // Serial.print(pumpDuration);
+      // Serial.println("ms");
       outletPumpWasActive = true;
-      runPumpSafely(OUTLET_PUMP_PIN, pumpDuration);
+      // runPumpSafely(OUTLET_PUMP_PIN, pumpDuration);
+
+      // read from sensor until level is below high threshold or timeout occurs
+      unsigned long startTime = millis();
+      digitalWrite(OUTLET_PUMP_PIN, LOW);  // Activate pump (assuming active LOW)
+      outletPumpRunning = true;
+      while (true) {
+        uint8_t level = waterSensor.calculateWaterLevel();
+        if (level <= AppState::highThreshold) {
+          SerialPrint(WATER, F("High threshold reached - stopping outlet pump"));
+          break;
+        }
+        delay(100);  // Check every 100ms
+      }
+      digitalWrite(OUTLET_PUMP_PIN, HIGH);  // Deactivate pump
+      outletPumpRunning = false;
+
     }
   }
 
-  // Electrovalve control is now handled in runPumpSafely()
+  // Electrovalve control is now handled in runPumpSafely() // we dont trust runPumpSafely() anymore so we control electrovalve directly in this function
   // It opens before pump starts and closes after pump stops
 
   return {WATER_ERROR_NONE, currentLevel, inletPumpRunning, outletPumpRunning};

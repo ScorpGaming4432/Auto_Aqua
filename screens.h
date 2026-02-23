@@ -107,7 +107,7 @@ void showTime(uint64_t currentTime);
  * Display time setup screen for setting current time
  * @return Time offset from millis(), or -1 if cancelled
  */
-uint64_t timeSetupScreen();
+uint64_t timeSetupScreen(const char *label = "");
 
 /**
  * Get elapsed seconds since startup
@@ -177,5 +177,7 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
   * If user enters invalid values, calls police.
 */
 void handleThreshold();
+
+void lightTimeScreen(uint64_t *lightofftime, uint64_t *lightontime);
 
 #endif

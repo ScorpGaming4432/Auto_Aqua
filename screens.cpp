@@ -487,7 +487,7 @@ void lcdPrintWithGlyphs(const char *str, uint8_t length) {
 }
 
 
-uint64_t timeSetupScreen() {
+uint64_t timeSetupScreen(const char *label = "") {
   uint64_t nowSecs = seconds();
   uint32_t tod = (uint32_t)(nowSecs % 86400ULL);
   uint8_t hh = tod / 3600;
@@ -505,6 +505,8 @@ uint64_t timeSetupScreen() {
     lcd.print(':');
     lcd.print(digits[4]);
     lcd.print(digits[5]);
+    lcd.print(" ");
+    lcd.print(label);
     lcd.setCursor(0, 1);
     lcd.print("#=OK  *=Cancel");
   };
@@ -748,4 +750,11 @@ void handleThreshold() {
 
     Serial.println("[LOOP] Invalid thresholds entered. Cannot allow. Try again.");
   }
+}
+
+void lightTimeScreen(uint64_t *lightofftime, uint64_t *lightontime) {
+  lcd.clear();
+
+  *lightofftime = timeSetupScreen("LightOFF");
+  *lightontime = timeSetupScreen("LightON");
 }
