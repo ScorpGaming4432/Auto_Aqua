@@ -44,6 +44,10 @@ void lcdPrintWithGlyphs(const char *str, uint8_t length) {
       continue;
     }
     uint8_t libIdx = c - 128; // octal \200 is 128
+    if (libIdx >= Glyphs::LIBRARY_SIZE) {
+      lcd.write('?'); // Safety: fallback character if glyph missing
+      continue;
+    }
     int8_t slot = -1;
     for (uint8_t s = 0; s < 8; s++) {
       if (slotCache[s] == libIdx) { slot = s; break; }

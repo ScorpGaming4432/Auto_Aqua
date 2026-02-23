@@ -9,7 +9,7 @@
 #include "language.h"
 #include "appstate.h"
 #include "storage.h"
-#include "debug.h"
+#include "debug.hpp"
 #include <Arduino.h>
 #include <stddef.h>
 

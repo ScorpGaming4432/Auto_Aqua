@@ -6,7 +6,7 @@
 
 #include "water.h"
 #include "hardware.h"
-#include "debug.h"
+#include "debug.hpp"
 #include <Arduino.h>
 #include <Wire.h>
 

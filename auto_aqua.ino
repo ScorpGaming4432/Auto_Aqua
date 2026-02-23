@@ -11,7 +11,7 @@ uint64_t lightont = 0;
 // NOLINT_MANUAL_MEMORY: Low-level AVR reset mechanism
 void (* const softwareReset)(void) = nullptr;
 
-#include "debug.h"
+#include "debug.hpp"
 #include "screens.h"
 #include "display.h"
 #include "language.h"

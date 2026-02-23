@@ -8,7 +8,7 @@
 #include "screens.h"
 #include "appstate.h"
 #include "water.h"
-#include "debug.h"
+#include "debug.hpp"
 #include <Arduino.h>
 
 void initPumpModes() {

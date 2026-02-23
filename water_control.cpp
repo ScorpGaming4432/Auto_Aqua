@@ -8,7 +8,7 @@
 #include "hardware.h"
 #include "appstate.h"
 #include "storage.h"
-#include "debug.h"
+#include "debug.hpp"
 #include "pumps.h"
 #include <Arduino.h>
 

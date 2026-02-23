@@ -7,7 +7,7 @@
  * Handles reading/writing settings like tank volume, pump amounts, etc.
  * Uses struct-based approach to eliminate magic values.
  */
-#include "debug.h"
+#include "debug.hpp"
 #include "appstate.h"
 #include "storage.h"
 #include <Arduino.h>

@@ -91,7 +91,7 @@
 
 **Fixed in Phase 2**: Global variables `lcd`, `dimTimer` are hardware-specific (acceptable)
 
-## debug.h
+## debug.hpp
 
 | Line/Range | Violation Description | Guideline Section |
 |------------|---------------------|------------------|
@@ -202,6 +202,6 @@
 2. **Struct Field Count**: `Language` struct has 22 fields (limit: 10) - Phase 4
 3. **Magic Numbers**: Numeric literals without `constexpr` definitions - Phase 5
 4. **Delay Usage**: Blocking `delay()` calls throughout - Phase 5
-5. **Macro Abuse**: Multiple macros in language.h, chars.h, debug.h - Phase 5
+5. **Macro Abuse**: Multiple macros in language.h, chars.h, debug.hpp - Phase 5
 6. **Public Method Overuse**: `Pump` class has 9+ public methods - Phase 4
 7. **Architecture Smells**: "God Modules" and deep call chains need refactoring - Phase 4/5
