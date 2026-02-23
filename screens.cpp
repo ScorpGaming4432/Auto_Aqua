@@ -33,7 +33,7 @@ void splashScreen() {
     lcd.write(2);
     lcd.write(3);
 
-    animateIcon(slots, r, scratch);
+    Glyphs::animateIcon(slots, r, scratch);
     delay(80);
   }
   delay(1000);
