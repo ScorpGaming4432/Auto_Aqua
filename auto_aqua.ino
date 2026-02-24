@@ -48,7 +48,7 @@ void runInitialConfiguration() {
   // Language setup
   AppState::languageIndex = langConfigScreen(0);
   SerialPrint(CONFIG, "Language index selected by user: ", AppState::languageIndex);
-  LANG_BUFFER = readLanguage(AppState::languageIndex);
+  readLanguage(AppState::languageIndex, &LANG_BUFFER);
   SerialPrint(CONFIG, "Loaded language pack from PROGMEM: index=", AppState::languageIndex);
   SerialPrint(CONFIG, "Language name: ", LANG_BUFFER.general.name);
 
@@ -77,13 +77,13 @@ void runInitialConfiguration() {
   AppState::timeOffset = timeSetupScreen();
   SerialPrint(CONFIG, "Clock offset configured (seconds): ", static_cast<uint32_t>(AppState::timeOffset));
   handleThreshold();
-  lightTimeScreen(lightofft, lightont);
+  lightTimeScreen(&lightofft, &lightont);
 
   saveAppStateToConfiguration();
 }
 
 void loadSavedConfiguration() {
-  LANG_BUFFER = readLanguage(AppState::languageIndex);
+  readLanguage(AppState::languageIndex, &LANG_BUFFER);
   SerialPrint(CONFIG, "Loaded persisted language index ", AppState::languageIndex, " from PROGMEM");
   SerialPrint(CONFIG, "Persisted configuration loaded and applied");
 }
@@ -118,9 +118,9 @@ void setup() {
 
 void displayMainScreen() {
   lcd.setCursor(0, 0);
-  lcd.print(LANG_BUFFER.status.mainScreen);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.mainScreen, LANG_MAINSCREEN_LEN);
   lcd.setCursor(0, 1);
-  lcd.print(LANG_BUFFER.status.noTask);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.noTask, LANG_NOTASK_LEN);
 }
 
 void handlePumpConfiguration(char k) {
@@ -214,7 +214,7 @@ void loop() {
 
   char k = keypad.getKey();
   if (k) {
-    SerialPrint(INPUT, "Keypad event received: ", k);
+    SerialPrint(KEYPAD_INPUT, "Keypad event received: ", k);
   }
 
   handlePumpConfiguration(k);

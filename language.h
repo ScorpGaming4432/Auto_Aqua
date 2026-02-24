@@ -20,7 +20,7 @@ constexpr uint8_t LANG_PUMPWORKING_LEN = 17;
 constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 18;
 constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 18;
 constexpr uint8_t LANG_INTERVALTITLE_LEN = 18;
-constexpr uint8_t LANG_WATER_ERROR_LEN = 16;
+constexpr uint8_t LANG_WATER_ERROR_LEN = 17;
 constexpr uint8_t LANG_PUMP_STATUS_LEN = 14;
 
 struct LangGeneral { char name[LANG_NAME_LEN]; char prompt[LANG_PROMPT_LEN]; };
@@ -36,8 +36,8 @@ struct LangStatus {
   char noTask[LANG_NOTASK_LEN];
   char pumpWorking[LANG_PUMPWORKING_LEN];
   char waterLevel[LANG_WATER_ERROR_LEN];
-  char inletPumpOn[LANG_PUMP_STATUS_LEN];
-  char outletPumpOn[LANG_PUMP_STATUS_LEN];
+  char inletPumpOn[LANG_WATER_ERROR_LEN];
+  char outletPumpOn[LANG_WATER_ERROR_LEN];
   char pumpsOk[LANG_PUMP_STATUS_LEN];
 };
 struct LangError {
@@ -127,7 +127,7 @@ const Language LANGUAGES[LANG_COUNT] PROGMEM = {
   }
 };
 
-Language readLanguage(uint8_t idx);
+Language readLanguage(uint8_t idx, Language *dest);
 void readLanguageField(uint8_t idx, uint8_t offset, char* dest, uint8_t len);
 
 #endif

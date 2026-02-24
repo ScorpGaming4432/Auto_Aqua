@@ -30,7 +30,7 @@ uint64_t timeSetupScreen(const char *label) {
     lcd.print(digits[4]);
     lcd.print(digits[5]);
     lcd.print(" ");
-    lcd.print(label);
+    lcdPrintWithGlyphs(label, 8); // Assuming rest of line
     lcd.setCursor(0, 1);
     lcd.print("#=OK  *=Cancel");
   };
@@ -73,7 +73,7 @@ uint64_t timeSetupScreen(const char *label) {
     }
 
     if (key >= '0' && key <= '9') {
-      SerialPrint(INPUT, "Time digit entered at pos ", pos, ": ", key);
+      SerialPrint(KEYPAD_INPUT, "Time digit entered at pos ", pos, ": ", key);
       digits[pos] = key;
       pos = (pos + 1) % 6;
       showCursor = true;
@@ -81,12 +81,12 @@ uint64_t timeSetupScreen(const char *label) {
     }
 
     if (key == 'A') {
-      SerialPrint(INPUT, "Time cursor moved right to next position");
+      SerialPrint(KEYPAD_INPUT, "Time cursor moved right to next position");
       pos = (pos + 1) % 6;
       continue;
     }
     if (key == 'B') {
-      SerialPrint(INPUT, "Time cursor moved left to previous position");
+      SerialPrint(KEYPAD_INPUT, "Time cursor moved left to previous position");
       pos = (pos + 6 - 1) % 6;
       continue;
     }

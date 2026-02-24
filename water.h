@@ -106,13 +106,13 @@ int16_t getHighThreshold();
  * Set low threshold value
  * @param threshold Low threshold in percentage (0-100)
  */
-void setLowThreshold(int16_t threshold);
+void setLowThreshold(uint16_t threshold);
 
 /**
  * Set high threshold value
  * @param threshold High threshold in percentage (0-100)
  */
-void setHighThreshold(int16_t threshold);
+void setHighThreshold(uint16_t threshold);
 
 /**
  * Get current water level sensor readings (both low and high)

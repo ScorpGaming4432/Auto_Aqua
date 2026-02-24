@@ -16,17 +16,17 @@
  * Handles cursor blinking, multi-digit number entry, and validation
  */
 uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCol, uint8_t maxDigits, uint32_t value, bool editMode, const char *unit) {
-  SerialPrint(INPUT, "Opening numeric editor label=", label, " maxDigits=", maxDigits, " initialValue=", value);
+  SerialPrint(KEYPAD_INPUT, "Opening numeric editor label=", label, " maxDigits=", maxDigits, " initialValue=", value);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(label);
+  lcdPrintWithGlyphs(label, 16);
   lcd.setCursor(0, 1);
 
   // Copy format into a local RAM buffer so we can inspect characters
   char fmtBuf[17];
   strncpy(fmtBuf, format, 16);
   fmtBuf[16] = '\0';
-  lcd.print(fmtBuf);
+  lcdPrintWithGlyphs(fmtBuf, 16);
 
   // Determine whether the format already contains a unit character
   bool formatHasUnit = false;
@@ -131,7 +131,7 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
 
     if (!localEdit) {
       if (key == '#') {
-        SerialPrint(INPUT, "Numeric editor entering edit mode");
+        SerialPrint(KEYPAD_INPUT, "Numeric editor entering edit mode");
         localEdit = true;
         if (number != UNSET_U32)
           digitsEntered = true;
@@ -141,14 +141,14 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
         }
         redrawNumber(number);
       } else if (key == '*') {
-        SerialPrint(INPUT, "Numeric editor cancelled before editing");
+        SerialPrint(KEYPAD_INPUT, "Numeric editor cancelled before editing");
         return UNSET_U32;
       }
       continue;
     }
 
     if (key == '*') {
-      SerialPrint(INPUT, "Numeric editor clear/cancel key pressed");
+      SerialPrint(KEYPAD_INPUT, "Numeric editor clear/cancel key pressed");
       if (!digitsEntered)
         return UNSET_U32;
       number = 0;
@@ -158,22 +158,22 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
     }
 
     if (key == '#') {
-      SerialPrint(INPUT, "Numeric editor confirm key pressed");
+      SerialPrint(KEYPAD_INPUT, "Numeric editor confirm key pressed");
       if (!digitsEntered)
         return UNSET_U32;
-      SerialPrint(INPUT, "Numeric editor returning value=", number);
+      SerialPrint(KEYPAD_INPUT, "Numeric editor returning value=", number);
       return number;
     }
 
     if (key >= '0' && key <= '9') {
-      SerialPrint(INPUT, "Numeric digit entered: ", key);
+      SerialPrint(KEYPAD_INPUT, "Numeric digit entered: ", key);
       if (number == UNSET_U32) number = 0;
       if (curLen < maxDigits) {
         digitsEntered = true;
         number = number * 10 + (key - '0');
         redrawNumber(number);
       } else {
-        SerialPrint(INPUT, "Numeric editor overflow: too many digits; returning UNSET");
+        SerialPrint(KEYPAD_INPUT, "Numeric editor overflow: too many digits; returning UNSET");
         return UNSET_U32;
       }
       continue;

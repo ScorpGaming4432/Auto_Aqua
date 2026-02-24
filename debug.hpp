@@ -21,7 +21,7 @@ enum Location {
   DUR = 9,
   STORAGE = 10,
   CONFIG = 11,
-  INPUT = 12,
+  KEYPAD_INPUT = 12,
   MONITOR = 13,
   LIGHTS = 14,
   FACTORY = 15
@@ -50,7 +50,7 @@ inline void printLocationTag(Location tag) {
     case DUR:     Serial.print(F("DUR")); break;
     case STORAGE: Serial.print(F("STORAGE")); break;
     case CONFIG:  Serial.print(F("CONFIG")); break;
-    case INPUT:   Serial.print(F("INPUT")); break;
+    case KEYPAD_INPUT:   Serial.print(F("INPUT")); break;
     case MONITOR: Serial.print(F("MONITOR")); break;
     case LIGHTS:  Serial.print(F("LIGHTS")); break;
     case FACTORY: Serial.print(F("FACTORY")); break;
@@ -73,12 +73,20 @@ inline void serialPrintHelper(int64_t arg) {
   Serial.print(static_cast<long>(arg));
 }
 
+inline void serialPrintRecursive() {}
+
+template<typename T, typename... Args>
+inline void serialPrintRecursive(T first, Args... args) {
+  serialPrintHelper(first);
+  serialPrintRecursive(args...);
+}
+
 template<typename... Args>
 inline void SerialPrint(Location tag, Args... args) {
   Serial.print('[');
   printLocationTag(tag);
   Serial.print(F("] "));
-  (serialPrintHelper(args), ...);
+  serialPrintRecursive(args...);
   Serial.println();
 }
 #else
