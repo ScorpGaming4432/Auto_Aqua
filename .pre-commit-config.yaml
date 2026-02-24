@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        files: '\\.(ino|c|cc|cpp|cxx|h|hpp|hh)$'
+
+  - repo: local
+    hooks:
+      - id: check-guidelines
+        name: guideline checker (changed files)
+        entry: tools/check_guidelines.py --changed-only
+        language: system
+        pass_filenames: false
+        files: '\\.(ino|c|cc|cpp|cxx|h|hpp|hh)$'
