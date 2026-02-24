@@ -2,16 +2,16 @@
  * ============================================================================
  * SCREENS.H - User Interface Screen Declarations
  * ============================================================================
- * 
+ *
  * Defines all screen display functions and keypad interface for the aquarium
  * management system. Handles user input for configuration and monitoring.
- * 
+ *
  * Keypad Layout (4x4 Matrix):
  *   1  2  3  A
  *   4  5  6  B
  *   7  8  9  C
  *   *  0  #  D
- * 
+ *
 */
 
 #ifndef SCREENS_H

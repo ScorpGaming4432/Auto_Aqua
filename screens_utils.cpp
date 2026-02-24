@@ -25,32 +25,34 @@ static uint8_t slotCache[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
 static uint8_t nextSlot = 0;
 
 void readLanguageField(uint8_t idx, uint8_t offset, char *dest, uint8_t len) {
-  const void *base = static_cast<const void *>(&LANGUAGES[idx % LANG_COUNT]);
-  memcpy_P(dest, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(base) + offset), len);
-  dest[len] = '\0';
+  memcpy_P(dest, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(static_cast<const void *>(&LANGUAGES[idx % LANG_COUNT])) + offset), len);
 }
 
-Language readLanguage(uint8_t languageIndex) {
-  Language result;
-  memcpy_P(&result, &LANGUAGES[languageIndex % LANG_COUNT], sizeof(Language));
-  return result;
+Language readLanguage(uint8_t languageIndex, Language *dest) {
+  memcpy_P(dest, &LANGUAGES[languageIndex % LANG_COUNT], sizeof(Language));
+  return *dest;
 }
 
 void lcdPrintWithGlyphs(const char *str, uint8_t length) {
   for (uint8_t i = 0; i < length; i++) {
     uint8_t c = static_cast<uint8_t>(str[i]);
-    if (c < 0x80) {
+    if (c == '\0') break;
+
+    if (c < 128) {
       lcd.write(c);
       continue;
     }
-    uint8_t libIdx = c - 128; // octal \200 is 128
+    uint8_t libIdx = c - 128;  // octal \200 is 128
     if (libIdx >= Glyphs::LIBRARY_SIZE) {
-      lcd.write('?'); // Safety: fallback character if glyph missing
+      lcd.write('?');  // Safety: fallback character if glyph missing
       continue;
     }
     int8_t slot = -1;
     for (uint8_t s = 0; s < 8; s++) {
-      if (slotCache[s] == libIdx) { slot = s; break; }
+      if (slotCache[s] == libIdx) {
+        slot = s;
+        break;
+      }
     }
     if (slot == -1) {
       slot = nextSlot;

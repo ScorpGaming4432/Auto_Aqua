@@ -83,10 +83,10 @@ Document a contract for every non-trivial function near its declaration or defin
 
 Include all of the following:
 
-* Parameter units (e.g., `ms`, `%`, `liters`).
-* Valid ranges.
-* Sentinel behavior (`-1`, `0`, special enum values).
-* Side effects (e.g., EEPROM writes, pump control).
+- Parameter units (e.g., `ms`, `%`, `liters`).
+- Valid ranges.
+- Sentinel behavior (`-1`, `0`, special enum values).
+- Side effects (e.g., EEPROM writes, pump control).
 
 ## 2.5.2 Preconditions
 
@@ -94,9 +94,9 @@ Add explicit precondition checks for boundary-sensitive values before use.
 
 Mandatory targets:
 
-* Threshold ranges.
-* Time fields.
-* Pump indexes.
+- Threshold ranges.
+- Time fields.
+- Pump indexes.
 
 ## 2.5.3 Postconditions and Invariants
 
@@ -105,11 +105,11 @@ must hold after the update.
 
 ## 2.5.4 Domain Examples
 
-* `lowThreshold` / `highThreshold`: `%`, range `0-100`, sentinel `-1` as "unset", invariant
+- `lowThreshold` / `highThreshold`: `%`, range `0-100`, sentinel `-1` as "unset", invariant
   `lowThreshold <= highThreshold`.
-* `tankVolume`: liters, positive range, define whether `0` means "empty" or "unknown", and note
+- `tankVolume`: liters, positive range, define whether `0` means "empty" or "unknown", and note
   EEPROM write side effects.
-* Scheduling intervals: `ms`, bounded interval range, documented disable sentinel, invariant that
+- Scheduling intervals: `ms`, bounded interval range, documented disable sentinel, invariant that
   interval pump actions do not overlap unsafely.
 
 ---
@@ -258,18 +258,18 @@ Limit function call chain depth to 7.
 
 Use only these levels:
 
-* `ERROR`: failures, invalid data, safety-limit violations, or any path returning/propagating `Errors`.
-* `WARN`: recoverable anomalies (fallback, retry, clamping, degraded mode).
-* `INFO`: lifecycle/user-visible events (start/stop, mode/menu changes, config load/save).
-* `TRACE`: high-frequency diagnostics for development only.
+- `ERROR`: failures, invalid data, safety-limit violations, or any path returning/propagating `Errors`.
+- `WARN`: recoverable anomalies (fallback, retry, clamping, degraded mode).
+- `INFO`: lifecycle/user-visible events (start/stop, mode/menu changes, config load/save).
+- `TRACE`: high-frequency diagnostics for development only.
 
 ## 10.2 Error Log: Required Fields
 
 Before any error is returned/propagated, emit one error log line with:
 
-* module/location tag (for example `Location::Sensor`),
-* stable identifier (`Errors::Xxx` or stable code),
-* key context (inputs, current state, thresholds/limits, latest sensor snapshot when relevant).
+- module/location tag (for example `Location::Sensor`),
+- stable identifier (`Errors::Xxx` or stable code),
+- key context (inputs, current state, thresholds/limits, latest sensor snapshot when relevant).
 
 ## 10.3 Error Log: Prohibited Style
 
@@ -286,8 +286,8 @@ Every externally visible failure (LCD, serial user output, API/UI status) must i
 
 Control loops and menu workflows must log one line per state change:
 
-* format: `<component> <from_state> -> <to_state> [trigger/context]`,
-* level: `INFO` for expected transitions, `WARN` for forced/recovery transitions.
+- format: `<component> <from_state> -> <to_state> [trigger/context]`,
+- level: `INFO` for expected transitions, `WARN` for forced/recovery transitions.
 
 ## 10.6 Compile-Time Log Gating
 
@@ -295,8 +295,8 @@ All logs must be compile-time gated. `DEBUG_SERIAL_ENABLED` is the primary gate 
 
 Default expectations:
 
-* development/debug: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, optional `TRACE`),
-* release: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN`; no `TRACE`).
+- development/debug: `DEBUG_SERIAL_ENABLED=1` (`INFO`, `WARN`, `ERROR`, optional `TRACE`),
+- release: `DEBUG_SERIAL_ENABLED=0` (`ERROR` and minimal `WARN`; no `TRACE`).
 
 If extra flags are introduced (for example `TRACE_LOGS_ENABLED`), they must default to OFF in release.
 
@@ -331,37 +331,37 @@ These are invalid because they omit `Location`, stable `Errors` code, and runtim
 
 Use this checklist for every PR, even when no automated checks fail:
 
-* [ ] Long functions are split or justified (`SECTION 1.1`, `SECTION 7.1`).
-* [ ] Deep nesting is flattened with early returns or extracted helpers (`SECTION 1.2`, `SECTION 2.4`).
-* [ ] Error-path logs include context (what failed + where + key inputs) (`SECTION 2.3`).
-* [ ] Sentinel values are documented near declaration and use sites (`SECTION 7.3`).
-* [ ] State mutations include a short intent comment when side effects are not obvious (`SECTION 2.3`, `SECTION 9.1`).
+- [ ] Long functions are split or justified (`SECTION 1.1`, `SECTION 7.1`).
+- [ ] Deep nesting is flattened with early returns or extracted helpers (`SECTION 1.2`, `SECTION 2.4`).
+- [ ] Error-path logs include context (what failed + where + key inputs) (`SECTION 2.3`).
+- [ ] Sentinel values are documented near declaration and use sites (`SECTION 7.3`).
+- [ ] State mutations include a short intent comment when side effects are not obvious (`SECTION 2.3`, `SECTION 9.1`).
 
 ## 11.2 Lightweight Static-Analysis Hooks (Suggested)
 
 These tools are optional but recommended because they have low setup overhead and can run locally or in CI:
 
-* `clang-tidy` (`readability-function-size`, `readability-else-after-return`, `bugprone-branch-clone`)
-  * Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 2.4`, `SECTION 7.1`.
-* `cpplint` (line length, whitespace, include hygiene)
-  * Maps to: `SECTION 1.3`, `SECTION 4.3`, `SECTION 8.1`, `SECTION 8.2`.
-* `cppcheck --enable=warning,style,performance`
-  * Maps to: `SECTION 2.3`, `SECTION 5.1`, `SECTION 5.2`, `SECTION 9.1`.
-* `lizard` (function length / complexity trends)
-  * Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 7.1`, `SECTION 7.2`.
+- `clang-tidy` (`readability-function-size`, `readability-else-after-return`, `bugprone-branch-clone`)
+  - Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 2.4`, `SECTION 7.1`.
+- `cpplint` (line length, whitespace, include hygiene)
+  - Maps to: `SECTION 1.3`, `SECTION 4.3`, `SECTION 8.1`, `SECTION 8.2`.
+- `cppcheck --enable=warning,style,performance`
+  - Maps to: `SECTION 2.3`, `SECTION 5.1`, `SECTION 5.2`, `SECTION 9.1`.
+- `lizard` (function length / complexity trends)
+  - Maps to: `SECTION 1.1`, `SECTION 1.2`, `SECTION 7.1`, `SECTION 7.2`.
 
 Minimal hook pattern:
 
-* pre-commit: run `cpplint` on changed files.
-* pre-push or CI: run `clang-tidy`/`cppcheck` on touched modules and `lizard` on diffs.
+- pre-commit: run `cpplint` on changed files.
+- pre-push or CI: run `clang-tidy`/`cppcheck` on touched modules and `lizard` on diffs.
 
 ## 11.3 Debug Readiness Checklist
 
 Before merging, verify debug readiness on changed behavior:
 
-* [ ] Failure paths expose a reproducible error code (or equivalent stable identifier).
-* [ ] Logs/events include a meaningful Location tag (module + function or subsystem).
-* [ ] Captured context is enough to replay the failure path (key inputs, state transition, and trigger).
+- [ ] Failure paths expose a reproducible error code (or equivalent stable identifier).
+- [ ] Logs/events include a meaningful Location tag (module + function or subsystem).
+- [ ] Captured context is enough to replay the failure path (key inputs, state transition, and trigger).
 
 ## 11.4 Legacy Migration Note
 

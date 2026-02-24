@@ -16,15 +16,15 @@
 /**
  * Display language selection screen
  */
-uint8_t langConfigScreen(uint8_t languageIndex) {
+uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
   lcd.clear();
 
-  char langName[LANG_NAME_LEN + 1];
-  char langPrompt[LANG_PROMPT_LEN + 1];
-  
+  char langName[LANG_NAME_LEN];
+  char langPrompt[LANG_PROMPT_LEN];
+
   // Use offsetof for robust PROGMEM access
-  readLanguageField(languageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
-  readLanguageField(languageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
+  readLanguageField(oldLanguageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
+  readLanguageField(oldLanguageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
 
   lcd.setCursor(0, 0);
   lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
@@ -33,36 +33,34 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
   lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
   lcd.print("  #->");
 
-  uint8_t newlang = languageIndex;
+  uint8_t newlang = oldLanguageIndex;
   while (true) {
     char key = keypad.getKey();
 
-    if (key) {
-      if (key >= '0' && key <= '9') {
-        newlang = key - '0';
-      } else if (key == 'A') {
-        newlang = (newlang + 1) % LANG_COUNT;
-      } else if (key == 'B') {
-        newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
-      } else if (key == '#') {
-        return newlang;
-      } else if (key == '*') {
-        return languageIndex;
-      }
+    if (!key) {
+      delay(100);
+      continue;
+    };
 
-      if (newlang != languageIndex) {
-        languageIndex = newlang;
-        readLanguageField(languageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
-        readLanguageField(languageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
-        lcd.setCursor(0, 0);
-        lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
-        lcd.setCursor(4, 1);
-        lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
-      }
-    }
-    delay(100);
+    if (key == '#') return newlang;
+    if (key == '*') return oldLanguageIndex;
+
+
+    if (key >= '0' && key <= '9') newlang = key - '0';
+    else if (key == 'A') newlang = (newlang + 1) % LANG_COUNT;
+    else if (key == 'B') newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
+
+    if (newlang == oldLanguageIndex) continue;
+
+    readLanguageField(newlang, offsetof(Language, general.name), langName, LANG_NAME_LEN);
+    readLanguageField(newlang, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
+    lcd.setCursor(0, 0);
+    lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
+    lcd.setCursor(4, 1);
+    lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
   }
 }
+
 
 uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume) {
   if (tankVolume == UNSET_U32) {
@@ -76,7 +74,7 @@ void handleEditTankVolume(const char *tankTitle) {
   lcd.clear();
   lcd.setCursor(0, 0);
   int32_t tv = tankVolumeScreen(tankTitle, false, AppState::tankVolume);
-  
+
   if (tv > 0) {
     AppState::tankVolume = static_cast<uint32_t>(tv);
     saveAppStateToConfiguration();
@@ -104,7 +102,7 @@ void handleThreshold() {
   while (true) {
     uint16_t low = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%"));
     uint16_t high = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%"));
-    
+
     if (low != UNSET_U16 && high != UNSET_U16 && low > 0 && high > low && high <= 100) {
       AppState::lowThreshold = low;
       AppState::highThreshold = high;

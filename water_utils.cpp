@@ -27,38 +27,51 @@ void displayWaterLevelStatus(const WaterLevelResult &result) {
   lcd.clear();
   if (result.error != WATER_ERROR_NONE) {
     lcd.setCursor(0, 0);
-    lcd.print("Water Sensor Err");
+    lcdPrintWithGlyphs(LANG_BUFFER.error.waterSensorError, LANG_WATER_ERROR_LEN);
     lcd.setCursor(0, 1);
     switch (result.error) {
-      case WATER_ERROR_SENSOR_TIMEOUT: lcd.print("Sensor Timeout"); break;
-      case WATER_ERROR_SENSOR_COMMUNICATION: lcd.print("Comm Error"); break;
-      case WATER_ERROR_SENSOR_INVALID_DATA: lcd.print("Invalid Data"); break;
-      case WATER_ERROR_PUMP_TIMEOUT: lcd.print("Pump Timeout"); break;
-      default: lcd.print("Unknown Error"); break;
+      case WATER_ERROR_SENSOR_TIMEOUT: 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.sensorTimeout, LANG_WATER_ERROR_LEN); 
+        break;
+      case WATER_ERROR_SENSOR_COMMUNICATION: 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.commError, LANG_WATER_ERROR_LEN); 
+        break;
+      case WATER_ERROR_SENSOR_INVALID_DATA: 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.invalidData, LANG_WATER_ERROR_LEN); 
+        break;
+      case WATER_ERROR_PUMP_TIMEOUT: 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.pumpTimeout, LANG_WATER_ERROR_LEN); 
+        break;
+      default: 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.unknownError, LANG_WATER_ERROR_LEN); 
+        break;
     }
   } else {
     lcd.setCursor(0, 0);
-    lcd.print("Water Level: ");
+    lcdPrintWithGlyphs(LANG_BUFFER.status.waterLevel, LANG_WATER_ERROR_LEN);
     lcd.print(result.level);
     lcd.print("%");
     lcd.setCursor(0, 1);
-    if (result.inletPumpActive) lcd.print("Inlet Pump ON");
-    else if (result.outletPumpActive) lcd.print("Outlet Pump ON");
-    else lcd.print("Pumps: OK");
+    if (result.inletPumpActive) 
+      lcdPrintWithGlyphs(LANG_BUFFER.status.inletPumpOn, LANG_PUMP_STATUS_LEN);
+    else if (result.outletPumpActive) 
+      lcdPrintWithGlyphs(LANG_BUFFER.status.outletPumpOn, LANG_PUMP_STATUS_LEN);
+    else 
+      lcdPrintWithGlyphs(LANG_BUFFER.status.pumpsOk, LANG_PUMP_STATUS_LEN);
   }
 }
 
 int16_t getLowThreshold() { return AppState::lowThreshold; }
 int16_t getHighThreshold() { return AppState::highThreshold; }
 
-void setLowThreshold(int16_t threshold) {
+void setLowThreshold(uint16_t threshold) {
   if (threshold < AppState::highThreshold) {
     AppState::lowThreshold = threshold;
     saveAppStateToConfiguration();
   }
 }
 
-void setHighThreshold(int16_t threshold) {
+void setHighThreshold(uint16_t threshold) {
   if (threshold > AppState::lowThreshold && threshold <= 100) {
     AppState::highThreshold = threshold;
     saveAppStateToConfiguration();

@@ -2,6 +2,8 @@
  * ============================================================================
  * AUTO AQUA - Automatic Aquarium Management System
  * ============================================================================
+
+ przycisk na przepompowanie przewodów od środków
 **/
 
 uint64_t lightofft = 0;
@@ -32,62 +34,63 @@ extern Language LANG_BUFFER;  // Defined in screens.cpp
 void setupSerial() {
   Serial.begin(Hardware::SERIAL_BAUD);
   Wire.begin();
-  SerialPrint(SETUP, "Serial started");
+  SerialPrint(SETUP, "Serial interface started @ ", Hardware::SERIAL_BAUD, " baud; I2C bus initialized");
 }
 
 void setupInitialScreen() {
-  SerialPrint(SETUP, "showing splash screen");
+  SerialPrint(SETUP, "Displaying splash screen before initialization");
   splashScreen();
 }
 
 void runInitialConfiguration() {
-  SerialPrint(SETUP, "Configuration invalid - running setup screens");
+  SerialPrint(CONFIG, "Configuration missing/invalid; entering first-run setup wizard");
 
   // Language setup
   AppState::languageIndex = langConfigScreen(0);
-  SerialPrint(SETUP, "Language index set to ", AppState::languageIndex);
-  LANG_BUFFER = readLanguage(AppState::languageIndex);
-  SerialPrint(SETUP, " Language ", AppState::languageIndex, " loaded from PROGMEM");
-  SerialPrint(SETUP, "Language name: ", LANG_BUFFER.general.name);
+  SerialPrint(CONFIG, "Language index selected by user: ", AppState::languageIndex);
+  readLanguage(AppState::languageIndex, &LANG_BUFFER);
+  SerialPrint(CONFIG, "Loaded language pack from PROGMEM: index=", AppState::languageIndex);
+  SerialPrint(CONFIG, "Language name: ", LANG_BUFFER.general.name);
 
   // Tank volume setup
   AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true, 0);
-  SerialPrint(SETUP, "tankVolume = ", AppState::tankVolume);
+  SerialPrint(CONFIG, "Tank volume configured to ", AppState::tankVolume, " liters");
 
   // Pump setup - dosing pumps only (indices 2, 3, 4)
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
-    SerialPrint(SETUP, " set pump ", i, " amount (dosing pumps only)");
+    SerialPrint(CONFIG, "Prompting dosing pump ", i, " amount configuration");
     DosingConfig cfg = AppState::pumps[i].getConfig();
     cfg.amount = pumpAmountScreen(LANG_BUFFER.tank.amountTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(SETUP, " pump[", i, "] amount = ", AppState::pumps[i].getConfig().amount);
+    SerialPrint(CONFIG, "Dosing pump ", i, " amount saved: ", AppState::pumps[i].getConfig().amount, " ml");
 
-    SerialPrint(SETUP, " set pump ", i, " interval (dosing pumps only)");
+    SerialPrint(CONFIG, "Prompting dosing pump ", i, " interval configuration");
     cfg = AppState::pumps[i].getConfig();
     cfg.interval = pumpIntervalScreen(LANG_BUFFER.tank.intervalTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(SETUP, " pump[", i, "] interval = ", AppState::pumps[i].getConfig().interval);
+    SerialPrint(CONFIG, "Dosing pump ", i, " interval saved: every ", AppState::pumps[i].getConfig().interval, " hours");
   }
 
   // Time offset and thresholds
   AppState::timeOffset = timeSetupScreen();
-  SerialPrint(SETUP, " Time offset set: ", static_cast<uint32_t>(AppState::timeOffset));
+  SerialPrint(CONFIG, "Clock offset configured (seconds): ", static_cast<uint32_t>(AppState::timeOffset));
   handleThreshold();
-  lightTimeScreen(lightofft, lightont);
+  lightTimeScreen(&lightofft, &lightont);
 
   saveAppStateToConfiguration();
 }
 
 void loadSavedConfiguration() {
-  LANG_BUFFER = readLanguage(AppState::languageIndex);
-  SerialPrint(SETUP, "Language ", AppState::languageIndex, " loaded from PROGMEM");
-  SerialPrint(SETUP, "Configuration loaded successfully");
+  readLanguage(AppState::languageIndex, &LANG_BUFFER);
+  SerialPrint(CONFIG, "Loaded persisted language index ", AppState::languageIndex, " from PROGMEM");
+  SerialPrint(CONFIG, "Persisted configuration loaded and applied");
 }
 
 void initializeSystem() {
   initWaterManagement();
+  SerialPrint(SETUP, "Water management subsystem initialized");
   lcd.clear();
 }
 
@@ -97,6 +100,7 @@ void setup() {
 
   Configuration config = loadConfiguration();
   bool needsSetup = !isConfigurationValid(config);
+  SerialPrint(CONFIG, "Configuration validity check result: needsSetup=", needsSetup ? "true" : "false");
   loadConfigurationToAppState();
 
   if (needsSetup) {
@@ -114,15 +118,15 @@ void setup() {
 
 void displayMainScreen() {
   lcd.setCursor(0, 0);
-  lcd.print(LANG_BUFFER.status.mainScreen);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.mainScreen, LANG_MAINSCREEN_LEN);
   lcd.setCursor(0, 1);
-  lcd.print(LANG_BUFFER.status.noTask);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.noTask, LANG_NOTASK_LEN);
 }
 
 void handlePumpConfiguration(char k) {
   if (k >= '1' && k <= '3') {
     uint8_t pumpIndex = k - '1';
-    SerialPrint(LOOP, "Editing pump amount for pump ", pumpIndex);
+    SerialPrint(CONFIG, "User requested dosing amount edit for pump index ", pumpIndex);
     handleEditAmount(pumpIndex);
     saveAppStateToConfiguration();
   }
@@ -130,17 +134,17 @@ void handlePumpConfiguration(char k) {
 
 void handleWaterManagement(char k) {
   if (k == 'A') {
-    SerialPrint(LOOP, "Edit tank volume");
+    SerialPrint(CONFIG, "User requested tank volume edit");
     AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true,
                                             AppState::tankVolume);
     saveAppStateToConfiguration();
   } else if (k == 'C') {
-    SerialPrint(LOOP, "Measuring water level");
+    SerialPrint(MONITOR, "Manual water-level measurement requested");
     WaterLevelResult result = checkWaterLevel();
     displayWaterLevelStatus(result);
     delay(Hardware::UI_DELAY_LONG_MS);
   } else if (k == 'D') {
-    SerialPrint(LOOP, "Editing tank thresholds");
+    SerialPrint(CONFIG, "User requested tank threshold recalibration");
     handleThreshold();
     saveAppStateToConfiguration();
   }
@@ -148,11 +152,11 @@ void handleWaterManagement(char k) {
 
 void handleSystemConfiguration(char k) {
   if (k == '0') {
-    SerialPrint(LOOP, "Showing Current Time");
+    SerialPrint(TIME, "Displaying current adjusted time");
     showTime(seconds() + AppState::timeOffset);
     delay(Hardware::UI_DELAY_MEDIUM_MS);
   } else if (k == 'B') {
-    SerialPrint(LOOP, "Language configuration");
+    SerialPrint(CONFIG, "User entered language configuration screen");
     AppState::languageIndex = langConfigScreen(AppState::languageIndex);
     saveAppStateToConfiguration();
     lcd.clear();
@@ -171,13 +175,13 @@ void handleFactoryReset() {
   while (true) {
     char key = keypad.getKey();
     if (key == '#') {
-      SerialPrint(LOOP, "Factory reset confirmed");
+      SerialPrint(FACTORY, "Factory reset confirmed by user; erasing persisted config");
       factoryReset();
       delay(Hardware::UI_DELAY_SHORT_MS);
       softwareReset();
       break;
     } else if (key == '*') {
-      SerialPrint(LOOP, "Factory reset cancelled");
+      SerialPrint(FACTORY, "Factory reset cancelled by user");
       break;
     }
     delay(10);
@@ -188,8 +192,10 @@ void handleWaterMonitoring() {
   WaterLevelResult result = checkWaterLevel();
 
   if (lightont == AppState::timeOffset + seconds()) {
+    SerialPrint(LIGHTS, "Light schedule hit ON timestamp; setting relay LOW (light ON)");
     digitalWrite(Hardware::LIGHT_PIN, LOW);
   } else if (lightofft == AppState::timeOffset + seconds()) {
+    SerialPrint(LIGHTS, "Light schedule hit OFF timestamp; setting relay HIGH (light OFF)");
     digitalWrite(Hardware::LIGHT_PIN, HIGH);
   }
 
@@ -208,7 +214,7 @@ void loop() {
 
   char k = keypad.getKey();
   if (k) {
-    SerialPrint(LOOP, "key -> ", k);
+    SerialPrint(KEYPAD_INPUT, "Keypad event received: ", k);
   }
 
   handlePumpConfiguration(k);

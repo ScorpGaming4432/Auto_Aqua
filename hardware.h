@@ -2,7 +2,7 @@
  * ============================================================================
  * HARDWARE.H - Hardware Abstraction Layer
  * ============================================================================
- * 
+ *
  * Centralized hardware definitions for the aquarium system.
  * All pin assignments, hardware addresses, and hardware-specific constants
  * are defined here to eliminate hardware leakage across modules.

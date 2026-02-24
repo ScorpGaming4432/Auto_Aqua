@@ -2,7 +2,7 @@
  * ============================================================================
  * INPUT.CPP - Input Handling Implementation
  * ============================================================================
- * 
+ *
  * Processes keypad input and dispatches to appropriate handlers.
  */
 

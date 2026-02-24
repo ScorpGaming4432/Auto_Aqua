@@ -65,7 +65,7 @@ static bool validatePumps(const Configuration& config) {
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     if (config.pumpAmounts[i] == UNSET_U16 ||
         config.pumpDurations[i] == UNSET_U64 ||
-        config.pumpDosingIntervals[i] == UNSET_U32) {
+        config.pumpDosingIntervals[i] == UNSET_U16) {
       SerialPrint(STORAGE, F("Invalid: Pump "), i, F(" data UNSET"));
       return false;
     }
@@ -178,7 +178,7 @@ void factoryReset() {
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     resetConfig.pumpAmounts[i] = UNSET_U16;
     resetConfig.pumpDurations[i] = UNSET_U64;
-    resetConfig.pumpDosingIntervals[i] = UNSET_U32;
+    resetConfig.pumpDosingIntervals[i] = UNSET_U16;
   }
 
   saveConfiguration(resetConfig);
