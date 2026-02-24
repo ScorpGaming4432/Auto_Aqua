@@ -37,6 +37,22 @@ arduino-cli compile --fqbn arduino:avr:mega .
 arduino-cli upload --fqbn arduino:avr:mega -p <PORT> .
 ```
 
+## compile_commands.json for clang-tidy
+
+Refresh the compile database with:
+
+```bash
+python3 tools/gen_compile_db.py --fqbn arduino:avr:mega --sketch . --output compile_commands.json
+```
+
+The script runs `arduino-cli compile --verbose` and transforms compiler invocations into
+`compile_commands.json` entries for both regular `.cpp` translation units and the generated
+sketch unit (`.ino` via `.ino.cpp`).
+
+Because it preserves the full compiler argument list from Arduino CLI, include paths for
+`Arduino.h`, local project headers, and discovered library directories are retained so
+`clang-tidy` can resolve symbols consistently.
+
 ## Coding rules
 
 Project coding rules are documented in:
