@@ -42,3 +42,8 @@ arduino-cli upload --fqbn arduino:avr:mega -p <PORT> .
 Project coding rules are documented in:
 
 - [`CODE_GUIDELINES.md`](CODE_GUIDELINES.md)
+
+
+## Code quality tooling
+
+- [`docs/quality.md`](docs/quality.md)

@@ -1,0 +1,17 @@
+CompileFlags:
+  CompilationDatabase: build
+Diagnostics:
+  ClangTidy:
+    Add: [
+      bugprone-branch-clone,
+      readability-else-after-return,
+      readability-function-size,
+      readability-magic-numbers,
+      modernize-use-nullptr,
+      modernize-use-override,
+      modernize-use-using,
+      cppcoreguidelines-pro-type-cstyle-cast
+    ]
+    Remove: [
+      clang-analyzer-*
+    ]
