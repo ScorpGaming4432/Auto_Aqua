@@ -19,7 +19,12 @@ enum Location {
   CHARS = 7,
   TIME = 8,
   DUR = 9,
-  STORAGE = 10
+  STORAGE = 10,
+  CONFIG = 11,
+  INPUT = 12,
+  MONITOR = 13,
+  LIGHTS = 14,
+  FACTORY = 15
 };
 
 enum Errors {
@@ -44,6 +49,11 @@ inline void printLocationTag(Location tag) {
     case TIME:    Serial.print(F("TIME")); break;
     case DUR:     Serial.print(F("DUR")); break;
     case STORAGE: Serial.print(F("STORAGE")); break;
+    case CONFIG:  Serial.print(F("CONFIG")); break;
+    case INPUT:   Serial.print(F("INPUT")); break;
+    case MONITOR: Serial.print(F("MONITOR")); break;
+    case LIGHTS:  Serial.print(F("LIGHTS")); break;
+    case FACTORY: Serial.print(F("FACTORY")); break;
     default:      Serial.print(F("UNKNOWN")); break;
   }
 }
