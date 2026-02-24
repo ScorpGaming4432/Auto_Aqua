@@ -50,14 +50,6 @@ extern Language LANG_BUFFER;
 void splashScreen();
 
 /**
- * Display language selection screen
- * @param idx Current language index
- * @param editMode Whether in edit mode or view mode
- * @return Selected language index
- */
-uint8_t langConfigScreen(uint8_t idx);
-
-/**
  * Display tank volume input screen
  * @param tankVolumeBuf Localized label for tank volume
  * @param editMode Whether to allow editing
