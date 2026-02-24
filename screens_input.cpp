@@ -112,6 +112,10 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
   uint32_t number = value;
 
   while (true) {
+    // RUN BACKGROUND TASKS
+    extern void handleWaterMonitoring();
+    handleWaterMonitoring();
+
     char key = keypad.getKey();
 
     if (localEdit && millis() - lastBlink >= 500) {

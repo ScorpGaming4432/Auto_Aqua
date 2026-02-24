@@ -50,6 +50,34 @@ extern Language LANG_BUFFER;
 void splashScreen();
 
 /**
+ * Display language selection screen
+ * @param idx Current language index
+ * @return Selected language index
+ */
+uint8_t langConfigScreen(uint8_t idx);
+
+/**
+ * Get elapsed seconds since startup
+ * Handles millis() overflow automatically
+ * @return Total seconds elapsed
+ */
+inline uint64_t seconds() {
+  static uint32_t previousMillis = 0;
+  static uint64_t totalMillis = 0;
+  uint32_t currentMillis = millis();
+  uint32_t delta;
+  // Handle millisecond counter overflow
+  if (currentMillis >= previousMillis) {
+    delta = currentMillis - previousMillis;
+  } else {
+    delta = (0xFFFFFFFFUL - previousMillis) + currentMillis + 1;
+  }
+  totalMillis += delta;
+  previousMillis = currentMillis;
+  return totalMillis / 1000;
+}
+
+/**
  * Display tank volume input screen
  * @param tankVolumeBuf Localized label for tank volume
  * @param editMode Whether to allow editing
@@ -104,27 +132,6 @@ void showTime(uint64_t currentTime);
  * @return Time offset from millis(), or -1 if cancelled
  */
 uint64_t timeSetupScreen(const char *label = "");
-
-/**
- * Get elapsed seconds since startup
- * Handles millis() overflow automatically
- * @return Total seconds elapsed
- */
-inline uint64_t seconds() {
-  static uint32_t previousMillis = 0;
-  static uint64_t totalMillis = 0;
-  uint32_t currentMillis = millis();
-  uint32_t delta;
-  // Handle millisecond counter overflow
-  if (currentMillis >= previousMillis) {
-    delta = currentMillis - previousMillis;
-  } else {
-    delta = (0xFFFFFFFFUL - previousMillis) + currentMillis + 1;
-  }
-  totalMillis += delta;
-  previousMillis = currentMillis;
-  return totalMillis / 1000;
-}
 
 /**
  * Display water threshold configuration screen

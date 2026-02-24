@@ -51,6 +51,9 @@ uint64_t timeSetupScreen(const char *label) {
   bool showCursor = true;
 
   while (true) {
+    extern void handleWaterMonitoring();
+    handleWaterMonitoring();
+
     for (uint8_t i = 0; i < 6; ++i) {
       uint8_t col = (i < 2) ? i : ((i < 4) ? (i + 1) : (i + 2));
       lcd.setCursor(col, 0);
@@ -68,7 +71,7 @@ uint64_t timeSetupScreen(const char *label) {
 
     char key = keypad.getKey();
     if (!key) {
-      delay(30);
+      delay(10);
       continue;
     }
 

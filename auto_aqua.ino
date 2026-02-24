@@ -21,7 +21,6 @@ void (* const softwareReset)(void) = nullptr;
 #include "pumps.h"
 #include "storage.h"
 #include "appstate.h"
-#include "input.h"
 #include "hardware.h"
 
 // External references
@@ -173,6 +172,7 @@ void handleFactoryReset() {
   lcd.setCursor(0, 1);
   lcd.print("#=Yes  *=No");
   while (true) {
+    handleWaterMonitoring();
     char key = keypad.getKey();
     if (key == '#') {
       SerialPrint(FACTORY, "Factory reset confirmed by user; erasing persisted config");

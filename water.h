@@ -34,6 +34,7 @@ struct WaterPumpState {
   uint32_t inletPumpTotalRuntime = 0;
   uint32_t outletPumpTotalRuntime = 0;
   unsigned long pumpStartTime = 0;
+  unsigned long pumpDuration = 0;  // Added for non-blocking timing
   bool pumpActive = false;
   uint8_t activePumpPin = 0;
 
@@ -51,6 +52,9 @@ struct WaterPumpState {
   // Electrovalve state
   bool electrovalveActive = false;
   uint32_t electrovalveTotalRuntime = 0;
+
+  // Added for non-blocking automatic control
+  bool autoControlActive = false;
 };
 
 // Encapsulates low/high touch sensor data and reading logic
@@ -80,6 +84,12 @@ private:
  * Sets up sensors and pump control pins
  */
 void initWaterManagement();
+
+/**
+ * Update water management system (non-blocking)
+ * Should be called frequently in the main loop
+ */
+void updateWaterManagement();
 
 /**
  * Check water level and auto-control pumps

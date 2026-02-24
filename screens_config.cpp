@@ -35,10 +35,13 @@ uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
 
   uint8_t newlang = oldLanguageIndex;
   while (true) {
+    extern void handleWaterMonitoring();
+    handleWaterMonitoring();
+
     char key = keypad.getKey();
 
     if (!key) {
-      delay(100);
+      delay(10);
       continue;
     };
 
