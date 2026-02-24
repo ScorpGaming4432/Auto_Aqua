@@ -2,10 +2,10 @@
  * ============================================================================
  * WATER.H - Water Management Interface
  * ============================================================================
- * 
+ *
  * Defines water level monitoring and pump control for the aquarium system.
  * Handles automatic water inlet/outlet pump management based on thresholds.
- * 
+ *
  */
 
 #ifndef WATER_H

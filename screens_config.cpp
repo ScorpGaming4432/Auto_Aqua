@@ -21,7 +21,7 @@ uint8_t langConfigScreen(uint8_t languageIndex) {
 
   char langName[LANG_NAME_LEN + 1];
   char langPrompt[LANG_PROMPT_LEN + 1];
-  
+
   // Use offsetof for robust PROGMEM access
   readLanguageField(languageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
   readLanguageField(languageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
@@ -76,7 +76,7 @@ void handleEditTankVolume(const char *tankTitle) {
   lcd.clear();
   lcd.setCursor(0, 0);
   int32_t tv = tankVolumeScreen(tankTitle, false, AppState::tankVolume);
-  
+
   if (tv > 0) {
     AppState::tankVolume = static_cast<uint32_t>(tv);
     saveAppStateToConfiguration();
@@ -104,7 +104,7 @@ void handleThreshold() {
   while (true) {
     uint16_t low = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%"));
     uint16_t high = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%"));
-    
+
     if (low != UNSET_U16 && high != UNSET_U16 && low > 0 && high > low && high <= 100) {
       AppState::lowThreshold = low;
       AppState::highThreshold = high;

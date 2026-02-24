@@ -2,7 +2,7 @@
  * ============================================================================
  * PUMPS.H - Pump Control Interface
  * ============================================================================
- * 
+ *
  * Defines pump control functions and constants for the aquarium system.
  * Supports operation of multiple peristaltic pumps for liquid dispensing.
  */
@@ -35,10 +35,10 @@ public:
 
   void setConfig(const DosingConfig& config);
   DosingConfig getConfig() const;
-  
+
   void setRole(PumpRole role);
   PumpRole getRole() const;
-  
+
   bool shouldDose(uint64_t currentSeconds) const;
 
 private:

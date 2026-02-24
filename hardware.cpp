@@ -2,7 +2,7 @@
  * ============================================================================
  * HARDWARE.CPP - Hardware Abstraction Implementation
  * ============================================================================
- * 
+ *
  * Hardware initialization and utility functions.
  */
 

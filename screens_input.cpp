@@ -62,7 +62,7 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
 
     char tmp[12]; // Increased size for safety (uint32 can be 10 digits)
     uint8_t idx = 0;
-    unsigned long v = (unsigned long)val;
+    unsigned long v = static_cast<unsigned long>(val);
 
     if (v == 0) {
       tmp[idx++] = '0';
@@ -121,7 +121,7 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
       else
         lcd.print(lastDigitChar);
     }
-    
+
     if (!key) {
       delay(10);
       continue;
