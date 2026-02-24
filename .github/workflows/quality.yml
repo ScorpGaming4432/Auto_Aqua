@@ -1,0 +1,109 @@
+name: Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy cppcheck python3-pip
+          pip3 install lizard
+
+      - name: Install Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          sudo mv bin/arduino-cli /usr/local/bin/arduino-cli
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+
+      - name: Generate compilation database
+        run: |
+          mkdir -p artifacts
+          arduino-cli compile --fqbn arduino:avr:mega --only-compilation-database .
+          COMPDB="$(find . -name compile_commands.json | head -n1)"
+          if [ -z "$COMPDB" ]; then
+            echo "compile_commands.json was not generated" >&2
+            exit 1
+          fi
+          echo "COMPDB=$COMPDB" >> "$GITHUB_ENV"
+
+      - name: Resolve changed files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)"
+          fi
+          CHANGED="$(git diff --name-only --diff-filter=ACMRTUXB "$BASE_SHA" HEAD | tr '\n' ' ')"
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: clang-tidy (changed files or key modules)
+        run: |
+          mkdir -p artifacts
+          CHANGED='${{ steps.changed.outputs.changed }}'
+          TARGETS="$(echo "$CHANGED" | tr ' ' '\n' | rg '\\.(cpp|cc|cxx|h|hpp|hh)$' || true)"
+          if [ -z "$TARGETS" ]; then
+            TARGETS="water.cpp water_control.cpp water_sensor.cpp pumps.cpp"
+          fi
+          echo "$TARGETS" | tr ' ' '\n' > artifacts/clang_tidy_targets.txt
+          : > artifacts/clang_tidy.log
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ ! -f "$f" ] && continue
+            echo "=== $f ===" | tee -a artifacts/clang_tidy.log
+            clang-tidy -p "$(dirname "$COMPDB")" "$f" | tee -a artifacts/clang_tidy.log
+          done < artifacts/clang_tidy_targets.txt
+
+      - name: cppcheck
+        run: |
+          mkdir -p artifacts
+          cppcheck --enable=warning,style,performance,portability --error-exitcode=1 \
+            --inline-suppr --suppress=missingIncludeSystem \
+            . 2> artifacts/cppcheck.txt
+          cat artifacts/cppcheck.txt
+
+      - name: lizard complexity
+        run: |
+          mkdir -p artifacts
+          lizard -C 15 -l cpp -l c . | tee artifacts/lizard.txt
+
+      - name: Guideline checker (full repo)
+        run: |
+          mkdir -p artifacts
+          python3 tools/check_guidelines.py \
+            --fail-on BLOCKER STRONG \
+            --report artifacts/guidelines_report.md | tee artifacts/guidelines_console.txt
+
+      - name: Publish quality summary
+        if: always()
+        run: |
+          {
+            echo "## Quality summary"
+            echo "| Check | Artifact |"
+            echo "|---|---|"
+            echo "| clang-tidy targets | artifacts/clang_tidy_targets.txt |"
+            echo "| clang-tidy log | artifacts/clang_tidy.log |"
+            echo "| cppcheck | artifacts/cppcheck.txt |"
+            echo "| lizard | artifacts/lizard.txt |"
+            echo "| guideline report | artifacts/guidelines_report.md |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          path: artifacts/
