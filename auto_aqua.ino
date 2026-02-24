@@ -2,6 +2,8 @@
  * ============================================================================
  * AUTO AQUA - Automatic Aquarium Management System
  * ============================================================================
+
+ przycisk na przepompowanie przewodów od środków
 **/
 
 uint64_t lightofft = 0;
