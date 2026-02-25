@@ -65,6 +65,7 @@ void runInitialConfiguration() {
     lcd.clear();
     SerialPrint(CONFIG, "Dosing pump ", i, " amount saved: ", AppState::pumps[i].getConfig().amount,
                 " ml");
+    runPumpSafely(i, calculatePumpDuration(0, cfg.amount));
 
     SerialPrint(CONFIG, "Prompting dosing pump ", i, " interval configuration");
     cfg = AppState::pumps[i].getConfig();
