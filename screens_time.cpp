@@ -51,8 +51,8 @@ uint64_t timeSetupScreen(const char *label) {
   bool showCursor = true;
 
   while (true) {
-    extern void handleWaterMonitoring();
-    handleWaterMonitoring();
+    extern void handleWaterMonitoring(bool);
+    handleWaterMonitoring(false);
 
     for (uint8_t i = 0; i < 6; ++i) {
       uint8_t col = (i < 2) ? i : ((i < 4) ? (i + 1) : (i + 2));

@@ -11,20 +11,20 @@ uint64_t lightont = 0;
 
 // Function to trigger software reset via jump to address 0
 // NOLINT_MANUAL_MEMORY: Low-level AVR reset mechanism
-void (* const softwareReset)(void) = nullptr;
+void (*const softwareReset)(void) = nullptr;
 
-#include "debug.hpp"
-#include "screens.h"
-#include "display.h"
-#include "language.h"
-#include "water.h"
-#include "pumps.h"
-#include "storage.h"
 #include "appstate.h"
+#include "debug.hpp"
+#include "display.h"
 #include "hardware.h"
+#include "language.h"
+#include "pumps.h"
+#include "screens.h"
+#include "storage.h"
+#include "water.h"
 
 // External references
-extern Language LANG_BUFFER;  // Defined in screens.cpp
+extern Language LANG_BUFFER; // Defined in screens.cpp
 
 // ============================================================================
 // Setup Helper Functions
@@ -33,7 +33,8 @@ extern Language LANG_BUFFER;  // Defined in screens.cpp
 void setupSerial() {
   Serial.begin(Hardware::SERIAL_BAUD);
   Wire.begin();
-  SerialPrint(SETUP, "Serial interface started @ ", Hardware::SERIAL_BAUD, " baud; I2C bus initialized");
+  SerialPrint(SETUP, "Serial interface started @ ", Hardware::SERIAL_BAUD,
+              " baud; I2C bus initialized");
 }
 
 void setupInitialScreen() {
@@ -62,19 +63,22 @@ void runInitialConfiguration() {
     cfg.amount = pumpAmountScreen(LANG_BUFFER.tank.amountTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(CONFIG, "Dosing pump ", i, " amount saved: ", AppState::pumps[i].getConfig().amount, " ml");
+    SerialPrint(CONFIG, "Dosing pump ", i, " amount saved: ", AppState::pumps[i].getConfig().amount,
+                " ml");
 
     SerialPrint(CONFIG, "Prompting dosing pump ", i, " interval configuration");
     cfg = AppState::pumps[i].getConfig();
     cfg.interval = pumpIntervalScreen(LANG_BUFFER.tank.intervalTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(CONFIG, "Dosing pump ", i, " interval saved: every ", AppState::pumps[i].getConfig().interval, " hours");
+    SerialPrint(CONFIG, "Dosing pump ", i, " interval saved: every ",
+                AppState::pumps[i].getConfig().interval, " hours");
   }
 
   // Time offset and thresholds
   AppState::timeOffset = timeSetupScreen();
-  SerialPrint(CONFIG, "Clock offset configured (seconds): ", static_cast<uint32_t>(AppState::timeOffset));
+  SerialPrint(CONFIG,
+              "Clock offset configured (seconds): ", static_cast<uint32_t>(AppState::timeOffset));
   handleThreshold();
   lightTimeScreen(&lightofft, &lightont);
 
@@ -99,7 +103,8 @@ void setup() {
 
   Configuration config = loadConfiguration();
   bool needsSetup = !isConfigurationValid(config);
-  SerialPrint(CONFIG, "Configuration validity check result: needsSetup=", needsSetup ? "true" : "false");
+  SerialPrint(CONFIG,
+              "Configuration validity check result: needsSetup=", needsSetup ? "true" : "false");
   loadConfigurationToAppState();
 
   if (needsSetup) {
@@ -134,8 +139,8 @@ void handlePumpConfiguration(char k) {
 void handleWaterManagement(char k) {
   if (k == 'A') {
     SerialPrint(CONFIG, "User requested tank volume edit");
-    AppState::tankVolume = tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true,
-                                            AppState::tankVolume);
+    AppState::tankVolume =
+      tankVolumeScreen(LANG_BUFFER.tank.volumeTitle, true, AppState::tankVolume);
     saveAppStateToConfiguration();
   } else if (k == 'C') {
     SerialPrint(MONITOR, "Manual water-level measurement requested");
@@ -172,7 +177,7 @@ void handleFactoryReset() {
   lcd.setCursor(0, 1);
   lcd.print("#=Yes  *=No");
   while (true) {
-    handleWaterMonitoring();
+    handleWaterMonitoring(false);
     char key = keypad.getKey();
     if (key == '#') {
       SerialPrint(FACTORY, "Factory reset confirmed by user; erasing persisted config");
@@ -188,7 +193,7 @@ void handleFactoryReset() {
   }
 }
 
-void handleWaterMonitoring() {
+void handleWaterMonitoring(bool updateDisplay) {
   WaterLevelResult result = checkWaterLevel();
 
   if (lightont == AppState::timeOffset + seconds()) {
@@ -199,11 +204,25 @@ void handleWaterMonitoring() {
     digitalWrite(Hardware::LIGHT_PIN, HIGH);
   }
 
-  if (result.error != WATER_ERROR_NONE || result.inletPumpActive ||
-      result.outletPumpActive) {
+  // Rewrite the following code block to use a more descriptive and concise logging mechanism.
+  if (updateDisplay &&
+      (result.error != WATER_ERROR_NONE || result.inletPumpActive || result.outletPumpActive)) {
+    Serial.print("Water level check result - Level: ");
+    Serial.print(result.level, DEC);
+    Serial.print("%; Error: ");
+    if (result.error != WATER_ERROR_NONE) {
+      Serial.print(result.error);
+    } else {
+      Serial.println("None");
+    }
+    Serial.print("; Inlet Pump: ");
+    Serial.print(result.inletPumpActive ? "Active" : "Inactive");
+    Serial.print("; Outlet Pump: ");
+    Serial.print(result.outletPumpActive ? "Active" : "Inactive");
+
+    // Instead of using delay(), consider using a more efficient and reliable way to update the
+    // display.
     displayWaterLevelStatus(result);
-    delay(Hardware::UI_DELAY_MEDIUM_MS);
-    lcd.clear();
   }
 
   checkDosingSchedule();
@@ -225,6 +244,6 @@ void loop() {
     handleFactoryReset();
   }
 
-  handleWaterMonitoring();
+  handleWaterMonitoring(true);
   delay(Hardware::UI_DELAY_SHORT_MS);
 }

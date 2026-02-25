@@ -113,8 +113,8 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
 
   while (true) {
     // RUN BACKGROUND TASKS
-    extern void handleWaterMonitoring();
-    handleWaterMonitoring();
+    extern void handleWaterMonitoring(bool);
+    handleWaterMonitoring(false);
 
     char key = keypad.getKey();
 

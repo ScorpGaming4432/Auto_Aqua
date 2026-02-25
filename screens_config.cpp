@@ -25,18 +25,20 @@ uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
   // Use offsetof for robust PROGMEM access
   readLanguageField(oldLanguageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
   readLanguageField(oldLanguageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
+  SerialPrint(CONFIG, "Loaded language fields ", langName, " ; ", langPrompt);
 
   lcd.setCursor(0, 0);
-  lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
+  lcdPrintWithGlyphs(langName, 16);
   lcd.setCursor(0, 1);
   lcd.print("Num=");
-  lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
+  lcdPrintWithGlyphs(langPrompt, 9);
   lcd.print("  #->");
 
   uint8_t newlang = oldLanguageIndex;
+  uint8_t prevlang = oldLanguageIndex;
   while (true) {
-    extern void handleWaterMonitoring();
-    handleWaterMonitoring();
+    extern void handleWaterMonitoring(bool);
+    handleWaterMonitoring(false);
 
     char key = keypad.getKey();
 
@@ -48,19 +50,20 @@ uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
     if (key == '#') return newlang;
     if (key == '*') return oldLanguageIndex;
 
-
     if (key >= '0' && key <= '9') newlang = key - '0';
     else if (key == 'A') newlang = (newlang + 1) % LANG_COUNT;
     else if (key == 'B') newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
 
-    if (newlang == oldLanguageIndex) continue;
+    if (newlang == prevlang) continue;
+    prevlang = newlang;
 
     readLanguageField(newlang, offsetof(Language, general.name), langName, LANG_NAME_LEN);
     readLanguageField(newlang, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
+    SerialPrint(CONFIG, "Loaded new language fields ", langName, " ; ", langPrompt);
     lcd.setCursor(0, 0);
-    lcdPrintWithGlyphs(langName, LANG_NAME_LEN);
+    lcdPrintWithGlyphs(langName, 16);
     lcd.setCursor(4, 1);
-    lcdPrintWithGlyphs(langPrompt, LANG_PROMPT_LEN);
+    lcdPrintWithGlyphs(langPrompt, 9);
   }
 }
 
