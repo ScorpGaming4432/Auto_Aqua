@@ -48,8 +48,11 @@ static int8_t prepareGlyph(uint16_t unicode) {
   return -1;
 }
 
-void lcdPrintWithGlyphs(const char *str, uint8_t length) {
+void lcdPrintWithGlyphs(const char *str, uint8_t length, uint8_t col, uint8_t row) {
   if (!str) return;
+  
+  // Set cursor to starting position
+  lcd.setCursor(col, row);
   
   // Pass 1: Pre-load all required glyphs into CGRAM
   const uint8_t *p = reinterpret_cast<const uint8_t *>(str);
@@ -71,29 +74,35 @@ void lcdPrintWithGlyphs(const char *str, uint8_t length) {
   }
 
   // Pass 2: Print characters. Now all slots are guaranteed to be ready.
-  p = reinterpret_cast<const uint8_t *>(str);
-  uint8_t printed = 0;
-  while (*p && printed < length) {
-    uint16_t unicode = 0;
-    uint8_t b = *p++;
-    if (b < 0x80) unicode = b;
-    else if ((b & 0xE0) == 0xC0) { unicode = ((b & 0x1F) << 6) | (*p++ & 0x3F); }
-    else if ((b & 0xF0) == 0xE0) {
-      uint8_t b2 = *p++;
-      uint8_t b3 = *p++;
-      unicode = ((b & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
-    } else continue;
+  // Print twice to bypass LCD errors, resetting cursor position between prints
+  for (uint8_t printPass = 0; printPass < 2; printPass++) {
+    // Reset cursor to starting position for each print
+    lcd.setCursor(col, row);
+    
+    p = reinterpret_cast<const uint8_t *>(str);
+    uint8_t printed = 0;
+    while (*p && printed < length) {
+      uint16_t unicode = 0;
+      uint8_t b = *p++;
+      if (b < 0x80) unicode = b;
+      else if ((b & 0xE0) == 0xC0) { unicode = ((b & 0x1F) << 6) | (*p++ & 0x3F); }
+      else if ((b & 0xF0) == 0xE0) {
+        uint8_t b2 = *p++;
+        uint8_t b3 = *p++;
+        unicode = ((b & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+      } else continue;
 
-    if (unicode == 0) break;
-    if (unicode < 128) {
-      lcd.write(static_cast<uint8_t>(unicode));
-    } else {
-      int8_t slot = -1;
-      for (uint8_t s = 0; s < 8; s++) {
-        if (slotCache[s] == unicode) { slot = s; break; }
+      if (unicode == 0) break;
+      if (unicode < 128) {
+        lcd.write(static_cast<uint8_t>(unicode));
+      } else {
+        int8_t slot = -1;
+        for (uint8_t s = 0; s < 8; s++) {
+          if (slotCache[s] == unicode) { slot = s; break; }
+        }
+        lcd.write(slot >= 0 ? static_cast<uint8_t>(slot) : ' ');
       }
-      lcd.write(slot >= 0 ? static_cast<uint8_t>(slot) : ' ');
+      printed++;
     }
-    printed++;
   }
 }

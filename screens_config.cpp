@@ -4,12 +4,12 @@
  * ============================================================================
  */
 
-#include "screens.h"
+#include "appstate.h"
+#include "debug.hpp"
 #include "display.h"
 #include "language.h"
-#include "appstate.h"
+#include "screens.h"
 #include "storage.h"
-#include "debug.hpp"
 #include <Arduino.h>
 #include <stddef.h>
 
@@ -24,15 +24,16 @@ uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
 
   // Use offsetof for robust PROGMEM access
   readLanguageField(oldLanguageIndex, offsetof(Language, general.name), langName, LANG_NAME_LEN);
-  readLanguageField(oldLanguageIndex, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
+  readLanguageField(oldLanguageIndex, offsetof(Language, general.prompt), langPrompt,
+                    LANG_PROMPT_LEN);
   SerialPrint(CONFIG, "Loaded language fields ", langName, " ; ", langPrompt);
 
-  lcd.setCursor(0, 0);
-  lcdPrintWithGlyphs(langName, 16);
+  lcdPrintWithGlyphs(langName, 16, 0, 0);
   lcd.setCursor(0, 1);
   lcd.print("Num=");
-  lcdPrintWithGlyphs(langPrompt, 9);
-  lcd.print("  #->");
+  lcdPrintWithGlyphs(langPrompt, 9, 4, 1);
+  lcd.setCursor(12, 1);
+  lcd.print(" #->");
 
   uint8_t newlang = oldLanguageIndex;
   uint8_t prevlang = oldLanguageIndex;
@@ -47,28 +48,33 @@ uint8_t langConfigScreen(uint8_t oldLanguageIndex) {
       continue;
     };
 
-    if (key == '#') return newlang;
-    if (key == '*') return oldLanguageIndex;
+    if (key == '#')
+      return newlang;
+    if (key == '*')
+      return oldLanguageIndex;
 
-    if (key >= '0' && key <= '9') newlang = key - '0';
-    else if (key == 'A') newlang = (newlang + 1) % LANG_COUNT;
-    else if (key == 'B') newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
+    if (key >= '0' && key <= '9')
+      newlang = key - '0';
+    else if (key == 'A')
+      newlang = (newlang + 1) % LANG_COUNT;
+    else if (key == 'B')
+      newlang = (newlang + LANG_COUNT - 1) % LANG_COUNT;
 
-    if (newlang == prevlang) continue;
+    if (newlang == prevlang)
+      continue;
     prevlang = newlang;
 
     readLanguageField(newlang, offsetof(Language, general.name), langName, LANG_NAME_LEN);
     readLanguageField(newlang, offsetof(Language, general.prompt), langPrompt, LANG_PROMPT_LEN);
     SerialPrint(CONFIG, "Loaded new language fields ", langName, " ; ", langPrompt);
-    lcd.setCursor(0, 0);
-    lcdPrintWithGlyphs(langName, 16);
-    lcd.setCursor(4, 1);
-    lcdPrintWithGlyphs(langPrompt, 9);
+    lcdPrintWithGlyphs(langName, 16, 0, 0);
+    lcdPrintWithGlyphs(langPrompt, 9, 4, 1);
+    lcd.setCursor(12, 1);
+    lcd.print(" #->");
   }
 }
 
-
-uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tankVolume) {
+uint32_t tankVolumeScreen(const char* tankVolumeBuf, bool editMode, uint32_t tankVolume) {
   if (tankVolume == UNSET_U32) {
     tankVolume = 0;
     editMode = true;
@@ -76,7 +82,7 @@ uint32_t tankVolumeScreen(const char *tankVolumeBuf, bool editMode, uint32_t tan
   return editNumberScreen(tankVolumeBuf, "<-* _______l #->", 4, 7, tankVolume, editMode, "l");
 }
 
-void handleEditTankVolume(const char *tankTitle) {
+void handleEditTankVolume(const char* tankTitle) {
   lcd.clear();
   lcd.setCursor(0, 0);
   int32_t tv = tankVolumeScreen(tankTitle, false, AppState::tankVolume);
@@ -90,7 +96,8 @@ void handleEditTankVolume(const char *tankTitle) {
   char follow = 0;
   while ((millis() - start) < 2000) {
     follow = keypad.getKey();
-    if (follow) break;
+    if (follow)
+      break;
     delay(10);
   }
 
@@ -106,8 +113,12 @@ void handleEditTankVolume(const char *tankTitle) {
 
 void handleThreshold() {
   while (true) {
-    uint16_t low = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.lowThresholdTitle, "     ___%    #->", 8, 2, AppState::lowThreshold, true, "%"));
-    uint16_t high = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.highThresholdTitle, "     ___%    #->", 8, 3, AppState::highThreshold, true, "%"));
+    uint16_t low =
+      static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.lowThresholdTitle, "     ___%    #->",
+                                             8, 2, AppState::lowThreshold, true, "%"));
+    uint16_t high = static_cast<uint16_t>(editNumberScreen(LANG_BUFFER.tank.highThresholdTitle,
+                                                           "     ___%    #->", 8, 3,
+                                                           AppState::highThreshold, true, "%"));
 
     if (low != UNSET_U16 && high != UNSET_U16 && low > 0 && high > low && high <= 100) {
       AppState::lowThreshold = low;

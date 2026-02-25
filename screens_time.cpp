@@ -30,7 +30,7 @@ uint64_t timeSetupScreen(const char *label) {
     lcd.print(digits[4]);
     lcd.print(digits[5]);
     lcd.print(" ");
-    lcdPrintWithGlyphs(label, 8); // Assuming rest of line
+    lcdPrintWithGlyphs(label, 8, 9, 0); // Assuming rest of line
     lcd.setCursor(0, 1);
     lcd.print("#=OK  *=Cancel");
   };

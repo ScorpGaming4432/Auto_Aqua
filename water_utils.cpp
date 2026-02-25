@@ -26,38 +26,36 @@ uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t target) {
 void displayWaterLevelStatus(const WaterLevelResult &result) {
   lcd.clear();
   if (result.error != WATER_ERROR_NONE) {
-    lcd.setCursor(0, 0);
-    lcdPrintWithGlyphs(LANG_BUFFER.error.waterSensorError, LANG_WATER_ERROR_LEN);
+    lcdPrintWithGlyphs(LANG_BUFFER.error.waterSensorError, LANG_WATER_ERROR_LEN, 0, 0);
     lcd.setCursor(0, 1);
     switch (result.error) {
       case WATER_ERROR_SENSOR_TIMEOUT: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.sensorTimeout, LANG_WATER_ERROR_LEN); 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.sensorTimeout, LANG_WATER_ERROR_LEN, 0, 1); 
         break;
       case WATER_ERROR_SENSOR_COMMUNICATION: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.commError, LANG_WATER_ERROR_LEN); 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.commError, LANG_WATER_ERROR_LEN, 0, 1); 
         break;
       case WATER_ERROR_SENSOR_INVALID_DATA: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.invalidData, LANG_WATER_ERROR_LEN); 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.invalidData, LANG_WATER_ERROR_LEN, 0, 1); 
         break;
       case WATER_ERROR_PUMP_TIMEOUT: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.pumpTimeout, LANG_WATER_ERROR_LEN); 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.pumpTimeout, LANG_WATER_ERROR_LEN, 0, 1); 
         break;
       default: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.unknownError, LANG_WATER_ERROR_LEN); 
+        lcdPrintWithGlyphs(LANG_BUFFER.error.unknownError, LANG_WATER_ERROR_LEN, 0, 1); 
         break;
     }
   } else {
-    lcd.setCursor(0, 0);
-    lcdPrintWithGlyphs(LANG_BUFFER.status.waterLevel, LANG_WATER_ERROR_LEN);
+    lcdPrintWithGlyphs(LANG_BUFFER.status.waterLevel, LANG_WATER_ERROR_LEN, 0, 0);
     lcd.print(result.level);
     lcd.print("%");
     lcd.setCursor(0, 1);
     if (result.inletPumpActive) 
-      lcdPrintWithGlyphs(LANG_BUFFER.status.inletPumpOn, LANG_PUMP_STATUS_LEN);
+      lcdPrintWithGlyphs(LANG_BUFFER.status.inletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
     else if (result.outletPumpActive) 
-      lcdPrintWithGlyphs(LANG_BUFFER.status.outletPumpOn, LANG_PUMP_STATUS_LEN);
+      lcdPrintWithGlyphs(LANG_BUFFER.status.outletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
     else 
-      lcdPrintWithGlyphs(LANG_BUFFER.status.pumpsOk, LANG_PUMP_STATUS_LEN);
+      lcdPrintWithGlyphs(LANG_BUFFER.status.pumpsOk, LANG_PUMP_STATUS_LEN, 0, 1);
   }
 }
 

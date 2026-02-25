@@ -118,8 +118,10 @@ void mainScreen(const char *mainScreenBuf, const char *NoTaskBuf);
  * Replaces certain characters with LCD custom characters
  * @param str String to print
  * @param length Number of characters to print
+ * @param col Column position to start printing
+ * @param row Row position to start printing
  */
-void lcdPrintWithGlyphs(const char *str, uint8_t length);
+void lcdPrintWithGlyphs(const char *str, uint8_t length, uint8_t col, uint8_t row);
 
 /**
  * Display the current time on LCD

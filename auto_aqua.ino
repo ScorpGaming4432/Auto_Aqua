@@ -46,7 +46,7 @@ void runInitialConfiguration() {
   SerialPrint(CONFIG, "Configuration missing/invalid; entering first-run setup wizard");
 
   // Language setup
-  AppState::languageIndex = langConfigScreen(0);
+  AppState::languageIndex = langConfigScreen(1);
   SerialPrint(CONFIG, "Language index selected by user: ", AppState::languageIndex);
   readLanguage(AppState::languageIndex, &LANG_BUFFER);
   SerialPrint(CONFIG, "Loaded language pack from PROGMEM: index=", AppState::languageIndex);
@@ -121,10 +121,8 @@ void setup() {
 // ============================================================================
 
 void displayMainScreen() {
-  lcd.setCursor(0, 0);
-  lcdPrintWithGlyphs(LANG_BUFFER.status.mainScreen, LANG_MAINSCREEN_LEN);
-  lcd.setCursor(0, 1);
-  lcdPrintWithGlyphs(LANG_BUFFER.status.noTask, LANG_NOTASK_LEN);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.mainScreen, LANG_MAINSCREEN_LEN, 0, 0);
+  lcdPrintWithGlyphs(LANG_BUFFER.status.noTask, LANG_NOTASK_LEN, 0, 1);
 }
 
 void handlePumpConfiguration(char k) {

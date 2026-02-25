@@ -18,15 +18,14 @@
 uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCol, uint8_t maxDigits, uint32_t value, bool editMode, const char *unit) {
   SerialPrint(KEYPAD_INPUT, "Opening numeric editor label=", label, " maxDigits=", maxDigits, " initialValue=", value);
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcdPrintWithGlyphs(label, 16);
+  lcdPrintWithGlyphs(label, 16, 0, 0);
   lcd.setCursor(0, 1);
 
   // Copy format into a local RAM buffer so we can inspect characters
   char fmtBuf[17];
   strncpy(fmtBuf, format, 16);
   fmtBuf[16] = '\0';
-  lcdPrintWithGlyphs(fmtBuf, 16);
+  lcdPrintWithGlyphs(fmtBuf, 16, 0, 1);
 
   // Determine whether the format already contains a unit character
   bool formatHasUnit = false;
