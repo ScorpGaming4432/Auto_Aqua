@@ -49,10 +49,6 @@ struct WaterPumpState {
   bool inletPumpRunning = false;
   bool outletPumpRunning = false;
 
-  // Electrovalve state
-  bool electrovalveActive = false;
-  uint32_t electrovalveTotalRuntime = 0;
-
   // Added for non-blocking automatic control
   bool autoControlActive = false;
 };
@@ -203,16 +199,9 @@ uint8_t calculateWaterLevel();
 void displayWaterLevelStatus(const WaterLevelResult &result);
 
 /**
- * Control electrovalve (open/close)
- * @param open true to open valve, false to close
+ * Manual control for dosing pumps
  */
-void controlElectrovalve(bool open);
-
-/**
- * Get electrovalve status
- * @return true if electrovalve is open, false if closed
- */
-bool isElectrovalveOpen();
+void handleManualPumpControl(uint8_t idx);
 
 // /**
 //  * Check if any pump is currently active

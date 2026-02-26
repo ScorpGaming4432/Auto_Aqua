@@ -92,6 +92,11 @@ void loadSavedConfiguration() {
 }
 
 void initializeSystem() {
+  // Initialize light control pin
+  pinMode(Hardware::LIGHT_PIN, OUTPUT);
+  digitalWrite(Hardware::LIGHT_PIN, HIGH); // Start with light OFF
+  SerialPrint(SETUP, "Light control pin initialized (pin ", Hardware::LIGHT_PIN, ")");
+  
   initWaterManagement();
   SerialPrint(SETUP, "Water management subsystem initialized");
   lcd.clear();
@@ -131,6 +136,10 @@ void handlePumpConfiguration(char k) {
     SerialPrint(CONFIG, "User requested dosing amount edit for pump index ", pumpIndex);
     handleEditAmount(pumpIndex);
     saveAppStateToConfiguration();
+  } else if (k >= '7' && k <= '9') {
+    uint8_t pumpIndex = k - '7';
+    SerialPrint(CONFIG, "User requested manual pump control for pump index ", pumpIndex);
+    handleManualPumpControl(pumpIndex);
   }
 }
 
@@ -194,13 +203,32 @@ void handleFactoryReset() {
 void handleWaterMonitoring(bool updateDisplay) {
   WaterLevelResult result = checkWaterLevel();
 
-  if (lightont == AppState::timeOffset + seconds()) {
-    SerialPrint(LIGHTS, "Light schedule hit ON timestamp; setting relay LOW (light ON)");
-    digitalWrite(Hardware::LIGHT_PIN, LOW);
-  } else if (lightofft == AppState::timeOffset + seconds()) {
-    SerialPrint(LIGHTS, "Light schedule hit OFF timestamp; setting relay HIGH (light OFF)");
-    digitalWrite(Hardware::LIGHT_PIN, HIGH);
+  // ============================================================================
+  // Light Control Logic
+  // ============================================================================
+  // Light is controlled by LIGHT_PIN (pin 5):
+  // - LOW (0) = Light is ON
+  // - HIGH (1) = Light is OFF
+  // ============================================================================
+  
+  uint64_t currentTime = AppState::timeOffset + seconds();
+  uint8_t lightState = HIGH; // Default: Light OFF
+  
+  // Handle the case where light schedule spans midnight (lightont > lightofft)
+  if (lightont > lightofft) {
+    // Light is ON from lightont to 23:59:59 and from 00:00:00 to lightofft
+    if (currentTime >= lightont || currentTime <= lightofft) {
+      lightState = LOW;  // Light ON
+    }
+  } else {
+    // Normal case: light is ON from lightont to lightofft
+    if (currentTime >= lightont && currentTime <= lightofft) {
+      lightState = LOW;  // Light ON
+    }
   }
+  
+  // Apply the light state
+  digitalWrite(Hardware::LIGHT_PIN, lightState);
 
   // Rewrite the following code block to use a more descriptive and concise logging mechanism.
   if (updateDisplay &&

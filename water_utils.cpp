@@ -8,7 +8,9 @@
 #include "appstate.h"
 #include "storage.h"
 #include "display.h"
+#include "debug.hpp"
 #include <Arduino.h>
+#include <stdint.h>
 
 extern WaterSensor waterSensor;
 
@@ -95,3 +97,19 @@ void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf) {
 bool checkSensorHealth() {
   return waterSensor.readSensorData() == WATER_ERROR_NONE && waterSensor.isSensorConnected();
 }
+
+void handleManualPumpControl(uint8_t idx) {
+  // lcd.clear();
+  // lcd.setCursor(0, 0);
+  // lcd.print("Manual Pump Ctrl");
+  
+  // SerialPrint(PUMPS, "Manual pump control for pump ", idx);
+  // delay(1000);
+  // digitalWrite(Hardware::DOSING_PUMP_PINS[idx], LOW);
+  // while (!keypad.getKey()) {
+  //   delay(10);
+  // }
+  // digitalWrite(Hardware::DOSING_PUMP_PINS[idx], HIGH);
+  // SerialPrint(PUMPS, "Manual pump control for pump ", idx, " stopped by user");
+}
+

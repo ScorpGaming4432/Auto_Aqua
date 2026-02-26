@@ -22,13 +22,13 @@ namespace Hardware {
 // Pump control pins
 constexpr uint8_t INLET_PUMP_PIN = 7;
 constexpr uint8_t OUTLET_PUMP_PIN = 6;
-constexpr uint8_t ELECTROVALVE_PIN = 5;
+// constexpr uint8_t ELECTROVALVE_PIN = 5;
 
 // Dosing pump pins (pumps 0-2)
 constexpr uint8_t DOSING_PUMP_PINS[] = { 2, 3, 4 };
 
 // Light control pin
-constexpr uint8_t LIGHT_PIN = 8;
+constexpr uint8_t LIGHT_PIN = 5;
 
 // Keypad pins
 constexpr uint8_t KEYPAD_ROW_PINS[] = { 30, 32, 34, 36 };
