@@ -4,11 +4,11 @@
  * ============================================================================
  */
 
+#include "appstate.h"
+#include "debug.hpp"
 #include "pumps.h"
 #include "screens.h"
-#include "appstate.h"
 #include "water.h"
-#include "debug.hpp"
 #include <Arduino.h>
 
 void initPumpModes() {
@@ -29,10 +29,13 @@ void checkDosingSchedule() {
   uint64_t now = seconds();
   for (uint8_t i = 0; i < Hardware::DOSING_PUMP_COUNT; ++i) {
     Pump& p = AppState::pumps[i];
-    if (p.getRole() != PumpRole::DOSING) continue;
-
+    if (p.getRole() != PumpRole::DOSING) {
+      SerialPrint(PUMPS, "ERROR:", NOT_CORRECT, "\nPUMP OF INDEX ", i, "SHOULD HAVE BEEN DOSING. CURRENT IS DIFFERENT");
+      continue;
+    }
     DosingConfig cfg = p.getConfig();
-    if (cfg.interval == 0 || !p.shouldDose(now)) continue;
+    if (cfg.interval == 0 || !p.shouldDose(now))
+      continue;
 
     if (cfg.amount == 0) {
       cfg.lastTime = now;
@@ -40,8 +43,10 @@ void checkDosingSchedule() {
       continue;
     }
 
-    uint64_t durationMs = (static_cast<uint64_t>(cfg.amount) * 1000ULL) / static_cast<uint64_t>(Hardware::PUMP_FLOW_RATE_ML_PER_SEC);
-    if (durationMs > Hardware::MAX_PUMP_RUN_TIME_MS) durationMs = Hardware::MAX_PUMP_RUN_TIME_MS;
+    uint64_t durationMs = (static_cast<uint64_t>(cfg.amount) * 1000ULL) /
+                          static_cast<uint64_t>(Hardware::PUMP_FLOW_RATE_ML_PER_SEC);
+    if (durationMs > Hardware::MAX_PUMP_RUN_TIME_MS)
+      durationMs = Hardware::MAX_PUMP_RUN_TIME_MS;
 
     cfg.duration = durationMs;
     cfg.lastTime = now;
@@ -55,12 +60,14 @@ void checkDosingSchedule() {
 Pump::Pump() {}
 
 int32_t Pump::edit(uint8_t pumpIndex, const char* amountTitle) {
-  if (role != PumpRole::DOSING) return -1;
+  if (role != PumpRole::DOSING)
+    return -1;
   return pumpAmountScreen(amountTitle, pumpIndex, true, config.amount);
 }
 
 int32_t Pump::viewEdit(uint8_t pumpIndex, const char* amountTitle) {
-  if (role != PumpRole::DOSING) return -1;
+  if (role != PumpRole::DOSING)
+    return -1;
   return pumpAmountScreen(amountTitle, pumpIndex, false, config.amount);
 }
 
@@ -71,8 +78,10 @@ void Pump::setRole(PumpRole r) { role = r; }
 PumpRole Pump::getRole() const { return role; }
 
 bool Pump::shouldDose(uint64_t currentSeconds) const {
-  if (config.interval == 0) return false;
+  if (config.interval == 0)
+    return false;
   uint64_t intervalSeconds = static_cast<uint64_t>(config.interval) * 86400ULL;
-  if (currentSeconds < config.lastTime) return true;
+  if (currentSeconds < config.lastTime)
+    return true;
   return (currentSeconds - config.lastTime) >= intervalSeconds;
 }

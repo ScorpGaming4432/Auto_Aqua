@@ -19,8 +19,10 @@ static WaterPumpState pumpState;
 void initWaterManagement() {
   pinMode(Hardware::INLET_PUMP_PIN, OUTPUT);
   pinMode(Hardware::OUTLET_PUMP_PIN, OUTPUT);
+  // pinMode(Hardware::ELECTROVALVE_PIN, OUTPUT);
   digitalWrite(Hardware::INLET_PUMP_PIN, HIGH);
   digitalWrite(Hardware::OUTLET_PUMP_PIN, HIGH);
+  // digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH);
 
   initPumpModes();
 
@@ -34,6 +36,7 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
   if (pumpState.pumpActive)
     return;
 
+  // controlElectrovalve(true);
   delay(500);
 
   if (duration > Hardware::MAX_PUMP_RUN_TIME_MS)
@@ -64,6 +67,7 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
 
   digitalWrite(pumpPin, HIGH);
   pumpState.pumpActive = false;
+  // controlElectrovalve(false);
 
   if (pumpPin == Hardware::INLET_PUMP_PIN) {
     pumpState.inletPumpWasActive = false;
@@ -89,6 +93,7 @@ WaterLevelResult checkWaterLevel() {
   if (currentLevel < AppState::lowThreshold - Hardware::HYSTERESIS_MARGIN_PERCENT) {
     if (!pumpState.inletPumpWasActive) {
       pumpState.inletPumpWasActive = true;
+      // digitalWrite(Hardware::ELECTROVALVE_PIN, LOW);
       digitalWrite(Hardware::INLET_PUMP_PIN, LOW);
       pumpState.inletPumpRunning = true;
       while (waterSensor.calculateWaterLevel() < AppState::lowThreshold) {
@@ -96,6 +101,7 @@ WaterLevelResult checkWaterLevel() {
       }
       digitalWrite(Hardware::INLET_PUMP_PIN, HIGH);
       pumpState.inletPumpRunning = false;
+      // digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH);
       pumpState.inletPumpWasActive = false;
     }
   }
@@ -117,7 +123,17 @@ WaterLevelResult checkWaterLevel() {
   return {WATER_ERROR_NONE, currentLevel, pumpState.inletPumpRunning, pumpState.outletPumpRunning};
 }
 
+// void controlElectrovalve(bool open) {
+//   if (open) {
+//     // digitalWrite(Hardware::ELECTROVALVE_PIN, LOW);
+//     // pumpState.electrovalveActive = true;
+//   } else {
+//     // digitalWrite(Hardware::ELECTROVALVE_PIN, HIGH);
+//     // pumpState.electrovalveActive = false;
+//   }
+// }
 
+// bool isElectrovalveOpen() { return pumpState.electrovalveActive; }
 
 void emergencyStopLetPumps() {
   digitalWrite(Hardware::INLET_PUMP_PIN, HIGH);
