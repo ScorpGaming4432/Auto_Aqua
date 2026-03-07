@@ -1,30 +1,28 @@
 // Simple pump toggle test
 // Connect test outputs to the pump relays (or LED + resistor) for verification
 
-#define INLET_PIN 38
-#define OUTLET_PIN 39
+constexpr uint8_t TESTING_PINS[] = {2, 3, 4, 5, 6, 7};
 
 void setup() {
   Serial.begin(9600);
-  pinMode(INLET_PIN, OUTPUT);
-  pinMode(OUTLET_PIN, OUTPUT);
-  digitalWrite(INLET_PIN, LOW);
-  digitalWrite(OUTLET_PIN, LOW);
+  for (uint8_t i = 0; i < sizeof(TESTING_PINS)/sizeof(TESTING_PINS[0]); i++) {
+    pinMode(TESTING_PINS[i], OUTPUT);
+  }
+  for (uint8_t i = 0; i < sizeof(TESTING_PINS)/sizeof(TESTING_PINS[0]); i++) {
+    digitalWrite(TESTING_PINS[i], LOW);
+  }
   Serial.println("Pump toggle test started");
 }
 
 void loop() {
-  Serial.println("Turning inlet ON");
-  digitalWrite(INLET_PIN, LOW);
+  Serial.println("Turning pumps ON");
+  for (uint8_t i = 0; i < sizeof(TESTING_PINS)/sizeof(TESTING_PINS[0]); i++) {
+    digitalWrite(TESTING_PINS[i], LOW);
+  }
   delay(1000);
-  digitalWrite(INLET_PIN, HIGH);
-  Serial.println("Turning inlet OFF");
+  for (uint8_t i = 0; i < sizeof(TESTING_PINS)/sizeof(TESTING_PINS[0]); i++) {
+    digitalWrite(TESTING_PINS[i], HIGH);
+  }
+  Serial.println("Turning pumps OFF");
   delay(500);
-
-  Serial.println("Turning outlet ON");
-  digitalWrite(OUTLET_PIN, LOW);
-  delay(1000);
-  digitalWrite(OUTLET_PIN, HIGH);
-  Serial.println("Turning outlet OFF");
-  delay(1500);
 }

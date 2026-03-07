@@ -59,11 +59,12 @@ void runPumpSafely(uint8_t pumpPin, uint16_t duration) {
     pumpState.outletPumpTotalRuntime += duration;
 
   unsigned long startWait = millis();
-  while (millis() - startWait < duration) {
-    if (millis() - pumpState.pumpStartTime > Hardware::MAX_PUMP_RUN_TIME_MS)
-      break;
-    delay(100);
-  }
+  // while (millis() - startWait < duration) {
+  //   if (millis() - pumpState.pumpStartTime > Hardware::MAX_PUMP_RUN_TIME_MS)
+  //     break;
+  //   delay(100);
+  // }
+  delay(duration);
 
   digitalWrite(pumpPin, HIGH);
   pumpState.pumpActive = false;
@@ -96,6 +97,7 @@ WaterLevelResult checkWaterLevel() {
       // digitalWrite(Hardware::ELECTROVALVE_PIN, LOW);
       digitalWrite(Hardware::INLET_PUMP_PIN, LOW);
       pumpState.inletPumpRunning = true;
+      lcdPrintWithGlyphs(LANG_BUFFER.status.inletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
       while (waterSensor.calculateWaterLevel() < AppState::lowThreshold) {
         delay(100);
       }
@@ -111,6 +113,7 @@ WaterLevelResult checkWaterLevel() {
       pumpState.outletPumpWasActive = true;
       digitalWrite(Hardware::OUTLET_PUMP_PIN, LOW);
       pumpState.outletPumpRunning = true;
+      lcdPrintWithGlyphs(LANG_BUFFER.status.outletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
       while (waterSensor.calculateWaterLevel() > AppState::highThreshold) {
         delay(100);
       }
@@ -121,6 +124,51 @@ WaterLevelResult checkWaterLevel() {
   }
 
   return {WATER_ERROR_NONE, currentLevel, pumpState.inletPumpRunning, pumpState.outletPumpRunning};
+}
+
+
+// ---------------------------------------------------------------------------
+// Cleaning cycle implementation
+// ---------------------------------------------------------------------------
+
+void runWaterCleaningCycle() {
+  SerialPrint(CONFIG, "Starting water cleaning cycle");
+
+  // drain until we hit or go below the low threshold
+  while (true) {
+    WaterError err = waterSensor.readSensorData();
+    if (err != WATER_ERROR_NONE) {
+      SerialPrint(CONFIG, "Sensor error during cleaning cycle: ", err);
+      break;
+    }
+    uint8_t lvl = waterSensor.calculateWaterLevel();
+    if (lvl <= AppState::lowThreshold) {
+      SerialPrint(CONFIG, "Reached low threshold (", lvl, "%), stopping outlet pump");
+      break;
+    }
+    uint16_t dur = calculatePumpDuration(lvl, AppState::lowThreshold);
+    runPumpSafely(Hardware::OUTLET_PUMP_PIN, dur);
+    delay(100);
+  }
+
+  // fill until we hit or exceed the high threshold
+  while (true) {
+    WaterError err = waterSensor.readSensorData();
+    if (err != WATER_ERROR_NONE) {
+      SerialPrint(CONFIG, "Sensor error during cleaning cycle: ", err);
+      break;
+    }
+    uint8_t lvl = waterSensor.calculateWaterLevel();
+    if (lvl >= AppState::highThreshold) {
+      SerialPrint(CONFIG, "Reached high threshold (", lvl, "%), stopping inlet pump");
+      break;
+    }
+    uint16_t dur = calculatePumpDuration(lvl, AppState::highThreshold);
+    runPumpSafely(Hardware::INLET_PUMP_PIN, dur);
+    delay(100);
+  }
+
+  SerialPrint(CONFIG, "Water cleaning cycle finished");
 }
 
 // void controlElectrovalve(bool open) {

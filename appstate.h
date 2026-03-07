@@ -45,6 +45,31 @@ extern uint16_t lowThreshold;
 // attempt to remove water. Ensure `highThreshold > lowThreshold`.
 extern uint16_t highThreshold;
 
+// Light control times (seconds since midnight). lightOffTime is when light
+// turns off, lightOnTime is when light turns on. If lightOnTime > lightOffTime,
+// the light schedule spans midnight.
+extern uint64_t lightOffTime;
+
+// Light on time (seconds since midnight).
+extern uint64_t lightOnTime;
+
+// Current light state (HIGH = off, LOW = on). Used for change detection and
+// manual override tracking. Updated by handleLightState() and can be manually
+// toggled via user input.
+extern uint8_t lightState;
+
+// Flag indicating whether light is in manual override mode (true = override active,
+// false = following automatic schedule). When override is active, the light state
+// is not recalculated based on scheduled times.
+extern bool lightOverrideActive;
+
+// Water cleaning interval in days; 0 disables automatic cleaning.
+extern uint16_t waterCleaningIntervalDays;
+
+// Timestamp (seconds) when the last cleaning cycle was performed. Used to
+// schedule the next automatic run.
+extern uint64_t lastCleaningTime;
+
 } // namespace AppState
 
 #endif // APPSTATE_H

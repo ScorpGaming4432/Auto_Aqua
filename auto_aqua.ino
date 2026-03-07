@@ -6,9 +6,6 @@
  przycisk na przepompowanie przewodów od środków
 **/
 
-uint64_t lightofft = 0;
-uint64_t lightont = 0;
-
 // Function to trigger software reset via jump to address 0
 // NOLINT_MANUAL_MEMORY: Low-level AVR reset mechanism
 void (*const softwareReset)(void) = nullptr;
@@ -57,22 +54,27 @@ void runInitialConfiguration() {
   SerialPrint(CONFIG, "Tank volume configured to ", AppState::tankVolume, " liters");
 
   // Pump setup - dosing pumps only (indices 2, 3, 4)
-  for (uint8_t i = 0; i < Hardware::PUMP_COUNT - 2; ++i) {
+  for (uint8_t i = 0; i < Hardware::DOSING_PUMP_COUNT; ++i) {
     SerialPrint(CONFIG, "Prompting dosing pump ", i, " amount configuration");
     DosingConfig cfg = AppState::pumps[i].getConfig();
     cfg.amount = pumpAmountScreen(LANG_BUFFER.tank.amountTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(CONFIG, "Dosing pump ", i, " amount saved: ", AppState::pumps[i].getConfig().amount,
-                " ml");
-    runPumpSafely(i, calculatePumpDuration(0, cfg.amount));
+    SerialPrint(CONFIG, "Dosing pump ", Hardware::DOSING_PUMP_PINS[i],
+                " amount saved: ", AppState::pumps[i].getConfig().amount, " ml");
+
+    SerialPrint(CONFIG, "Calculated pump duration: ", 
+     cfg.amount, "ml = ", calculatePumpDuration(0, cfg.amount), "ms");
+    
+    lcdPrintWithGlyphs(LANG_BUFFER.status.pumpWorking, LANG_PUMPWORKING_LEN, 0, 1);
+    runPumpSafely(Hardware::DOSING_PUMP_PINS[i], calculatePumpDuration(0, cfg.amount));
 
     SerialPrint(CONFIG, "Prompting dosing pump ", i, " interval configuration");
     cfg = AppState::pumps[i].getConfig();
     cfg.interval = pumpIntervalScreen(LANG_BUFFER.tank.intervalTitle, i, true, 0);
     AppState::pumps[i].setConfig(cfg);
     lcd.clear();
-    SerialPrint(CONFIG, "Dosing pump ", i, " interval saved: every ",
+    SerialPrint(CONFIG, "Dosing pump ", Hardware::DOSING_PUMP_PINS[i], " interval saved: every ",
                 AppState::pumps[i].getConfig().interval, " hours");
   }
 
@@ -81,7 +83,16 @@ void runInitialConfiguration() {
   SerialPrint(CONFIG,
               "Clock offset configured (seconds): ", static_cast<uint32_t>(AppState::timeOffset));
   handleThreshold();
-  lightTimeScreen(&lightofft, &lightont);
+
+  // cleaning interval configuration (days)
+  AppState::waterCleaningIntervalDays = cleanIntervalScreen(
+      LANG_BUFFER.tank.cleanIntervalTitle, true, 0);
+  // record the time when this configuration was performed so the first cycle will
+  // occur after the specified interval has elapsed
+  AppState::lastCleaningTime = AppState::timeOffset + seconds();
+  SerialPrint(CONFIG, "Cleaning interval configured to ", AppState::waterCleaningIntervalDays, " days");
+
+  lightTimeScreen(&AppState::lightOffTime, &AppState::lightOnTime);
 
   saveAppStateToConfiguration();
 }
@@ -97,7 +108,7 @@ void initializeSystem() {
   pinMode(Hardware::LIGHT_PIN, OUTPUT);
   digitalWrite(Hardware::LIGHT_PIN, HIGH); // Start with light OFF
   SerialPrint(SETUP, "Light control pin initialized (pin ", Hardware::LIGHT_PIN, ")");
-  
+
   initWaterManagement();
   SerialPrint(SETUP, "Water management subsystem initialized");
   lcd.clear();
@@ -113,13 +124,13 @@ void setup() {
               "Configuration validity check result: needsSetup=", needsSetup ? "true" : "false");
   loadConfigurationToAppState();
 
+  initializeSystem();
+
   if (needsSetup) {
     runInitialConfiguration();
   } else {
     loadSavedConfiguration();
   }
-
-  initializeSystem();
 }
 
 // ============================================================================
@@ -137,8 +148,8 @@ void handlePumpConfiguration(char k) {
     SerialPrint(CONFIG, "User requested dosing amount edit for pump index ", pumpIndex);
     handleEditAmount(pumpIndex);
     saveAppStateToConfiguration();
-  } else if (k >= '7' && k <= '9') {
-    uint8_t pumpIndex = k - '7';
+  } else if (k >= '4' && k <= '6') {
+    uint8_t pumpIndex = k - '4';
     SerialPrint(CONFIG, "User requested manual pump control for pump index ", pumpIndex);
     handleManualPumpControl(pumpIndex);
   }
@@ -159,6 +170,17 @@ void handleWaterManagement(char k) {
     SerialPrint(CONFIG, "User requested tank threshold recalibration");
     handleThreshold();
     saveAppStateToConfiguration();
+  } else if (k == '7') {
+    SerialPrint(CONFIG, "User requested cleaning interval edit");
+    AppState::waterCleaningIntervalDays = cleanIntervalScreen(
+        LANG_BUFFER.tank.cleanIntervalTitle, true,
+        AppState::waterCleaningIntervalDays);
+    saveAppStateToConfiguration();
+  } else if (k == '#') {
+    SerialPrint(CONFIG, "Manual water cleaning requested by user");
+    runWaterCleaningCycle();
+    AppState::lastCleaningTime = AppState::timeOffset + seconds();
+    saveAppStateToConfiguration();
   }
 }
 
@@ -166,6 +188,26 @@ void handleSystemConfiguration(char k) {
   if (k == '0') {
     SerialPrint(TIME, "Displaying current adjusted time");
     showTime(seconds() + AppState::timeOffset);
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
+  } else if (k == '8') {
+    SerialPrint(CONFIG, "User requested light time configuration");
+    lightTimeScreen(&AppState::lightOffTime, &AppState::lightOnTime);
+    saveAppStateToConfiguration();
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Light Time Set");
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
+  } else if (k == '9') {
+    SerialPrint(TIME, "Manual override of light state requested by user");
+
+    // Toggle light state and activate override mode
+    AppState::lightState = (AppState::lightState == HIGH) ? LOW : HIGH;
+    AppState::lightOverrideActive = true;
+    digitalWrite(Hardware::LIGHT_PIN, AppState::lightState);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(AppState::lightState == LOW ? "Light ON" : "Light OFF");
     delay(Hardware::UI_DELAY_MEDIUM_MS);
   } else if (k == 'B') {
     SerialPrint(CONFIG, "User entered language configuration screen");
@@ -178,6 +220,50 @@ void handleSystemConfiguration(char k) {
   }
 }
 
+// Light State Handler
+// ============================================================================
+// Calculates and applies light state based on current time and configured
+// on/off times, unless a manual override is active. Light is controlled by
+// LIGHT_PIN (pin 5):
+// - LOW (0) = Light is ON
+// - HIGH (1) = Light is OFF
+void handleLightState() {
+  // If override is active, don't recalculate; just maintain the current state
+  if (AppState::lightOverrideActive) {
+    digitalWrite(Hardware::LIGHT_PIN, AppState::lightState);
+    return;
+  }
+
+  uint64_t currentTime = AppState::timeOffset + seconds();
+  uint8_t lightState = HIGH; // Default: Light OFF
+
+  // Handle the case where light schedule spans midnight (lightOnTime > lightOffTime)
+  if (AppState::lightOnTime > AppState::lightOffTime) {
+    // Light is ON from lightOnTime to 23:59:59 and from 00:00:00 to lightOffTime
+    if (currentTime >= AppState::lightOnTime || currentTime <= AppState::lightOffTime) {
+      lightState = LOW; // Light ON
+    }
+  } else
+    // Normal case: light is ON from lightOnTime to lightOffTime
+    if (currentTime >= AppState::lightOnTime && currentTime <= AppState::lightOffTime) {
+      lightState = LOW; // Light ON
+    } else {
+      lightState = HIGH; // Light OFF
+    }
+
+  // Apply the light state
+  digitalWrite(Hardware::LIGHT_PIN, lightState);
+
+  // Display status only when state changes
+  if (lightState != AppState::lightState) {
+    AppState::lightState = lightState; 
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(lightState == LOW ? "Light ON" : "Light OFF");
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
+  }
+}
+
 void handleFactoryReset() {
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -185,7 +271,7 @@ void handleFactoryReset() {
   lcd.setCursor(0, 1);
   lcd.print("#=Yes  *=No");
   while (true) {
-    handleWaterMonitoring(false);
+    // handleWaterMonitoring(false);
     char key = keypad.getKey();
     if (key == '#') {
       SerialPrint(FACTORY, "Factory reset confirmed by user; erasing persisted config");
@@ -202,34 +288,19 @@ void handleFactoryReset() {
 }
 
 void handleWaterMonitoring(bool updateDisplay) {
-  WaterLevelResult result = checkWaterLevel();
-
-  // ============================================================================
-  // Light Control Logic
-  // ============================================================================
-  // Light is controlled by LIGHT_PIN (pin 5):
-  // - LOW (0) = Light is ON
-  // - HIGH (1) = Light is OFF
-  // ============================================================================
-  
-  uint64_t currentTime = AppState::timeOffset + seconds();
-  uint8_t lightState = HIGH; // Default: Light OFF
-  
-  // Handle the case where light schedule spans midnight (lightont > lightofft)
-  if (lightont > lightofft) {
-    // Light is ON from lightont to 23:59:59 and from 00:00:00 to lightofft
-    if (currentTime >= lightont || currentTime <= lightofft) {
-      lightState = LOW;  // Light ON
-    }
-  } else {
-    // Normal case: light is ON from lightont to lightofft
-    if (currentTime >= lightont && currentTime <= lightofft) {
-      lightState = LOW;  // Light ON
+  // automatic cleaning scheduling based on interval in days
+  if (AppState::waterCleaningIntervalDays > 0) {
+    uint64_t now = AppState::timeOffset + seconds();
+    uint64_t intervalSecs = static_cast<uint64_t>(AppState::waterCleaningIntervalDays) * 86400ULL;
+    if (now - AppState::lastCleaningTime >= intervalSecs) {
+      SerialPrint(CONFIG, "Automatic water cleaning interval reached");
+      runWaterCleaningCycle();
+      AppState::lastCleaningTime = now;
+      saveAppStateToConfiguration();
     }
   }
-  
-  // Apply the light state
-  digitalWrite(Hardware::LIGHT_PIN, lightState);
+
+  WaterLevelResult result = checkWaterLevel();
 
   // Rewrite the following code block to use a more descriptive and concise logging mechanism.
   if (updateDisplay &&
@@ -272,5 +343,6 @@ void loop() {
   }
 
   handleWaterMonitoring(true);
+  handleLightState();
   delay(Hardware::UI_DELAY_SHORT_MS);
 }

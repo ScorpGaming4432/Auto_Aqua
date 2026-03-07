@@ -171,6 +171,14 @@ bool checkSensorHealth();
 void emergencyStopLetPumps();
 
 /**
+ * Perform a full cleaning cycle:
+ *  - Run outlet pump until water level <= low threshold
+ *  - Run inlet pump until water level >= high threshold
+ * This is a blocking routine used for manual or scheduled cleaning.
+ */
+void runWaterCleaningCycle();
+
+/**
  * Calculate pump duration based on water level deviation from threshold
  * @param currentLevel Current water level percentage (0-100)
  * @param threshold Target threshold percentage (low or high)
@@ -213,6 +221,7 @@ void displayWaterLevelStatus(const WaterLevelResult &result);
  */
 // bool isElectrovalveOpen();
 
+void handleManualPumpControl(uint8_t idx);
 // /**
 //  * Check if any pump is currently active
 //  * @return true if pump is running, false otherwise

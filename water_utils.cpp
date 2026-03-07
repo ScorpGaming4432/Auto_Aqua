@@ -4,59 +4,59 @@
  * ============================================================================
  */
 
-#include "water.h"
 #include "appstate.h"
-#include "storage.h"
-#include "display.h"
 #include "debug.hpp"
+#include "display.h"
+#include "storage.h"
+#include "water.h"
 #include <Arduino.h>
 #include <stdint.h>
 
 extern WaterSensor waterSensor;
 
-uint8_t calculateWaterLevel() {
-  return waterSensor.calculateWaterLevel();
-}
+uint8_t calculateWaterLevel() { return waterSensor.calculateWaterLevel(); }
 
 uint16_t calculatePumpDuration(uint8_t currentLevel, uint8_t target) {
   uint8_t deviation = abs(currentLevel - target);
   uint16_t duration = 1000 + (deviation * 100);
-  if (duration > Hardware::MAX_PUMP_RUN_TIME_MS) duration = Hardware::MAX_PUMP_RUN_TIME_MS;
+  if (duration > Hardware::MAX_PUMP_RUN_TIME_MS)
+    duration = Hardware::MAX_PUMP_RUN_TIME_MS;
   return duration;
 }
 
-void displayWaterLevelStatus(const WaterLevelResult &result) {
+void displayWaterLevelStatus(const WaterLevelResult& result) {
   lcd.clear();
   if (result.error != WATER_ERROR_NONE) {
     lcdPrintWithGlyphs(LANG_BUFFER.error.waterSensorError, LANG_WATER_ERROR_LEN, 0, 0);
     lcd.setCursor(0, 1);
     switch (result.error) {
-      case WATER_ERROR_SENSOR_TIMEOUT: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.sensorTimeout, LANG_WATER_ERROR_LEN, 0, 1); 
-        break;
-      case WATER_ERROR_SENSOR_COMMUNICATION: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.commError, LANG_WATER_ERROR_LEN, 0, 1); 
-        break;
-      case WATER_ERROR_SENSOR_INVALID_DATA: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.invalidData, LANG_WATER_ERROR_LEN, 0, 1); 
-        break;
-      case WATER_ERROR_PUMP_TIMEOUT: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.pumpTimeout, LANG_WATER_ERROR_LEN, 0, 1); 
-        break;
-      default: 
-        lcdPrintWithGlyphs(LANG_BUFFER.error.unknownError, LANG_WATER_ERROR_LEN, 0, 1); 
-        break;
+    case WATER_ERROR_SENSOR_TIMEOUT:
+      lcdPrintWithGlyphs(LANG_BUFFER.error.sensorTimeout, LANG_WATER_ERROR_LEN, 0, 1);
+      break;
+    case WATER_ERROR_SENSOR_COMMUNICATION:
+      lcdPrintWithGlyphs(LANG_BUFFER.error.commError, LANG_WATER_ERROR_LEN, 0, 1);
+      break;
+    case WATER_ERROR_SENSOR_INVALID_DATA:
+      lcdPrintWithGlyphs(LANG_BUFFER.error.invalidData, LANG_WATER_ERROR_LEN, 0, 1);
+      break;
+    case WATER_ERROR_PUMP_TIMEOUT:
+      lcdPrintWithGlyphs(LANG_BUFFER.error.pumpTimeout, LANG_WATER_ERROR_LEN, 0, 1);
+      break;
+    default:
+      lcdPrintWithGlyphs(LANG_BUFFER.error.unknownError, LANG_WATER_ERROR_LEN, 0, 1);
+      break;
     }
+    delay(Hardware::UI_DELAY_MEDIUM_MS);
   } else {
     lcdPrintWithGlyphs(LANG_BUFFER.status.waterLevel, LANG_WATER_ERROR_LEN, 0, 0);
     lcd.print(result.level);
     lcd.print("%");
     lcd.setCursor(0, 1);
-    if (result.inletPumpActive) 
+    if (result.inletPumpActive)
       lcdPrintWithGlyphs(LANG_BUFFER.status.inletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
-    else if (result.outletPumpActive) 
+    else if (result.outletPumpActive)
       lcdPrintWithGlyphs(LANG_BUFFER.status.outletPumpOn, LANG_PUMP_STATUS_LEN, 0, 1);
-    else 
+    else
       lcdPrintWithGlyphs(LANG_BUFFER.status.pumpsOk, LANG_PUMP_STATUS_LEN, 0, 1);
   }
 }
@@ -86,11 +86,11 @@ void setWaterThresholds(int16_t low, int16_t high) {
   }
 }
 
-void getCurrentWaterLevel(uint8_t *highBuf, uint8_t *lowBuf) {
+void getCurrentWaterLevel(uint8_t* highBuf, uint8_t* lowBuf) {
   waterSensor.getCurrentWaterLevel(highBuf, lowBuf);
 }
 
-void read_water_sensor(uint8_t *highBuf, uint8_t *lowBuf) {
+void read_water_sensor(uint8_t* highBuf, uint8_t* lowBuf) {
   waterSensor.getCurrentWaterLevel(highBuf, lowBuf);
 }
 
@@ -99,17 +99,18 @@ bool checkSensorHealth() {
 }
 
 void handleManualPumpControl(uint8_t idx) {
-  // lcd.clear();
-  // lcd.setCursor(0, 0);
-  // lcd.print("Manual Pump Ctrl");
-  
-  // SerialPrint(PUMPS, "Manual pump control for pump ", idx);
-  // delay(1000);
-  // digitalWrite(Hardware::DOSING_PUMP_PINS[idx], LOW);
-  // while (!keypad.getKey()) {
-  //   delay(10);
-  // }
-  // digitalWrite(Hardware::DOSING_PUMP_PINS[idx], HIGH);
-  // SerialPrint(PUMPS, "Manual pump control for pump ", idx, " stopped by user");
-}
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Manual Pump Ctrl");
+  lcd.setCursor(0, 1);
+  lcd.print(idx + 1);
 
+  SerialPrint(PUMPS, "Manual pump control for pump ", idx);
+  delay(1000);
+  digitalWrite(Hardware::DOSING_PUMP_PINS[idx], LOW);
+  while (!keypad.getKey()) {
+    delay(10);
+  }
+  digitalWrite(Hardware::DOSING_PUMP_PINS[idx], HIGH);
+  SerialPrint(PUMPS, "Manual pump control for pump ", idx, " stopped by user");
+}

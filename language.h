@@ -22,6 +22,7 @@ constexpr uint8_t LANG_PUMPWORKING_LEN = 32;
 constexpr uint8_t LANG_LOWTHRESHOLD_LEN = 32;
 constexpr uint8_t LANG_HIGHTHRESHOLD_LEN = 32;
 constexpr uint8_t LANG_INTERVALTITLE_LEN = 32;
+constexpr uint8_t LANG_CLEANINTERVALTITLE_LEN = 32; // new: days-based cleaning interval label
 constexpr uint8_t LANG_WATER_ERROR_LEN = 32;
 constexpr uint8_t LANG_PUMP_STATUS_LEN = 32;
 
@@ -35,6 +36,7 @@ struct LangTank {
   char intervalTitle[LANG_INTERVALTITLE_LEN];
   char lowThresholdTitle[LANG_LOWTHRESHOLD_LEN];
   char highThresholdTitle[LANG_HIGHTHRESHOLD_LEN];
+  char cleanIntervalTitle[LANG_CLEANINTERVALTITLE_LEN]; // days-based cleaning interval
 };
 struct LangStatus {
   char mainScreen[LANG_MAINSCREEN_LEN];
@@ -65,52 +67,52 @@ struct Language {
 const Language LANGUAGES[LANG_COUNT] PROGMEM = {
   { // Polish (0)
     { "Polski   ", "Język   " },
-    { "Poj. zbiornika", "Ilość dawki w #", "Interwał pompy #", "Dolna granica", "Górna granica " },
+    { "Poj. zbiornika", "Ilość dawki w #", "Interwał pompy #", "Dolna granica", "Górna granica ", "Czyszczenie (d)" },
     { "Ekran główny    ", "Brak zadania  ", "Pompa działa   ", "Poziom wody:  ", "Wlew ON         ", "Wylew ON       ", "Pompy: OK  " },
     { "Błąd krytyczny!", "Sprawdź sensor  ", "Błąd czujnika   ", "Timeout czuj.  ", "Błąd komunik.   ", "Nieprawidl. dane", "Timeout pompy   ", "Nieznany błąd   " } },
   { // English (1)
     { "English  ", "Language" },
-    { "Tank volume   ", "Dosage of #    ", "Pump interval # ", "Low Threshold", "High Threshold" },
+    { "Tank volume   ", "Dosage of #    ", "Pump interval # ", "Low Threshold", "High Threshold", "Clean interval" },
     { "Main screen     ", "No task       ", "Pump running   ", "Water Level:  ", "Inlet Pump ON   ", "Outlet Pump ON ", "Pumps: OK  " },
     { "CRITICAL ERROR ", "CHECK SENSOR    ", "Sensor Error    ", "Sensor Timeout ", "Comm Error      ", "Invalid Data    ", "Pump Timeout    ", "Unknown Error   " } },
   { // Russian (2)
     { "Русский  ", "Язык    " },
-    { "Объём бака    ", "Дозировка #    ", "Интервал #      ", "Нижний порог ", "Верхний порог " },
+    { "Объём бака    ", "Дозировка #    ", "Интервал #      ", "Нижний порог ", "Верхний порог ", "Очистка (д)" },
     { "Главный экран   ", "Нет задачи    ", "Насос работает ", "Уровень воды: ", "Вход. насос A   ", "Выход. насос A ", "Насосы OK  " },
     { "КРИТ. ОШИБКА   ", "ПРОВЕРЬТЕ ДАТЧИК", "Ошиб. датчика   ", "Таймаут сенсора", "Ошиб. связи     ", "Невер. данные   ", "Таймаут насоса  ", "Неизв. ошибка   " } },
   { // German (3)
     { "Deutsch  ", "Sprache " },
-    { "Volumen Tank  ", "Dosierung der #", "Intervall #     ", "Min. Schwelle", "Max. Schwelle " },
+    { "Volumen Tank  ", "Dosierung der #", "Intervall #     ", "Min. Schwelle", "Max. Schwelle ", "Reinigung (T)" },
     { "Hauptmenü       ", "Keine Aufgabe ", "Pumpe läuft    ", "Wasserstand:  ", "Zulauf Pumpe AN ", "Ablauf Pumpe AN", "Pumpen OK  " },
     { "KRIT. FEHLER   ", "SENSOR PRÜFEN   ", "Sensor Fehler   ", "Sensor Timeout ", "Komm. Fehler    ", "Ungültige Daten ", "Pumpen Timeout  ", "Unbek. Fehler   " } },
   { // French (4)
     { "Français ", "Langue  " },
-    { "Vol. réservoir", "Dosage de la # ", "Intervalle #    ", "Seuil bas    ", "Seuil haut    " },
+    { "Vol. réservoir", "Dosage de la # ", "Intervalle #    ", "Seuil bas    ", "Seuil haut    ", "Nettoyage (j)" },
     { "Écran principal ", "Aucune tâche  ", "Pompe active   ", "Niveau d'eau: ", "Entrée pompe A  ", "Sortie pompe A ", "Pompes OK  " },
     { "ERREUR CRITIQ  ", "VÉRIF CAPTEUR   ", "Erreur capteur  ", "Timeout capteur", "Erreur communic.", "Données inval.  ", "Timeout pompe   ", "Erreur inconnue " } },
   { // Spanish (5)
     { "Español  ", "Idioma  " },
-    { "Vol. depósito ", "Cantidad en #  ", "Intervalo #     ", "Umbral mínimo", "Umbral máximo " },
+    { "Vol. depósito ", "Cantidad en #  ", "Intervalo #     ", "Umbral mínimo", "Umbral máximo ", "Limpieza (d)" },
     { "Pantalla princ. ", "Sin tarea     ", "Bomba activa   ", "Nivel de agua:", "Bomba entrada A ", "Bomba salida A ", "Bombas OK  " },
     { "ERROR CRÍTICO  ", "COMPROBE SENSOR ", "Error sensor    ", "Timeout sensor ", "Error de com.   ", "Datos inválidos ", "Timeout bomba   ", "Error desconoc. " } },
   { // Italian (6)
     { "Italiano ", "Lingua  " },
-    { "Volume serb.  ", "Quantità in #  ", "Intervallo #    ", "Soglia minima", "Soglia massima" },
+    { "Volume serb.  ", "Quantità in #  ", "Intervallo #    ", "Soglia minima", "Soglia massima", "Pulizia (g)" },
     { "Schermata princ.", "Nessun compito", "Pompa activa   ", "Livello acqua:", "Pomp. ingresso A", "Pomp. uscita A ", "Pompe OK   " },
     { "ERRORE CRITICO ", "CONTROLLARE SEN ", "Errore sensore  ", "Timeout sensore", "Errore comunic. ", "Dati non validi ", "Timeout pompa   ", "Errore sconosciu" } },
   { // Portuguese (7)
     { "Português", "Idioma  " },
-    { "Volume tanque ", "Quantidade #   ", "Intervalo #     ", "Limite mínimo", "Limite máximo " },
+    { "Volume tanque ", "Quantidade #   ", "Intervalo #     ", "Limite mínimo", "Limite máximo ", "Limpeza (d)" },
     { "Ecrã principal  ", "Sem tarefa    ", "Bomba ativa    ", "Nível de água:", "Bomba entrada A ", "Bomba saída A  ", "Bombas OK  " },
     { "ERRO CRÍTICO   ", "VERIFI. SENSOR  ", "Erro sensor     ", "Timeout sensor ", "Erro de com.    ", "Dados inválidos ", "Timeout bomba   ", "Erro desconoc.  " } },
   { // Turkish (8)
     { "Türkçe   ", "Dil     " },
-    { "Tank Hacmi    ", "Miktar #       ", "Aralık #        ", "Alt Eşiği    ", "Üst Eşiği     " },
+    { "Tank Hacmi    ", "Miktar #       ", "Aralık #        ", "Alt Eşiği    ", "Üst Eşiği     ", "Temizleme (g)" },
     { "Ana Ekran       ", "Görev yok     ", "Pompa çalışıyor", "Su Seviyesi:  ", "Giriş Pomp. A   ", "Çıkış Pomp. A  ", "Pompalar OK" },
     { "KRİTİK HATA    ", "SENSÖR KONTROL  ", "Sensör Hatası   ", "Sensör Timeout ", "Hata.İletişim   ", "Geçersiz Veri   ", "Pompa Timeout   ", "Bilinmeyen Hata " } },
   { // Czech (9)
     { "Čeština  ", "Jazyk   " },
-    { "Objem nádrže  ", "Množství v #   ", "Interval #      ", "Spodní práh  ", "Horní práh    " },
+    { "Objem nádrže  ", "Množství v #   ", "Interval #      ", "Spodní práh  ", "Horní práh    ", "Čištění (d)" },
     { "Hlavní obrazov. ", "Žádный úkol    ", "Čerpadlo běží  ", "Hladina wody: ", "Вступní čerp. A ", "Výstupní čer. A", "Čerpadla OK" },
     { "KRIT. CHYBA    ", "ZKONTROL ČIDLO  ", "Chyba čidla     ", "Timeout čidla  ", "Chyba komunik.  ", "Neplatná data   ", "Timeout čerpadla", "Neznámá chyba   " } }
 };

@@ -25,6 +25,13 @@ struct Configuration {
   uint16_t pumpDosingIntervals[Hardware::PUMP_COUNT];  // Dosing intervals in days
   uint16_t lowThreshold;
   uint16_t highThreshold;
+
+  // Automatic cleaning interval and last run timestamp
+  uint16_t waterCleaningIntervalDays;
+  uint64_t lastCleaningTime;
+
+  uint64_t lightOffTime;
+  uint64_t lightOnTime;
 };
 
 // Default configuration values
@@ -36,7 +43,11 @@ const Configuration DEFAULT_CONFIG = {
   .pumpDurations = { 0, 0, 0, 0, 0 },
   .pumpDosingIntervals = { 0, 0, 0, 0, 0 },
   .lowThreshold = 0,
-  .highThreshold = 0
+  .highThreshold = 0,
+  .waterCleaningIntervalDays = 0,
+  .lastCleaningTime = 0,
+  .lightOffTime = 0,
+  .lightOnTime = 0
 };
 
 // Magic values to indicate unset configuration

@@ -10,8 +10,8 @@
 #include <Arduino.h>
 
 // Test variables
-uint64_t lightont = 0;
-uint64_t lightofft = 0;
+uint64_t lightOnTime = 0;
+uint64_t lightOffTime = 0;
 uint64_t mockTime = 0;
 uint8_t lightPinState = HIGH;
 
@@ -46,8 +46,8 @@ void testLightControl() {
   Serial.println("\n=== Testing Light Control Logic ===");
 
   // Test Case 1: Normal schedule - Light ON from 8 AM to 8 PM
-  lightont = 8 * 3600;    // 8:00 AM
-  lightofft = 20 * 3600;  // 8:00 PM
+  lightOnTime = 8 * 3600;    // 8:00 AM
+  lightOffTime = 20 * 3600;  // 8:00 PM
 
   // Test at 6:00 AM (should be OFF)
   mockTime = 6 * 3600 * 1000;  // 6:00 AM in milliseconds
@@ -57,16 +57,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be OFF: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule (e.g., 8 PM to 8 AM)
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule (e.g., 8 AM to 8 PM)
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
@@ -82,16 +82,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be ON: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
@@ -107,16 +107,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be OFF: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
@@ -126,8 +126,8 @@ void testLightControl() {
 
   // Test Case 4: Test midnight spanning (light on from 8 PM to 8 AM)
   Serial.println("\n=== Testing Midnight Spanning ===");
-  lightont = 20 * 3600;  // 8:00 PM
-  lightofft = 8 * 3600;  // 8:00 AM
+  lightOnTime = 20 * 3600;  // 8:00 PM
+  lightOffTime = 8 * 3600;  // 8:00 AM
 
   // Test at 10:00 PM (should be ON)
   mockTime = 22 * 3600 * 1000;  // 10:00 PM
@@ -137,16 +137,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be ON: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
@@ -162,16 +162,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be ON: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
@@ -187,16 +187,16 @@ void testLightControl() {
   Serial.print((unsigned long)currentTime);
   Serial.print("s) - Light should be OFF: ");
 
-  if (lightont > lightofft) {
+  if (lightOnTime > lightOffTime) {
     // Overnight schedule
-    if (currentTime >= lightont || currentTime <= lightofft) {
+    if (currentTime >= lightOnTime || currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);
     }
   } else {
     // Same day schedule
-    if (currentTime >= lightont && currentTime <= lightofft) {
+    if (currentTime >= lightOnTime && currentTime <= lightOffTime) {
       digitalWrite(Hardware::LIGHT_PIN, LOW);
     } else {
       digitalWrite(Hardware::LIGHT_PIN, HIGH);

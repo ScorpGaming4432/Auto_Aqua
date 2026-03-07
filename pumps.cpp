@@ -16,6 +16,11 @@ void initPumpModes() {
     AppState::pumps[3].setRole(PumpRole::INLET);
     AppState::pumps[4].setRole(PumpRole::OUTLET);
   }
+
+  for (uint8_t i = 0; i <= Hardware::DOSING_PUMP_COUNT; i++) {
+    pinMode(Hardware::DOSING_PUMP_PINS[i], OUTPUT);
+    digitalWrite(Hardware::DOSING_PUMP_PINS[i], HIGH);
+  }
 }
 
 static uint8_t pumpIndexToPin(uint8_t pumpIndex) {
@@ -29,10 +34,9 @@ void checkDosingSchedule() {
   uint64_t now = seconds();
   for (uint8_t i = 0; i < Hardware::DOSING_PUMP_COUNT; ++i) {
     Pump& p = AppState::pumps[i];
-    if (p.getRole() != PumpRole::DOSING) {
-      SerialPrint(PUMPS, "ERROR:", NOT_CORRECT, "\nPUMP OF INDEX ", i, "SHOULD HAVE BEEN DOSING. CURRENT IS DIFFERENT");
+    if (p.getRole() != PumpRole::DOSING)
       continue;
-    }
+
     DosingConfig cfg = p.getConfig();
     if (cfg.interval == 0 || !p.shouldDose(now))
       continue;

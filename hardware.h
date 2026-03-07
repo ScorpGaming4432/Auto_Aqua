@@ -57,8 +57,14 @@ constexpr uint8_t LCD_WIDTH = 16;
 constexpr uint8_t LCD_HEIGHT = 2;
 
 // UI timing
+
+// 0.1 sec time value
 constexpr uint16_t UI_DELAY_SHORT_MS = 100;
+
+// 1 sec time value
 constexpr uint16_t UI_DELAY_MEDIUM_MS = 1000;
+
+// 2 sec time value
 constexpr uint16_t UI_DELAY_LONG_MS = 2000;
 
 // Pump flow rate (ml/second)

@@ -36,5 +36,5 @@ void splashScreen() {
     Glyphs::animateIcon(slots, r, scratch);
     delay(80);
   }
-  delay(1000);
+  delay(Hardware::UI_DELAY_MEDIUM_MS);
 }

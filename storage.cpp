@@ -88,7 +88,9 @@ bool isConfigurationValid(const Configuration& config) {
 
   if (config.languageIndex == UNSET_U8 ||
       config.tankVolume == UNSET_U32 ||
-      config.timeOffset == UNSET_I64) {
+      config.timeOffset == UNSET_I64 ||
+      config.lightOffTime == UNSET_U64 ||
+      config.lightOnTime == UNSET_U64) {
     SerialPrint(STORAGE, F("Invalid: General data UNSET"));
     return false;
   }
@@ -112,6 +114,10 @@ void loadConfigurationToAppState() {
     AppState::timeOffset = config.timeOffset;
     AppState::lowThreshold = config.lowThreshold;
     AppState::highThreshold = config.highThreshold;
+    AppState::waterCleaningIntervalDays = config.waterCleaningIntervalDays;
+    AppState::lastCleaningTime = config.lastCleaningTime;
+    AppState::lightOffTime = config.lightOffTime;
+    AppState::lightOnTime = config.lightOnTime;
 
     for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
       DosingConfig cfg;
@@ -130,6 +136,10 @@ void loadConfigurationToAppState() {
     AppState::timeOffset = DEFAULT_CONFIG.timeOffset;
     AppState::lowThreshold = DEFAULT_CONFIG.lowThreshold;
     AppState::highThreshold = DEFAULT_CONFIG.highThreshold;
+    AppState::waterCleaningIntervalDays = DEFAULT_CONFIG.waterCleaningIntervalDays;
+    AppState::lastCleaningTime = DEFAULT_CONFIG.lastCleaningTime;
+    AppState::lightOffTime = DEFAULT_CONFIG.lightOffTime;
+    AppState::lightOnTime = DEFAULT_CONFIG.lightOnTime;
 
     for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
       DosingConfig cfg;
@@ -151,6 +161,10 @@ void saveAppStateToConfiguration() {
   config.timeOffset = AppState::timeOffset;
   config.lowThreshold = AppState::lowThreshold;
   config.highThreshold = AppState::highThreshold;
+  config.waterCleaningIntervalDays = AppState::waterCleaningIntervalDays;
+  config.lastCleaningTime = AppState::lastCleaningTime;
+  config.lightOffTime = AppState::lightOffTime;
+  config.lightOnTime = AppState::lightOnTime;
 
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     DosingConfig cfg = AppState::pumps[i].getConfig();
@@ -174,6 +188,10 @@ void factoryReset() {
   resetConfig.timeOffset = UNSET_I64;
   resetConfig.lowThreshold = UNSET_U16;
   resetConfig.highThreshold = UNSET_U16;
+  resetConfig.waterCleaningIntervalDays = 0;
+  resetConfig.lastCleaningTime = 0;
+  resetConfig.lightOffTime = UNSET_U64;
+  resetConfig.lightOnTime = UNSET_U64;
 
   for (uint8_t i = 0; i < Hardware::PUMP_COUNT; i++) {
     resetConfig.pumpAmounts[i] = UNSET_U16;

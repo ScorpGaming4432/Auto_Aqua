@@ -74,7 +74,7 @@ inline uint64_t seconds() {
   }
   totalMillis += delta;
   previousMillis = currentMillis;
-  return totalMillis / 1000;
+  return totalMillis / Hardware::UI_DELAY_MEDIUM_MS;
 }
 
 /**
@@ -105,6 +105,9 @@ uint16_t pumpAmountScreen(const char *amountBuf, uint8_t pumpIndex, bool editMod
  * @return Entered duration, or -1 if cancelled
  */
 uint16_t pumpIntervalScreen(const char *intervalBuf, uint8_t pumpIndex, bool editMode, uint16_t duration);
+
+// Days-based cleaning interval input screen
+uint16_t cleanIntervalScreen(const char *intervalBuf, bool editMode, uint16_t days);
 
 /**
  * Display main/idle screen
@@ -184,5 +187,7 @@ uint32_t editNumberScreen(const char *label, const char *format, uint8_t entryCo
 void handleThreshold();
 
 void lightTimeScreen(uint64_t *lightofftime, uint64_t *lightontime);
+
+
 
 #endif

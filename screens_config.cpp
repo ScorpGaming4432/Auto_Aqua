@@ -133,3 +133,13 @@ void handleThreshold() {
     delay(100);
   }
 }
+
+uint16_t cleanIntervalScreen(const char *intervalBuf, bool editMode, uint16_t days) {
+  if (days == UNSET_U16) {
+    days = 0;
+    editMode = true;
+  }
+  return static_cast<uint16_t>(
+      editNumberScreen(intervalBuf, "<-* ________ #->", 6, 6, days, editMode, "d"));
+}
+
